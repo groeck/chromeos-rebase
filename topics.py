@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from config import rebasedb, topics
+from config import rebasedb, topiclist
 
 def get_topic(file):
     for (subdir, topic, ) in topics:
@@ -62,9 +62,16 @@ c.execute("select sha from commits order by date")
 for (sha,) in c.fetchall():
     c.execute("UPDATE commits SET topic=0 where sha='%s'" % sha)
 
-topic = 0
+topic = 1
+topics = [ ]
+for subdirs in topiclist:
+    for subdir in subdirs:
+	topics.append((subdir, topic))
+    topic = topic + 1
+
 for (subdir, topic, ) in topics:
     handle_topic(topic, subdir)
+
 topic = topic + 1
 
 while True:
