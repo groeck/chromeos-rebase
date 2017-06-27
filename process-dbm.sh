@@ -5,6 +5,8 @@ then
 	t1=1
 fi
 
+. ./config.sh
+
 sql="select disposition,sha,dsha,description from commits where topic=${t1}"
 
 while [ "$2" != "" ]
@@ -15,7 +17,7 @@ done
 
 sql="${sql};"
 
-sqlite3 rebase49.db "${sql}" | while read line
+sqlite3 ${rebasedb} "${sql}" | while read line
 do
     dotag=0
     fromupstream=0

@@ -1,58 +1,79 @@
 #!/bin/bash
 
-if [ -d linux-chrome ]
+# Note: Collabora repository with pending patches
+# https://git.collabora.com/cgit/linux.git/log/?h=topic/chromeos/waiting-for-upstream
+
+. ./config.sh
+
+if [ -d ${chromeos_path} ]
 then
-	pushd linux-chrome
-	git checkout chromeos-4.4
+	pushd ${chromeos_path}
+	git checkout ${rebase_origin_branch}
 	git pull
 	popd
 else
-	git clone https://chromium.googlesource.com/chromiumos/third_party/kernel linux-chrome
-	pushd linux-chrome
-	git checkout -b chromeos-4.4 origin/chromeos-4.4
+	git clone
+	https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
+	pushd ${chromeos_path}
+	git checkout -b ${rebase_origin_branch} origin/${rebase_origin_branch}
 	popd
 fi
 
-if [ -d linux-android ]
+if [ -d ${android_path} ]
 then
-	pushd linux-android
+	pushd ${android_path}
 	git checkout android-4.4
 	git pull
 	popd
 else
-	git clone https://android.googlesource.com/kernel/common linux-android
-	pushd linux-android
+	git clone https://android.googlesource.com/kernel/common ${android_path}
+	pushd ${android_path}
 	git checkout -b android-4.4 origin/android-4.4
 	git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 	git fetch upstream	# for tags
 	popd
 fi
 
-if [ -d linux-stable ]
+if [ -d ${stable_path} ]
 then
-	pushd linux-stable
+	pushd ${stable_path}
 	git pull
 	popd
 else
-	git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux-stable
+	git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git ${stable_path}
 fi
 
 echo "Initializing database"
 python initdb.py
 
-if [ ! -e upstream49.db -o "$1" = "-f" ]
+if [ ! -e ${upstreamdb} -o "$1" = "-f" ]
 then
 	echo "Initializing upstream database"
-	if [ -d linux-upstream ]
+	if [ -d ${upstream_path} ]
 	then
-		pushd linux-upstream
+		pushd ${upstream_path}
 		git checkout master
 		git pull
 		popd
 	else
-		git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git linux-upstream
+		git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git ${upstream_path}
 	fi
 	python initdb-upstream.py
+fi
+
+if [ ! -e ${nextdb} -o "$1" = "-f" ]
+then
+	echo "Initializing next database"
+	if [ -d ${next_path} ]
+	then
+		pushd ${next_path}
+		git fetch origin
+		git reset --hard origin/master
+		popd
+	else
+		git clone git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git ${next_path}
+	fi
+	python initdb-next.py
 fi
 
 echo "Calculating initial drop list"
