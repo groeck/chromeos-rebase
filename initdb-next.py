@@ -28,7 +28,7 @@ conn.commit()
 
 os.chdir(next_path)
 
-commits = subprocess.check_output(['git', 'log', '--oneline', next_pick])
+commits = subprocess.check_output(['git', 'log', '--oneline', '--no-merges', next_pick])
 for commit in commits.splitlines():
     if commit != "":
         elem = commit.split(" ", 1)
