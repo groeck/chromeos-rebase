@@ -5,15 +5,20 @@ then
 	t1=1
 fi
 
-. ./config.sh
+rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
 
 sql="select disposition,sha,dsha,description from commits where topic=${t1}"
+
+tlist=${t1}
 
 while [ "$2" != "" ]
 do
     sql="${sql} or topic=$2"
+    tlist= "${tlist}, $2"
     shift
 done
+
+echo "# ${tlist}"
 
 sql="${sql};"
 
