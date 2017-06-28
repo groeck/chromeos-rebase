@@ -4,7 +4,9 @@ rebasedb = 'rebase412.db'
 upstreamdb = 'upstream412.db'
 nextdb = 'next412.db'
 
-rebase_origin = 'chromeos-4.4'
+rebase_baseline_branch = 'chromeos-4.4'
+android_baseline_branch = "android-4.4"
+
 rebase_baseline = 'v4.4'
 stable_baseline = 'v4.4.70'
 rebase_target = 'v4.12-rc7'
