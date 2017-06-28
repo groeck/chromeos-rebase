@@ -22,8 +22,7 @@ then
 	git pull
 	popd
 else
-	git clone
-	https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
+	git clone https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
 	pushd ${chromeos_path}
 	git checkout -b ${rebase_baseline_branch} origin/${rebase_baseline_branch}
 	popd
