@@ -3,32 +3,42 @@
 # Note: Collabora repository with pending patches
 # https://git.collabora.com/cgit/linux.git/log/?h=topic/chromeos/waiting-for-upstream
 
-. ./config.sh
+chromeos_path=$(python -c "from config import chromeos_path; print chromeos_path;")
+android_path=$(python -c "from config import android_path; print android_path;")
+stable_path=$(python -c "from config import stable_path; print stable_path;")
+upstream_path=$(python -c "from config import upstream_path; print upstream_path;")
+next_path=$(python -c "from config import next_path; print next_path;")
+
+rebase_baseline_branch=$(python -c "from config import rebase_baseline_branch; print rebase_baseline_branch;")
+android_baseline_branch=$(python -c "from config import android_baseline_branch; print android_baseline_branch;")
+
+upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
+nextdb=$(python -c "from config import nextdb; print nextdb;")
 
 if [ -d ${chromeos_path} ]
 then
 	pushd ${chromeos_path}
-	git checkout ${rebase_origin_branch}
+	git checkout ${rebase_baseline_branch}
 	git pull
 	popd
 else
 	git clone
 	https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
 	pushd ${chromeos_path}
-	git checkout -b ${rebase_origin_branch} origin/${rebase_origin_branch}
+	git checkout -b ${rebase_baseline_branch} origin/${rebase_baseline_branch}
 	popd
 fi
 
 if [ -d ${android_path} ]
 then
 	pushd ${android_path}
-	git checkout android-4.4
+	git checkout ${android_baseline_branch}
 	git pull
 	popd
 else
 	git clone https://android.googlesource.com/kernel/common ${android_path}
 	pushd ${android_path}
-	git checkout -b android-4.4 origin/android-4.4
+	git checkout -b ${android_baseline_branch} origin/${android_baseline_branch}
 	git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 	git fetch upstream	# for tags
 	popd
