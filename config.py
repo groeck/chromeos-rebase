@@ -9,7 +9,7 @@ android_baseline_branch = "android-4.4"
 
 rebase_baseline = 'v4.4'
 stable_baseline = 'v4.4.70'
-rebase_target = 'v4.12-rc7'
+rebase_target = 'v4.12'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
