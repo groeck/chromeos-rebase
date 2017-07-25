@@ -22,6 +22,9 @@ for (sha, desc) in c.fetchall():
     if desc.startswith('android:'):
 	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
 	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
+    if desc.startswith('Android:'):
+	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
+	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
 
 conn.commit()
 
