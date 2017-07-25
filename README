@@ -1,0 +1,10 @@
+# chromeos-rebase
+Scripts used to assist rebasing chromeos kernels
+
+Run "setup.sh" to initialize the database.
+
+Run process-dbm.sh <topic> (where <topic> is a number)
+to list patches associated with a given topic. Output is a list
+of patches which can be used as input to "git rebase -i".
+
+process-dbm-csv.sh generates a list of patches in csv format.
