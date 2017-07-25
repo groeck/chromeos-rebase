@@ -1,4 +1,4 @@
-patchlist = "patchlist-170626"
+patchlist = "patchlist-170725"
 
 rebasedb = 'rebase412.db'
 upstreamdb = 'upstream412.db'

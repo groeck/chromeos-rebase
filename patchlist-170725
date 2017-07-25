@@ -810,6 +810,7 @@ pick 0c465e0620f8 CHROMIUM: sysrq: clear sysrq->active state on sysrq release
 pick d69e8994ca04 CHROMIUM: acpi: thermal: honor "mode" sysfs file setting
 pick d65f3e2e5453 CHROMIUM: acpi: thermal: initialize tz_enabled to 1
 pick 0d376649aa87 UPSTREAM: regulator: mt6311: MT6311_REGULATOR needs to select REGMAP_I2C
+pick ebac3489b6d2 UPSTREAM: thermal: cpu_cooling: fix out of bounds access in time_in_idle
 pick 612417c71e91 CHROMIUM: thermal: Add notifier call chain for hot/critical events
 pick a64a05263804 CHROMIUM: daisy: tpm: fail TPM probe if TPM is not started
 pick e212725680a7 CHROMIUM: tpm: do not suspend/resume if power stays on
@@ -2114,7 +2115,6 @@ pick b1944a54e486 CHROMIUM: ARM64: dts: add support multi audio codec devices
 pick 2232d6dc0017 Btrfs: fix deadlock running delayed iputs at transaction commit time
 pick 3028963a2869 target: Fix WRITE_SAME/DISCARD conversion to linux 512b sectors
 pick 75d46a71e0b8 MIPS: scache: Fix scache init with invalid line size.
-pick e6f54e7f5770 thermal: cpu_cooling: fix out of bounds access in time_in_idle
 pick 7f74146b5f52 drm/amdgpu: Use drm_calloc_large for VM page_tables array
 pick bdfa7f6e5338 drm/i915: more virtual south bridge detection
 pick 74b2c72122a8 drm/i915: refine qemu south bridge detection
@@ -3506,6 +3506,7 @@ pick 9bdee1872887 CHROMIUM: drm/rockchip: cdn-dp: reset controller before load f
 pick ecb5582ff60c FROMLIST: drm/bridge: analogix_dp: clear psr_support in bridge_disable()
 pick df2af32267ef CHROMIUM: config: Renormalize config
 pick d74e9cca4bc9 HACK-TO-REVERT: backlight: arcxcnn: add support for ArticSand devices
+pick 0fda64dccb10 HACK-TO-REVERT: backlight: arcxcnn: devicetree bindings for ArticSand devices
 pick 98b91022d91a CHROMIUM: arm64: dts: rockchip: add gru rev2 and remove rev0
 pick febde8094727 CHROMIUM: config: normalize configs
 pick 9c9f3138dbdb CHROMIUM: config: enable BACKLIGHT_ARCXCNN on arm64
@@ -5027,6 +5028,7 @@ pick 94f4a1a92f11 FIXUP: UPSTREAM: PCI: rockchip: Add quirk to disable RC's ASPM
 pick 01c1bab65b6a FIXUP: FROMLIST: PCI: rockchip: remove the pointer to L1 substate cap
 pick 7eecdc65c1d8 CHROMIUM: PCI: rockchip: sync up diffs with upstream
 pick 8d576b758189 CHROMIUM: arm64: dts: rockchip: fixes the opp of big cluster on rk3399-gru
+pick 36eaad4e56bb FROMLIST: usb: hub: Fix crash after failure to read BOS descriptor
 pick 7bd267a2951d UPSTREAM: PCI: Add pci_unmap_iospace() to unmap I/O resources
 pick b9a534e840d7 UPSTREAM: PCI: rockchip: Add Kconfig COMPILE_TEST
 pick 22201df26250 CHROMIUM: usb: dwc3: rockchip: Increase device insertion delay
@@ -5036,17 +5038,21 @@ pick 4d299ed34b66 CHROMIUM: drm/rockchip: cdn-dp: add hdcp_key node
 pick 3633ffeb8c5b FROMLIST: drm: Add Content Protection properties to drm
 pick 468170114c7c CHROMIUM: drm: Add "Enabled" value back to "Content Protection" property
 pick 0a2145692ed0 CHROMIUM: drm/rockchip: cdn-dp: add HDCP 1.4 support
+pick c96738bce1c8 FROMLIST: usb: hub: Fix error loop seen after hub communication errors
+pick cd110aca5c52 FROMLIST: usb: hub: Do not attempt to autosuspend disconnected devices
 pick fd3750a348d7 CHROMIUM: config: mediatek: Disable CPUFREQ_DT
 pick 41610c37c69b CHROMIUM: drm/img-rogue: fix multiple definition PDUMP build errors
 pick d670ccd07950 CHROMIUM: cros_ec: instantiate properly FP MCU device
 pick c88373961fa4 CHROMIUM: config: x86_64: enable CrOS EC SPI protocol
 pick ae5c23675074 UPSTREAM: drm/i915: Add Backlight Control using DPCD for eDP connectors (v9)
+pick 3d71853f7e27 UPSTREAM: net: unix: properly re-increment inflight counter of GC discarded candidates
 pick cf2d768bc56e UPSTREAM: drm/i915: Move down skl/kbl ddi iboost and n_edp_entires fixup
 pick cceae23adaa2 UPSTREAM: drm/i915: KBL - Recommended buffer translation programming for DisplayPort
 pick 9f416401b95d CHROMIUM: drm: rockchip: Add PSR residency debug entry
 pick 157272f80bb6 CHROMIUM: config: Renormalize config
 pick 29537850f95f CHROMIUM: net: xt_qtaguid: Fix memory leak
 pick 886ba5cc890b BACKPORT: drm/rockchip: fix "should it be static?" warnings
+pick 8a4ee6fb18a1 FROMLIST: btusb: wake system up when receives a wake irq
 pick 7adb62f0a1fc UPSTREAM: mwifiex: wake system up when receives a wake irq
 pick 28d934899b9c UPSTREAM: ASoC: Intel: Update bxt_da7219_max98357a to add a new
 pick e0472db68080 CHROMIUM: tpm: cr50_i2c: retry in case of bus errors
@@ -5063,12 +5069,18 @@ pick 4149fdd6cccf CHROMIUM: arm64: dts: rockchip: add mipi_dsi support
 pick ca91c41e2492 WIP: drm/mediatek: dsi: add support for dual DSI
 pick 4458f1262e8b CHROMIUM: arm64: dts: mt8176-rowan: Add Dual MIPI/DSI nodes
 pick 695c2be7dd38 CHROMIUM: arm64: dts: rockchip: enable mipi_dsi for scarlet
+pick c0753fd73937 UPSTREAM: ping: implement proper locking
 pick 48cb1c33f11a WIP: drm/panel: Add driver for BOE TV097qxm-NU0 panel
 pick a3f96b3784b0 CHROMIUM: arm64: dts: mt8176-rowan: Add panel nodes
 pick 1a4135886603 CHROMIUM: Enable DRM_PANEL_BOE_TV097QXM_NU0
 pick f27275748d2d FIXUP: CHROMIUM: iwl7000: mvm: add support for EWRD (Dynamic SAR) ACPI table
+pick 78cccdb69670 UPSTREAM: xfrm_user: validate XFRM_MSG_NEWAE XFRMA_REPLAY_ESN_VAL replay_window
+pick c81646d191af FROMLIST: net/packet: fix overflow in check for priv area size
+pick f7f32c47b8dd FROMLIST: net/packet: fix overflow in check for tp_frame_nr
+pick aef22a619fdb FROMLIST: net/packet: fix overflow in check for tp_reserve
 pick 6aa5d1674544 ANDROID: selinux: nlmsgtab: add SOCK_DESTROY to the netlink mapping tables
 pick 84712ab35e12 CHROMIUM: config: turn on inet diag and inet diag destroy
+pick 7e02bef7e315 UPSTREAM: xfrm_user: validate XFRM_MSG_NEWAE incoming ESN size harder
 pick bdaefa0f2dc3 CHROMIUM: config: Renormalize config
 pick a90c3cae1210 rk3399: devfreq: Add dmcfreq boost mode
 pick 0902ac5c0852 Revert"FROMLIST: keyrings: Allow searching the user session keyring"
@@ -5174,7 +5186,6 @@ pick f3e4b0af0b96 CHROMIUM: ext4: Remove broken support for detecting keyring ke
 pick 2a8df4c347ee CHROMIUM: iwl7000: mvm: don't fail when removing a key from an inexisting sta
 pick 603b65e0ab0e FIXUP: ia64: "FROMLIST: kbuild: Consolidate header generation from ASM offset information"
 pick 830a52ed1515 CHROMIUM: mwifiex: Fix enum mismatch in mwifiex_create_custom_regdomain()
-pick f7e2430f5666 UPSTREAM: [media] uvcvideo: Fix a wrong macro
 pick ed252746b6c4 FROMLIST: BACKPORT: mmc: sdhci-pci: Set MMC_CAP_AGGRESSIVE_PM for BYT-related Intel controllers
 pick d1c5b26c03d9 CHROMIUM-only: Enable wake source for sdcard card detect pin
 pick 4498a87a2a23 CHROMIUM: gpu: mali: Fix enum type mismatch in kbase_mem_from_umm()
@@ -5251,6 +5262,7 @@ pick 99013103c331 CHROMIUM: config: Built-in PowerVR driver 1.7 and 1.8 as modul
 pick 135f3bb1b58f CHROMIUM: drm/img-rogue: Add 1.8 IMG PowerVR Rogue driver
 pick 853b7cee846d CHROMIUM: arm64: dts: rockchip: Update thermal numbers on rk3399-bob
 pick faf6aa4b129d samples: move mic/mpssd example code from Documentation
+pick b0bde9f6a057 uvcvideo: Fix a wrong macro
 pick 272d60bfce0e staging: rtl: fix possible NULL pointer dereference
 pick 612e4679b865 mm/page_alloc: fix nodes for reclaim in fast path
 pick c5c893e7c44e mm: do not access page->mapping directly on page_endio
@@ -5294,12 +5306,10 @@ pick b1a0f744f8e6 Drivers: hv: avoid vfree() on crash
 pick 6cc5b73d7969 hv_netvsc: use skb_get_hash() instead of a homegrown implementation
 pick 582f548924cd md/raid1/10: fix potential deadlock
 pick a5c3f390eb77 Linux 4.4.57
-pick 610c6bcc5fcf net: unix: properly re-increment inflight counter of GC discarded candidates
 pick fdcee7c1e2f8 net/mlx5e: Count LRO packets correctly
 pick 95aa915c2f04 socket, bpf: fix sk_filter use after free in sk_clone_lock
 pick afaed241928f tcp: initialize icsk_ack.lrcvtime at session start time
 pick b55ffcb1bc8a ALSA: seq: Fix racy cell insertions during snd_seq_pool_done()
-pick 14a2032287d4 usb: hub: Fix crash after failure to read BOS descriptor
 pick 7922c1becb36 xfs: fix up xfs_swap_extent_forks inline extent handling
 pick 74c8dd066cc0 nl80211: fix dumpit error path RTNL deadlocks
 pick f154de03f416 USB: usbtmc: add missing endpoint sanity check
@@ -5313,8 +5323,6 @@ pick ac601978a2aa serial: 8250_pci: Detach low-level driver during PCI error rec
 pick 540d6d756ff8 fbcon: Fix vc attr at deinit
 pick 0a5766a6a73b Linux 4.4.58
 pick a9a76a3e318e xfrm: policy: init locks early
-pick cce7e56dd73f xfrm_user: validate XFRM_MSG_NEWAE XFRMA_REPLAY_ESN_VAL replay_window
-pick 22c9e7c092f6 xfrm_user: validate XFRM_MSG_NEWAE incoming ESN size harder
 pick 800791e7e0fd pinctrl: qcom: Don't clear status bit on irq_unmask
 pick 7a5202190810 fscrypt: remove broken support for detecting keyring key revocation
 pick 2bed5987692c sched/rt: Add a missing rescheduling point
@@ -5335,7 +5343,6 @@ pick 8cfaf0ae1f56 drm/i915: Stop using RP_DOWN_EI on Baytrail
 pick 297f55bcb62a usb: dwc3: gadget: delay unmap of bounced requests
 pick d8b8b5528ea5 MIPS: Introduce irq_stack
 pick 336365351285 MIPS: Stack unwinding while on IRQ stack
-pick d35f8fa0b93e net/packet: fix overflow in check for priv area size
 pick a80c068fbf43 Linux 4.4.62
 pick 3144d81a7735 cgroup, kthread: close race window where new kthreads can be migrated to non-root cgroups
 pick a5e2f803b891 Input: xpad - add support for Razer Wildcat gamepad
@@ -5381,7 +5388,6 @@ pick 746661c6b130 Revert "Revert "FROMLIST: Bluetooth: btusb: Add out-of-band wa
 pick b75d368c2b9b Revert "Revert "FROMLIST: Bluetooth: btusb: Configure Marvell to use one of the pins for oob wakeup""
 pick be7661cd3c7d Revert "Revert "FROMLIST: Bluetooth: btusb: Check for "ENABLED" instead of "DISABLED" in""
 pick fab10cf7efdf Revert "Revert "FROMLIST: Bluetooth: hidp: fix possible might sleep error in hidp_session_thread""
-pick 616aeced2269 Revert "Revert "FROMLIST: btusb: wake system up when receives a wake irq""
 pick d5d455a63c34 UPSTREAM: [media] xc2028: unlock on error in xc2028_set_config()
 pick 881e65a1e930 FIXUP: CHROMIUM: drm/img-rogue: Add 1.8 IMG PowerVR Rogue driver
 pick 4bf793eee6fb CHROMIUM: Revert "CHROMIUM: Revert "netlink: remove mmapped netlink support""
@@ -5722,12 +5728,9 @@ pick 9a35bc2ae545 hostap: avoid uninitialized variable use in hfa384x_get_rid
 pick 59e0cd110fb9 tipc: fix socket timer deadlock
 pick c50fd34e1089 mnt: Add a per mount namespace limit on the number of mounts
 pick 65d30f7545ff tipc: check minimum bearer MTU
-pick b7f47c794bc4 ping: implement proper locking
 pick 416bd4a366f3 perf/core: Fix concurrent sys_perf_event_open() vs. 'move_group' race
 pick 418b99042b87 Linux 4.4.65
 pick 28320756e78b ext4: check if in-inode xattr is corrupted in ext4_expand_extra_isize_ea()
-pick cf71bd41f809 net/packet: fix overflow in check for tp_frame_nr
-pick 25adf4e32a89 net/packet: fix overflow in check for tp_reserve
 pick f710dbd92b27 l2tp: take reference on sessions being dumped
 pick 593e185eaade l2tp: fix PPP pseudo-wire auto-loading
 pick 78c4e3d4848d tcp: clear saved_syn in tcp_disconnect()
@@ -5773,8 +5776,6 @@ pick 6cd0200a9554 target: Convert ACL change queue_depth se_session reference us
 pick 8e1a740a5d66 iscsi-target: Set session_fall_back_to_erl0 when forcing reinstatement
 pick 9d3c45786f27 staging: vt6656: use off stack for in buffer USB transfers.
 pick 5ac489a80ffb staging: gdm724x: gdm_mux: fix use-after-free on module unload
-pick 0b4dad7c2cf4 usb: hub: Fix error loop seen after hub communication errors
-pick 3d3ca81d5e35 usb: hub: Do not attempt to autosuspend disconnected devices
 pick b8cd9dd513bf x86, pmem: Fix cache flushing for iovec write < 8 bytes
 pick 7b268351860c KVM: x86: fix user triggerable warning in kvm_apic_accept_events()
 pick dcd4004ae521 crypto: algif_aead - Require setkey before accept(2)
@@ -6327,10 +6328,268 @@ pick e161a4ae6446 UPSTREAM: [media] v4l: flash led class: Use fwnode_handle inst
 pick 33c435b42a4c BACKPORT: [media] v4l: Switch from V4L2 OF not V4L2 fwnode API
 pick 95546765fa60 UPSTREAM: drm/dp: Factor out helper to distinguish between branch and sink devices
 pick 5f7d9ce1e65c UPSTREAM: drm: Print some debug/error info during DP dual mode detect
-pick fccc397a120b FROMLIST: ipv6: only call ip6_route_dev_notify() once for NETDEV_UNREGISTER
 pick 2a1d400ef57c rowan: Remove from kernel 4.4 pre-cq config
 pick 0f7f6da93f97 UPSTREAM: dma-buf/sync_file: refactor fence storage in struct sync_file
 pick 5aac3631e525 CHROMIUM: platform/chrome: cros_ec_lpc: Pass ACPI_ALL_NOTIFY to acpi_remove_notify_handler
 pick 029c928640f6 BACKPORT: dma-buf/sw_sync: de-stage SW_SYNC
 pick c9e1083ca6c9 FROMLIST: x86/intel_telemetry: Add debugfs entry for S0ix residency
 pick 071a49c37416 BACKPORT: dma-buf/sync_file: add sync_file_get_fence()
+pick 4b30145bce15 CHROMIUM: Revert "REVERT-ME: Add WIP patches of aux_backlight driver"
+pick 230f17f0ad9a UPSTREAM: drm/i915: Drop AUX backlight enable check for backlight control
+pick 113af77fd1ac UPSTREAM: drm: Add definition for eDP backlight frequency
+pick d96af101ebb4 UPSTREAM: drm/i915: Set PWM divider to match desired frequency in vbt
+pick 1febb1a30778 BACKPORT: drm/i915: Add heuristic to determine better way to adjust brightness
+pick dce6221b2ca7 BACKPORT: drm/i915: Add option to support dynamic backlight via DPCD
+pick 51932996c6e6 CHROMIUM: mm: vmscan: Fix redundant scan loop when file page count is low
+pick 706505115e29 CHROMIUM: i915: Fix error in revert of 963d0e7.
+pick 018001c78821 FROMGIT: kbuild: Add __cc-option macro
+pick bd7655327c49 FROMGIT: x86/build: Use __cc-option for boot code compiler options
+pick cf18a5ec40a8 FROMGIT: x86/build: Specify stack alignment for clang
+pick d0be8d66fc35 Revert "FROMLIST: uvcvideo: Prevent heap overflow in uvc driver"
+pick 81e24d193952 UPSTREAM: mmc: Change the max discard sectors and erase response when HW busy detect
+pick 18083ad14be0 UPSTREAM: tcp: reset sk_rx_dst in tcp_disconnect()
+pick cfafb2bfd34c FROMLIST: [media] v4l2-ctrls.c: Implement unlocked variant of v4l2_ctrl_handler_setup()
+pick 0bd7395532c8 UPSTREAM: ASoC: Intel: Skylake: Move i915 registration to worker thread
+pick 191dca88b1ed CHROMIUM: move fence array release to a worker
+pick 8c6ce6c455f8 REVERTME: dma-buf/sw_sync: fix userspace incrementing timeline by 0x7FFFFFFF
+pick 1de7a68994b5 CHROMIUM: config: Built-in PowerVR driver 1.8 and 1.7 as module
+pick 1809650fcb98 BACKPORT: ovl: lockdep annotate of nested stacked overlayfs inode lock
+pick 9b44741309e9 UPSTREAM: spi: rockchip: Disable Runtime PM when chip select is asserted
+pick 3a0c2ea8f6f8 BACKPORT: proc: revert /proc/<pid>/maps [stack:TID] annotation
+pick 8148d7b85c7c BACKPORT: dma-buf/sync_file: only enable fence signalling on poll()
+pick bebcc31532da UPSTREAM: ASoC: da7219: Fix HP detection procedure for all MCLK frequencies
+pick 61facebf3d0e UPSTREAM: ASoC: Intel: bxt: Move codec sysclk config to codec_init function
+pick 44b0c157700e UPSTREAM: mm: larger stack guard gap, between vmas
+pick 2dd361385e91 UPSTREAM: mm: fix new crash in unmapped_area_topdown()
+pick c54f22922b38 HACK: CHROMIUM: x86/mm: don't check %sp when faulting page immediately before stack
+pick 68a52822444c FROMLIST: mwifiex: correct channel stat buffer overflows
+pick 9e26e0473ae4 UPSTREAM: pinctrl: rockchip: remove unnecessary locking
+pick f00cc8ecdb7c UPSTREAM: PCI: rockchip: Use normal register bank for config accessors
+pick 2c7bc96919c8 CHROMIUM: drm/i915: Use max GFX freq on quad-core Baytrail
+pick 0613757893b3 UPSTREAM: pinctrl: rockchip: Add iomux-route switching support
+pick 796728b10644 UPSTREAM: pinctrl: rockchip: Add iomux-route switching support for rk3228
+pick 80bc3f926fca UPSTREAM: pinctrl: rockchip: Add iomux-route switching support for rk3328
+pick 71c108b99d8d UPSTREAM: pinctrl: rockchip: Add iomux-route switching support for rk3399
+pick ab5ff331e4b5 BACKPORT: drm/fence: allow fence waiting to be interrupted by userspace
+pick e3f002426976 BACKPORT: dma-buf: Rename struct fence to dma_fence
+pick ffe89a739da8 UPSTREAM: drm/nouveau/fbcon: make use of drm_fb_helper.fb
+pick 6b518dbfc3db BACKPORT: drm/i915/dp: Print full branch/sink descriptor
+pick 36c1642f12fe UPSTREAM: drm/i915: Rename struct i915_power_well field data to id
+pick 0d880f5422ed BACKPORT: drm/i915: Move DPIO phy documentation section to intel_dpio_phy.c
+pick 06384c6634b5 BACKPORT: drm/i915: Rearrange i915_wait_request() accounting with callers
+pick f5e02cd0a19b BACKPORT: drm/i915: Refactor object page API
+pick 80aaf950eee1 UPSTREAM: drm/i915: Pass around sg_table to get_pages/put_pages backend
+pick 1e5ed1a4d6b7 BACKPORT: drm/i915: Move object backing storage manipulation to its own locking
+pick d3881efd309e BACKPORT: drm/i915: Implement pread without struct-mutex
+pick bfea449128bb BACKPORT: drm/i915: Implement pwrite without struct-mutex
+pick 0946158d9eec BACKPORT: drm/i915: Use lockless object free
+pick 6c0c8d28fad7 UPSTREAM: drm/i915: Restore nonblocking awaits for modesetting
+pick 02d0a50cdb5a BACKPORT: drm/i915: Combine seqno + tracking into a global timeline struct
+pick 2a25db4619f3 FROMLIST: iommu/dma: Respect __GFP_DMA and __GFP_DMA32 in incoming GFP flags
+pick 7a3afae1806f FROMLIST: iommu/dma: Use __GFP_NOWARN only for high-order allocations
+pick 97a9da3f09e2 FROMLIST: base: dma-mapping: Export commonly used symbols
+pick d8e0604b2bd1 FROMLIST: base: dma-mapping: Provide a function to look up remapped pages
+pick 1f001160a7e9 FROMLIST: iommu: Export non-static functions to use in modules
+pick cb94d3350ec5 FROMLIST: iommu/dma: Export non-static functions to use in modules
+pick b6e0e1d5ea5f FROMLIST: iommu/dma: Add iommu_dma_cleanup()
+pick ebf98538e5dd CHROMIUM: mfd: Add new mfd device TPS68470
+pick 9d66d546b560 CHROMIUM: gpio: Add support for TPS68470 GPIOs
+pick 7946add39971 CHROMIUM: ACPI / PMIC: Add TI PMIC TPS68470 operation region driver
+pick b3a1f6c89a19 CHROMIUM: [media] i2c: add support for OV13858 sensor
+pick 9dbfa3c126fe CHROMIUM: [media] i2c: dw9714: Initial driver for dw9714 VCM
+pick 7c43ebb1cb2a CHROMIUM: [media] videodev2.h, v4l2-ioctl: add IPU3 raw10 color format
+pick bec6a6e791e5 CHROMIUM: [media] intel-ipu3: cio2: Add new MIPI-CSI2 driver
+pick e5cd9884b5b5 CHROMIUM: [media] videodev2.h, v4l2-ioctl: add IPU3 meta buffer format
+pick ef50b5fead86 CHROMIUM: [media] intel-ipu3: mmu: implement driver
+pick 691738ca4e9d CHROMIUM: [media] intel-ipu3: Add DMA API implementation
+pick e87da1fa0858 CHROMIUM: [media] intel-ipu3: Add user space ABI definitions
+pick 961ea48078ad CHROMIUM: [media] intel-ipu3: css: tables
+pick 6ef5ebae166f CHROMIUM: [media] intel-ipu3: css: imgu dma buff pool
+pick 83b4ef8f1f2d CHROMIUM: [media] intel-ipu3: css: firmware management
+pick 1a39bbece90a CHROMIUM: [media] intel-ipu3: params: compute and program ccs
+pick 6a62501ede4e CHROMIUM: [media] intel-ipu3: css hardware setup
+pick e866a79dedea CHROMIUM: [media] intel-ipu3: css pipeline
+pick 91a3df2d497a CHROMIUM: [media] intel-ipu3: Add imgu v4l2 driver
+pick 0da1150577ef CHROMIUM: [media] intel-ipu3: imgu top level pci device
+pick 121bac0803d4 CHROMIUM: [media] Add support Intel ACPI camera
+pick 5763c33c662c CHROMIUM: bindings: mfd: cros-ec: Document sub-devices
+pick 7bfc2144e938 CHROMIUM: arm64: dts: rockchip: gru: Enable cros-ec-pd-update notifier
+pick 672fb48e4a60 UPSTREAM: drm/i915: Introduce a global_seqno for each request
+pick c788bac54214 UPSTREAM: drm/i915: Reserve space in the global seqno during request allocation
+pick f6f9d49dc848 UPSTREAM: drm/i915: Avoid accessing request->timeline outside of its lifetime
+pick 51dfa48b911a UPSTREAM: drm/i915: Pass dev_priv to plane constructors
+pick 8381d0541597 UPSTREAM: drm/i915: Pass intel_crtc to intel_crtc_active()
+pick 1e695ef15540 UPSTREAM: drm/i915: Pass dev_priv to .get_display_clock_speed()
+pick 0382b64ee54b UPSTREAM: drm/i915: Pass dev_priv to IS_PINEVIEW()
+pick ffa3c849ffe3 BACKPORT: arm64: dts: rockchip: add some missing qos nodes on rk3399
+pick f72a4b86d55a BACKPORT: drm/i915: Pass dev_priv to rest of IS_FOO() macros for the old platforms
+pick 08693ce16022 BACKPORT: drm/i915: Pass dev_priv to init_clock_gating
+pick d3c9f9c50904 BACKPORT: drm/i915: Move hangcheck code out from i915_irq.c
+pick 79b4beff883d BACKPORT: drm/i915: Unify global_list into global_link
+pick 67eddc6cdc22 BACKPORT: drm: Add API for capturing frame CRCs
+pick a7c4e65a30a5 BACKPORT: drm: define drm_compat_ioctl NULL on CONFIG_COMPAT=n and reduce #ifdefs
+pick df77b87045f9 BACKPORT: dma-buf: return index of the first signaled fence (v2)
+pick 2de822b17750 UPSTREAM: drm: helper macros to print composite types
+pick 060e19113671 BACKPORT: drm: add helper for printing to log or seq_file
+pick ad35e0ae1671 BACKPORT: drm/atomic: add new drm_debug bit to dump atomic state
+pick cd8c3b4a45ba BACKPORT: drm: move allocation out of drm_get_format_name()
+pick e4779773d4e8 BACKPORT: drm: Extract drm_mode_config.[hc]
+pick 1c89f2053d84 UPSTREAM: drm: Drop externs from drm_crtc.h
+pick 7c434d80a8cf BACKPORT: drm/fence: add in-fences support
+pick 1023b829e3b2 UPSTREAM: drm/fence: add fence timeline to drm_crtc
+pick 59297b2af1f0 UPSTREAM: drm/fence: add out-fences support
+pick 28066af425ed FIXUP: CHROMIUM: iio: cros_ec: default to ec fifo size
+pick f998335d9b79 FIXUP: CHROMIUM: [media] intel-ipu3: cio2: Add new MIPI-CSI2 driver
+pick 345a70894d82 BACKPORT: drm/i915: Split out i915_vma.c
+pick d32aae33291d BACKPORT: drm/i915: Assorted dev_priv cleanups
+pick 5047d9de8809 BACKPORT: drm/i915: More assorted dev_priv cleanups
+pick 52c578692dfd BACKPORT: drm/i915: Further assorted dev_priv cleanups
+pick 7db8318ccd49 BACKPORT: drm/i915: Pass dev_priv to INTEL_INFO everywhere apart from the gen use
+pick c96c328e5cf4 UPSTREAM: drm/i915: Stop skipping the final clflush back to system pages
+pick 5f2293949c5e UPSTREAM: drm/i915/fbc: extract intel_fbc_can_enable()
+pick 2b5d31364701 BACKPORT: drm/i915: Defer transfer onto execution timeline to actual hw submission
+pick 010e0fac0eb7 BACKPORT: drm/i915: Remove engine->execlist_lock
+pick a2a84bf7a242 BACKPORT: drm/i915/scheduler: Execute requests in order of priorities
+pick 07559aea3d62 UPSTREAM: drm/i915: Store the execution priority on the context
+pick b3bc5018695a BACKPORT: drm/i915: dev_priv cleanup in i915_gem_gtt.c
+pick 6017f86b07dd BACKPORT: drm/i915: dev_priv cleanup in i915_suspend.c
+pick f49b7bb2f387 FIXUP: CHROMIUM: [media] intel-ipu3: imgu top level pci device
+pick 05127fe591ba FIXUP: CHROMIUM: mfd: Add new mfd device TPS68470
+pick 72f85fd59f39 CHROMIUM: config: Enable camera on Poppy and friends
+pick 95825de929e6 BACKPORT: drm/i915: Assorted INTEL_INFO(dev) cleanups
+pick 5e167eb750d1 BACKPORT: drm/i915: dev_priv cleanup in intel_display.c
+pick 46c57c7e3bd9 BACKPORT: drm/i915: Remove __I915__ magic macro
+pick df0eff8bbbdb UPSTREAM: drm/i915: Don't touch NULL sg on i915_gem_object_get_pages_gtt() error
+pick 26b13bb55e18 BACKPORT: drm/fences: add DOC: for explicit fencing
+pick 9de1a5e7b0a1 UPSTREAM: drm/atomic: Constify drm_atomic_crtc_needs_modeset()
+pick d367fcc8b1db UPSTREAM: drm/fence: add drm_crtc_create_fence()
+pick d3128d2f1dd0 UPSTREAM: drm/fence: fix memory overwrite when setting out_fence fd
+pick a95eb9c89df9 UPSTREAM: drm: Nuke modifier[1-3]
+pick 57f299254f07 BACKPORT: drm: Pass 'dev' to drm_helper_mode_fill_fb_struct()
+pick 721d3a6ac467 BACKPORT: drm: Replace drm_format_num_planes() with fb->format->num_planes
+pick ba682c71508b BACKPORT: drm: Replace drm_format_plane_cpp() with fb->format->cpp[]
+pick 552954169d6b BACKPORT: drm/fb_cma_helper: Replace drm_format_info() with fb->format
+pick a4ac30ab79c0 BACKPORT: drm: Nuke fb->depth
+pick 4d6bc8de2146 BACKPORT: drm: Nuke fb->bits_per_pixel
+pick e92ca82e7626 BACKPORT: drm: Nuke fb->pixel_format
+pick acf08040ba12 BACKPORT: drm: Replace 'format->format' comparisons to just 'format' comparisons
+pick 0544995ab010 BACKPORT: drm/atomic: Clean up wait_for_vblanks, v2.
+pick e079f24f1197 BACKPORT: drm/i915: Add a cursor hack to allow converting legacy page flip to atomic, v3.
+pick 05af1f779aa1 UPSTREAM: drm/i915: Decouple hang detection from hangcheck period
+pick 5a664bdae9c4 BACKPORT: drm/i915: Wipe hang stats as an embedded struct
+pick e409b7390b81 BACKPORT: drm/i915: Add i915 perf infrastructure
+pick 5a5e9d5aeffd BACKPORT: drm/i915: rename OACONTROL GEN7_OACONTROL
+pick 67095245cc3a UPSTREAM: drm/i915: Add 'render basic' Haswell OA unit config
+pick 1b965a81178f BACKPORT: drm/i915: advertise available metrics via sysfs
+pick ccbd95c96092 BACKPORT: drm/i915: i915_gem_alloc_context_obj can be static
+pick 6f1ddbba8950 FROMLIST: arm64: dts: rockchip: add SdioAudio pd control for rk3399
+pick 9a86f75de301 FROMGIT: iio: magnetometer: Only declare ACPI table when ACPI is enable
+pick e3f7f97f1e76 BACKPORT: drm/i915: Use enum plane_id in VLV/CHV sprite code
+pick e14964775372 BACKPORT: drm/i915/debugfs: Drop i915_hws_info
+pick 8ee5bc3e3e90 UPSTREAM: drm/i915: Use the precomputed value for whether to enable command parsing
+pick e48e7300fc16 BACKPORT: drm/i915: Integrate i915_sw_fence with debugobjects
+pick 152ba25bc8ea BACKPORT: drm/i915: Pass dev_priv to intel_setup_outputs()
+pick e37b34cb67c6 BACKPORT: drm/i915: Convert vm->dev backpointer to vm->i915
+pick d55b840463f5 BACKPORT: drm/i915: Make GEM object alloc/free and stolen created take dev_priv
+pick 4a628db7c8db BACKPORT: drm/i915: Make GEM object create and create from data take dev_priv
+pick 194e83e951e8 BACKPORT: drm/i915: Make various init functions take dev_priv
+pick 8a68119f956f BACKPORT: drm/i915: More GEM init dev_priv cleanup
+pick 92ac4dd4eeea UPSTREAM: drm/i915: dev_priv cleanup in bridge/bar/mmio init code
+pick 5d304755eac2 BACKPORT: drm/i915: Make i915_destroy_error_state take dev_priv
+pick e01ba4b745fe BACKPORT: drm/i915: Make i915_save/restore_state and intel_i2c_reset take dev_priv
+pick 9119e2144678 BACKPORT: drm/i915: Validate mode against max. link data rate for DP MST
+pick 8400931e92ae UPSTREAM: drm/i915: Protect cxsr state with wm_mutex
+pick 354f0324c6b4 BACKPORT: drm/i915: Mark all non-vma being inserted into the address spaces
+pick 4a6a0f342283 BACKPORT: drm/i915/bxt: IPC WA for Broxton
+pick 480da793e504 BACKPORT: drm/i915: Reorder phys backing storage release
+pick 78dcc2dc159c BACKPORT: drm/i915: Compute sink's max lane count/link BW at Hotplug
+pick 4f21c6dfd65f UPSTREAM: drm/i915: Move all the DP compliance data to a separate struct
+pick 8403d24d92c7 UPSTREAM: drm/i915: Introduce enableddisabled helper
+pick 77d53005e401 BACKPORT: drm/i915: Unify active context tracking between legacy/execlists/guc
+pick 2e0335850389 UPSTREAM: drm/i915: Simplify releasing context reference
+pick 8919b4c947fc UPSTREAM: drm/i915: Fallback to single PAGE_SIZE segments for DMA remapping
+pick 4b053619f908 UPSTREAM: drm/i915: Move the min_pixclk[] handling to the end of readout
+pick 0a690cea3043 BACKPORT: drm/i915: Use primary plane->state for overlay ckey setup
+pick e0619289e01e UPSTREAM: drm/i915: Don't clflush before release phys object
+pick 01c1cbb50e50 FROMLIST: vb2: core: Lower the log level of debug
+pick 014d56b831c5 UPSTREAM: drm/i915: Rename intel_shared_dpll_config to intel_shared_dpll_state
+pick f48fbe20cb59 BACKPORT: drm/i915: Complete kerneldoc for struct i915_gem_context
+pick 5953a9980bc2 UPSTREAM: drm/i915: Move number of scalers initialization to runtime init
+pick 09fe629fa468 BACKPORT: drm/i915: Simplify testing for am-I-the-kernel-context?
+pick 7ae6109b0fb3 BACKPORT: dma-fence: Introduce drm_fence_set_error() helper
+pick b409d8e8b86d BACKPORT: drm: Move drm_clflush prototypes to drm_cache header file
+pick 82005496a923 BACKPORT: drm/atomic: Add target_vblank support in atomic helpers (v2)
+pick 33bbd348614b BACKPORT: drm/dp: Store drm_device in MST topology manager
+pick 176b8799ab4c UPSTREAM: drm/i915: Convert i915_ggtt_view to use an anonymous union
+pick 5a28d210cf7d UPSTREAM: drm/i915: Eliminate superfluous i915_ggtt_view_rotated
+pick 6ab3e46409a0 BACKPORT: drm/i915: Eliminate superfluous i915_ggtt_view_normal
+pick 3d9384618899 UPSTREAM: drm/i915: Move engine reset preparation to i915_gem_reset_prepare()
+pick 9ea2ca268df8 BACKPORT: drm/i915/debugfs: Move out pipe CRC code
+pick 6a677e7c7d0a UPSTREAM: drm/i915: Track pinned vma in intel_plane_state
+pick e6cbee2fed1e UPSTREAM: drm/i915: Rename some warts in the VMA API
+pick a70118ceaf48 UPSTREAM: drm/i915: Remove crtc->config usage from intel_modeset_readout_hw_state()
+pick 344ed6c45791 UPSTREAM: drm/i915: Use common LRU inactive vma bumping for unpin_from_display
+pick 47ad06b3c911 UPSTREAM: drm/i915: Pevent copying uninitialised garbage into vma->ggtt_view
+pick 90a7af9c718f BACKPORT: drm/i915: Split intel_engine allocation and initialisation
+pick 61c8e59bc76a UPSTREAM: drm/i915: Only disable execlist preemption for the duration of the request
+pick c4af8e7b6826 UPSTREAM: drm/i915: Enable userspace to opt-out of implicit fencing
+pick 526d81870ac2 BACKPORT: drm/i915: Create context desc template when context is created
+pick baa99aded3b5 UPSTREAM: drm/i915: Record more information about the hanging contexts
+pick 1184a0d63803 UPSTREAM: drm/i915: refactor register fw read/write macros for recent GENs
+pick fad82b71253a BACKPORT: drm/i915: Nuke intel_mode_max_pixclk()
+pick ee721183d83e UPSTREAM: drm/i915: Move calling engine->init_hw() to its own function
+pick 8ff3b6b1fc5f Revert "HACK-TO-REVERT: backlight: arcxcnn: add support for ArticSand devices"
+pick ee490a27400f Revert "HACK-TO-REVERT: backlight: arcxcnn: devicetree bindings for ArticSand devices"
+pick 89dc2972dfc0 CHROMIUM: arm64: dts: rockchip: add gru led configs
+pick 7e20cf6dcf8a CHROMIUM: [media] intel-ipu3: Restrict builds to 64 bit images
+pick 87a485cc3237 CHROMIUM: drm/armada: Mark as BROKEN
+pick 9dd4a074b893 CHROMIUM: drm/imx: Mark DRM_IMX_IPUV3 as broken
+pick a9ab82dfde3b CHROMIUM: iio: cros_ec: Avoid out of bounds memory access
+pick a060991669c8 CHROMIUM: power: sbs-battery: Don't needlessly set CAPACITY_MODE
+pick ef5b1bc5bcf9 UPSTREAM: pwm: cros-ec: Fix transposed param settings
+pick 99fc2d5f709c CHROMIUM: config: Renormalize config
+pick d452e51aa898 CHROMIUM: drm/tilcdc: Mark as BROKEN
+pick 88223e75acc2 HACK: llist: Fix for compilation with clang
+pick 2873e0dab1ba HACK: arm64: use -mno-implicit-float instead of -mgeneral-regs-only
+pick d3803c1b08ff HACK: futex: don't optimize futex_detect_cmpxchg() on ARM64
+pick e2e90ec1979a FIXUP: CHROMIUM: iio: cros_ec: Avoid out of bounds memory access
+pick 1ae3ecacc8e9 UPSTREAM: mqueue: fix a use-after-free in sys_mq_notify()
+pick ee6615d9f8dc CHROMIUM: tpm: ignore failed selftest in probe
+pick a21eb8ec7678 CHROMIUM: cros-ec: Update cros_ec_commands header to latest version
+pick af9108fe6d9e CHROMIUM: mfd: cros_ec: Add PD port info to debugfs
+pick c79f8d4233c0 CHROMIUM: [media] intel-ipu3: Remove redefinition of imgu_addr_t
+pick db0122f40173 BACKPORT: ASoC: Intel: Skylake: Fix module load when module size > DMA buffer size
+pick 90e8f51a9989 UPSTREAM: ASoC: Intel: Skylake: Fix module state after unbind and delete
+pick 7c982b390604 BACKPORT: ASoC: Intel: Skylake: Add support for deferred DSP module bind
+pick 30888bbf3832 BACKPORT: ASoC: Intel: Skylake: Fix a couple user after free bugs
+pick 2064f26dead4 BACKPORT: ASoC: Intel: Skylake: Move sst common initialization to a helper function
+pick 1103c92b7270 BACKPORT: ASoC: Intel: Skylake: Commonize library load
+pick b427f631cf57 UPSTREAM: ASoC: Intel: Skylake: Support for multiple data blocks
+pick aec5026d95ff FROMLIST: uvcvideo: Prevent heap overflow in uvc driver
+pick 0560b3e764bd FROMGIT: x86/build: Fix stack alignment for CLang
+pick cbd23aa1426f UPSTREAM: drm/i915: Remove misleading CSR firmware loading docs
+pick 3b1d2be7b87e BACKPORT: drm/i915: Show dmc debug registers on Kabylake
+pick 6175b99bdeab CHROMIUM: iwl7000: mvm: allow vendor command to get SAR profile with the interface down
+pick 130373df7dec CHROMIUM: iwl7000: mvm: enable configuring SAR profile during interface down
+pick e5e3d36c33c6 FROMLIST: PCI / PM: Fix native PME handling during system suspend/resume
+pick 03dca4b76055 UPSTREAM: ath10k: ignore configuring the incorrect board_id
+pick 292d357614c4 CHROMIUM: container: config: enable NFSv4 support
+pick 7eb4914e21f8 CHROMIUM: config: Disable DRM_ARMADA & DRM_TILCDC
+pick a6edf7ec6181 CHROMIUM: [media] intel-ipu3: Fix 13M blank frame
+pick ae9e70a0d0c8 UPSTREAM: ath10k: bump up FW API to 6
+pick cef8b08e0411 CHROMIUM: iio: cros_ec: Add protection in FIFO processesing.
+pick 9a2a8ba8fdfe CHROMIUM: iio: cros_ec: use core mutex in sensors_ring
+pick e7780a12df76 CHROMIUM: iio: cros_ec: Enable EC fifo int when buffer is used.
+pick d4438f89e9d1 FROMGIT: drm/i915: Consistently use enum pipe for PCH transcoders
+pick 2d1ab4c6be64 FROMGIT: drm/i915: Pass enum pipe to intel_set_pch_fifo_underrun_reporting()
+pick a0e399140570 UPSTREAM: clk: rockchip: add ids for camera on rk3399
+pick e30104c34f8d UPSTREAM: clk: rockchip: add ids for rk3399 testclks used for camera handling
+pick 2cdc7f72cabe FIXUP: CHROMIUM: iwl7000: mvm: enable configuring SAR profile during interface down
+pick 2bded5c075bb CHROMIUM: iwl7000: Restrict build to depend on ACPI and 64BIT
+pick fbf429785e0e BACKPORT: drm/i915: Store required fence size/alignment for GGTT vma
+pick 0c77276c1f72 FROMLIST: serial: 8250_early: Remove __init marking from early write
+pick df7652b4c201 FROMLIST: mfd: intel-lpss: Put I2C and SPI controllers into reset state on suspend
+pick bade18bcccd0 UPSTREAM: ASoC: rt5663: Update the HW default values based on the shipping version
+pick 0ef7bbf2deae FROMLIST: x86: stub out pmc function
+pick 62dac500ff74 FROMLIST: tick: Add freeze timer events
+pick d37f08f11d1d FROMLIST: x86, apic: Add freeze event support
