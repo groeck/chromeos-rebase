@@ -8,3 +8,17 @@ to list patches associated with a given topic. Output is a list
 of patches which can be used as input to "git rebase -i".
 
 process-dbm-csv.sh generates a list of patches in csv format.
+
+-------------
+
+How to create an up-to-date patchlist as input (example: Rebase chromeos-4.4
+to v4.12):
+
+git checkout chromeos-4.4
+git rebase -i v4.12
+drop comments at end, store list of patches in patchlist-<date>
+Abort rebase.
+Add patchlist.<date> to the repository. Update config.py as needed.
+
+Note: The purpose of this exercise is to filter out patches which are already
+available upstream. At some point this needs to be automated.
