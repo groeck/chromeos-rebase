@@ -1,4 +1,4 @@
-patchlist = "patchlist-170725"
+patchlist = "patchlist-170828"
 
 rebasedb = 'rebase412.db'
 upstreamdb = 'upstream412.db'
@@ -8,7 +8,7 @@ rebase_baseline_branch = 'chromeos-4.4'
 android_baseline_branch = "android-4.4"
 
 rebase_baseline = 'v4.4'
-stable_baseline = 'v4.4.70'
+stable_baseline = 'v4.4.79'
 rebase_target = 'v4.12'
 
 chromeos_path = "linux-chrome"
