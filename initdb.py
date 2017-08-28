@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import subprocess
-from config import rebasedb, patchlist, \
+from config import rebasedb, \
 	stable_path, android_path, chromeos_path, \
 	rebase_baseline, stable_baseline, rebase_target
 
@@ -111,15 +111,19 @@ for commit in commits.splitlines():
             if fn != "":
                 c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha,fn,))
 
-os.chdir(workdir)
-
 conn.commit()
 
-with open(patchlist) as f:
-    for commit in f.readlines():
-        elem = commit.split(" ", 2)
-        sha = elem[1]
-	# Try to find patch in stable branch. If it there, drop it after all.
+# "git cherry -v <target>" on branch rebase_baseline gives us a list
+# of patches to apply.
+patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target])
+for patch in patches.splitlines():
+    elem = patch.split(" ", 2)
+    print "patch: " + patch
+    print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2])
+    if elem[0] == "+":
+	# patch not found upstream
+	sha = elem[1][:12]
+	# Try to find patch in stable branch. If it is there, drop it after all.
 	# If not, we may need to apply it.
         c.execute("select sha, origin from stable where sha is '%s'" % sha)
 	found=c.fetchone()
@@ -130,5 +134,6 @@ with open(patchlist) as f:
 	    c.execute("UPDATE commits SET disposition=('pick') where sha='%s'" % sha)
 	    c.execute("UPDATE commits SET reason=('') where sha='%s'" % sha)
 
+os.chdir(workdir)
 conn.commit()
 conn.close()

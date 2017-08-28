@@ -1,5 +1,3 @@
-patchlist = "patchlist-170828"
-
 rebasedb = 'rebase412.db'
 upstreamdb = 'upstream412.db'
 nextdb = 'next412.db'

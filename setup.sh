@@ -20,11 +20,17 @@ then
 	pushd ${chromeos_path}
 	git checkout ${rebase_baseline_branch}
 	git pull
+	git remote -v | grep upstream || {
+		git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+		git fetch upstream
+	}
 	popd
 else
 	git clone https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
 	pushd ${chromeos_path}
 	git checkout -b ${rebase_baseline_branch} origin/${rebase_baseline_branch}
+	git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+	git fetch upstream
 	popd
 fi
 
