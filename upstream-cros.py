@@ -53,11 +53,11 @@ for (sha, desc, disposition) in c.fetchall():
         rdesc=m.group(2)
 	ndesc=ndesc.replace("'", "''")
 	# print "    Match subject '%s'" % ndesc
-	cu.execute("select sha, description, in_49 from commits where description='%s'" % ndesc)
+	cu.execute("select sha, description, in_baseline from commits where description='%s'" % ndesc)
 	fsha = cu.fetchone()
 	if fsha:
 	    # c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'" % (fsha[0], sha))
-	    in_49 = fsha[2]
+	    in_baseline = fsha[2]
 	    if mf:
                 print "Regex match for %s '%s'" % (sha, desc.replace("'", "''"))
 	        print "    Match subject '%s'" % ndesc
@@ -71,7 +71,7 @@ for (sha, desc, disposition) in c.fetchall():
 	    # print "    Local description: %s" % desc
 	    # print "    Upstream description: %s" % ndesc
 	    # print "    In v4.9: %d" % fsha[2]
-	    # if in_49 == 1:
+	    # if in_baseline == 1:
 	    #	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
 	    # else:
 	    #	c2.execute("UPDATE commits SET disposition=('replace') where sha='%s'" % sha)
@@ -103,12 +103,12 @@ for (sha, desc, disposition) in c.fetchall():
 	    print "    subject match results %d/%d" % (result, smatch)
 	    # c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
 	    # 				((result + smatch)/2, sha))
-	    cu.execute("select sha, description, in_49 from commits where description='%s'" %
+	    cu.execute("select sha, description, in_baseline from commits where description='%s'" %
 	    							mdesc[0].replace("'", "''"))
 	    fsha = cu.fetchone()
 	    if fsha:
 		# c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'" % (fsha[0], sha))
-	        in_49 = fsha[2]
+	        in_baseline = fsha[2]
 	        print "    Upstream candidate %s ('%s')" % (fsha[0], fsha[1].replace("'", "''"))
 		if mf:
 		    # We have:
@@ -147,7 +147,7 @@ for (sha, desc, disposition) in c.fetchall():
 		    # c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" % sha)
 		    continue
 		# We have a match.
-	        if in_49 == 1:
+	        if in_baseline == 1:
 		    print "    Drop sha '%s' (close match)" % sha
 		    # c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
 		    # c2.execute("UPDATE commits SET reason=('upstream') where sha='%s'" % sha)
