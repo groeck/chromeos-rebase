@@ -69,8 +69,7 @@ do
     # echo "cherry-picking ${f2}"
     if [ ${fromupstream} -ne 0 ]
     then
-    	echo "pick ${f2_old} ${f4}"
-	echo "exec fromupstream.py --replace ${f2}"
+	echo "${f2_old},${f4},replace,with ${f2}"
     elif [ ${dotag} -ne 0 ]
     then
         echo "pick ${f2} ${f4}"
@@ -79,6 +78,6 @@ do
     then
 	echo "exec doconflicts49.sh ${f2} ${f4}"
     else
-        echo "${f2}	${f4}"
+        echo "${f2},${f4}"
     fi
 done
