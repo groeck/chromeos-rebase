@@ -1,6 +1,6 @@
 t1=$1
 
-if [ "${t1}" = "" ]
+if [ -z "${t1}" ]
 then
 	t1=1
 fi
@@ -14,7 +14,7 @@ tlist=${t1}
 while [ "$2" != "" ]
 do
     sql="${sql} or topic=$2"
-    tlist= "${tlist}, $2"
+    tlist="${tlist}, $2"
     shift
 done
 
