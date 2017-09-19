@@ -2,7 +2,7 @@ import sqlite3
 import os
 import subprocess
 import re
-from config import rebasedb, droplist
+from config import rebasedb, subject_droplist, droplist
 
 workdir = os.getcwd()
 
@@ -16,15 +16,10 @@ c2 = conn.cursor()
 
 c.execute("select sha, description from commits")
 for (sha, desc) in c.fetchall():
-    if desc.startswith('ANDROID:'):
-	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
-    if desc.startswith('android:'):
-	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
-    if desc.startswith('Android:'):
-	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
+    for prefix in subject_droplist:
+        if desc.startswith(prefix):
+	    c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
+	    c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
 
 conn.commit()
 
