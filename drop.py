@@ -12,20 +12,7 @@ conn = sqlite3.connect(rebasedb)
 c = conn.cursor()
 c2 = conn.cursor()
 
-# Drop all Android patches. We'll pick them up from the most recent version.
-
-c.execute("select sha, description from commits")
-for (sha, desc) in c.fetchall():
-    if desc.startswith('ANDROID:'):
-	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
-    if desc.startswith('android:'):
-	c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-	c2.execute("UPDATE commits SET reason=('android') where sha='%s'" % sha)
-
-conn.commit()
-
-# Now drop commits touching directories/files specified in droplist.
+# Drop commits touching directories/files specified in droplist.
 
 c.execute("select sha from commits")
 for (sha,) in c.fetchall():

@@ -5,7 +5,7 @@ import re
 # requires "pip install fuzzywuzzy"
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from config import rebasedb, upstreamdb, chromeos_path, upstream_path
+from config import rebasedb, upstreamdb, android_path, upstream_path
 
 rp = re.compile('(UPSTREAM: |FROMGIT: |FROMLIST: |BACKPORT: )(.*)')
 rpf = re.compile('(FIXUP: |Fixup: )(.*)')
@@ -33,7 +33,7 @@ def get_patch(path, sha):
 def patch_ratio(usha, lsha):
     lpatch = get_patch(upstream_path, usha)
     if lpatch:
-        upatch = get_patch(chromeos_path, lsha)
+        upatch = get_patch(android_path, lsha)
 	if upatch:
 	    return (fuzz.ratio(upatch, lpatch), fuzz.token_set_ratio(upatch, lpatch))
     return (0, 0)

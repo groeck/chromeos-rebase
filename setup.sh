@@ -3,7 +3,6 @@
 # Note: Collabora repository with pending patches
 # https://git.collabora.com/cgit/linux.git/log/?h=topic/chromeos/waiting-for-upstream
 
-chromeos_path=$(python -c "from config import chromeos_path; print chromeos_path;")
 android_path=$(python -c "from config import android_path; print android_path;")
 stable_path=$(python -c "from config import stable_path; print stable_path;")
 upstream_path=$(python -c "from config import upstream_path; print upstream_path;")
@@ -14,20 +13,6 @@ android_baseline_branch=$(python -c "from config import android_baseline_branch;
 
 upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from config import nextdb; print nextdb;")
-
-if [ -d ${chromeos_path} ]
-then
-	pushd ${chromeos_path}
-	git checkout ${rebase_baseline_branch}
-	git pull
-	popd
-else
-	git clone
-	https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
-	pushd ${chromeos_path}
-	git checkout -b ${rebase_baseline_branch} origin/${rebase_baseline_branch}
-	popd
-fi
 
 if [ -d ${android_path} ]
 then

@@ -14,7 +14,7 @@ tlist=${t1}
 while [ "$2" != "" ]
 do
     sql="${sql} or topic=$2"
-    tlist= "${tlist}, $2"
+    tlist="${tlist}, $2"
     shift
 done
 

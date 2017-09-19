@@ -2,7 +2,7 @@ import sqlite3
 import os
 import subprocess
 from config import rebasedb, patchlist, \
-	stable_path, android_path, chromeos_path, \
+	stable_path, android_path, \
 	rebase_baseline, stable_baseline, rebase_target
 
 stable_commits = rebase_baseline + '..' + stable_baseline
@@ -60,27 +60,10 @@ for commit in commits.splitlines():
 
 conn.commit()
 
-# Create list of SHAs from android 4.4.
-# Skip if entry is already in database.
+# get complete list of commits from rebase_baseline_branch
+# Assume that branch exists and has been checked out.
+
 os.chdir(android_path)
-commits = subprocess.check_output(['git', 'log', '--oneline', '--reverse', rebase_baseline + '..'])
-os.chdir(workdir)
-
-for commit in commits.splitlines():
-    if commit != "":
-	elem = commit.split(" ")[:1]
-	sha=elem[0]
-	c.execute("select sha from stable where sha is '%s'" % sha)
-	found=c.fetchall()
-	if found == []:
-	    c.execute("INSERT INTO stable(sha, origin) VALUES (?, ?)", (sha, "android", ))
-
-conn.commit()
-
-# get complete list of commits from chromeos-4.4.
-# Assume that the chromeos 4.4 branch exists and has been checked out.
-
-os.chdir(chromeos_path)
 commits = subprocess.check_output(['git', 'log', '--oneline', "--reverse", rebase_baseline + '..'])
 
 prevdate=0
