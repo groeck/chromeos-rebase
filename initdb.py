@@ -118,8 +118,8 @@ conn.commit()
 patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target])
 for patch in patches.splitlines():
     elem = patch.split(" ", 2)
-    print "patch: " + patch
-    print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2])
+    # print "patch: " + patch
+    # print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2])
     if elem[0] == "+":
 	# patch not found upstream
 	sha = elem[1][:12]
