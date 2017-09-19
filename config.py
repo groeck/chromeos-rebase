@@ -1,13 +1,13 @@
-rebasedb = 'rebase412.db'
-upstreamdb = 'upstream412.db'
-nextdb = 'next412.db'
+rebasedb = 'rebase414.db'
+upstreamdb = 'upstream414.db'
+nextdb = 'next414.db'
 
-rebase_baseline_branch = 'chromeos-4.4'
-android_baseline_branch = "android-4.4"
+rebase_baseline_branch = 'chromeos-4.12'
+android_baseline_branch = "android-4.9"
 
-rebase_baseline = 'v4.4'
-stable_baseline = 'v4.4.79'
-rebase_target = 'v4.12'
+rebase_baseline = 'v4.12'
+stable_baseline = 'v4.12.13'
+rebase_target = 'v4.14-rc1'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -15,22 +15,9 @@ android_path = "linux-android"
 upstream_path = "linux-upstream"
 next_path = "linux-next"
 
-droplist = [ ("drivers/net/wireless/iwl7000", "intel"),
-	( "include/config/iwl7000", "intel" ),
-	( "drivers/gpu/drm/i915", "intel" ),
-	( "drivers/gpu/drm/mediatek", "mediatek" ),
-	( "drivers/thermal/mtk_thermal", "mediatek" ),
-	( "drivers/clk/mediatek", "mediatek" ),
-	( "drivers/soc/mediatek", "mediatek" ),
-	( "drivers/media/platform/mtk", "mediatek" ),
-	( "Documentation/devicetree/bindings/media/mediatek", "mediatek" ),
-	( "Documentation/devicetree/bindings/soc/mediatek", "mediatek" ),
-	( "sound/soc/mediatek", "mediatek" ),
-	( "drivers/cpufreq/mt8173", "mediatek" ),
-	( "arch/arm64/boot/dts/mediatek", "mediatek" ),
-	( "drivers/net/wireless/ar10k", "atheros" ),
-	( "drivers/gpu/drm/img-rogue", "imgtec" )
-	]
+# subject_droplist = [ "ANDROID:", "Android:", "android:" ]
+subject_droplist = [ ]
+droplist = [ ]
 
 topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
 	[ "drivers/extcon/extcon-cros_ec", "Documentation/devicetree/bindings/extcon/extcon-cros-ec.txt",
@@ -42,25 +29,6 @@ topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
 	[ "drivers/gpu/drm/bridge/analogix", "include/drm/bridge/analogix_dp.h",
 	  "Documentation/devicetree/bindings/display/bridge/analogix_dp.txt",
 	  "Documentation/devicetree/bindings/drm/bridge/anx7688.txt" ],
-	[ "drivers/gpu/arm/midgard", "Documentation/devicetree/bindings/arm/mali-midgard.txt" ],
-	[ "arch/arm64/boot/dts/rockchip", "arch/arm/boot/dts/rockchip", "arch/arm/boot/dts/rk3" ],
-	[ "drivers/devfreq/rk3399", "drivers/devfreq/event/rockchip" ],
-	[ "drivers/clk/rockchip", "include/dt-bindings/clock/rk3399" ],
-	[ "drivers/spi/spi-rockchip" ],
-	[ "drivers/phy/phy-rockchip", "Documentation/devicetree/bindings/phy/phy-rockchip" ],
-	[ "drivers/usb/dwc3/dwc3-rockchip" ],
-	[ "drivers/crypto/rockchip" ],
-	[ "drivers/gpu/drm/rockchip",
-	  "Documentation/devicetree/bindings/display/rockchip",
-	  "drivers/media/platform/rockchip-vpu",
-	  "drivers/media/platform/rk3288",
-	  "Documentation/devicetree/bindings/display/rockchip/analogix_dp-rockchip.txt" ],
-	[ "include/soc/rockchip", "sound/soc/rockchip", "drivers/soc/rockchip",
-	  "Documentation/devicetree/bindings/sound/rockchip", "arch/arm/mach-rockchip" ],
-	[ "include/dt-bindings/power/rk3399" ],
-	[ "Documentation/devicetree/bindings/pci/rockchip", "drivers/pci/host/pcie-rockchip" ],
-	[ "drivers/thermal/rockchip" ],
-	[ "drivers/iommu/rockchip" ],
 	[ "drivers/power", "drivers/base/power", "kernel/power", "include/dt-bindings/power",
 	  "include/linux/power", "include/linux/pm", "Documentation/power", "arch/x86/power",
 	  "Documentation/devicetree/bindings/power" ],
