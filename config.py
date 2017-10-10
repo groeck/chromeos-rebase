@@ -6,8 +6,8 @@ rebase_baseline_branch = 'chromeos-4.12'
 android_baseline_branch = "android-4.9"
 
 rebase_baseline = 'v4.12'
-stable_baseline = 'v4.12.13'
-rebase_target = 'v4.14-rc1'
+stable_baseline = 'v4.12.14'
+rebase_target = 'v4.14-rc4'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -15,8 +15,9 @@ android_path = "linux-android"
 upstream_path = "linux-upstream"
 next_path = "linux-next"
 
-# subject_droplist = [ "ANDROID:", "Android:", "android:" ]
-subject_droplist = [ ]
+# Clear subject_droplist as follows to keep andoid patches
+# subject_droplist = [ ]
+subject_droplist = [ "ANDROID:", "Android:", "android:" ]
 droplist = [ ]
 
 topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
