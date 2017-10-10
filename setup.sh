@@ -22,8 +22,8 @@ then
 	git pull
 	git remote -v | grep upstream || {
 		git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-		git fetch upstream
 	}
+	git fetch upstream
 	popd
 else
 	git clone https://chromium.googlesource.com/chromiumos/third_party/kernel ${chromeos_path}
