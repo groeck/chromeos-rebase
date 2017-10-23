@@ -3,11 +3,13 @@ upstreamdb = 'upstream414.db'
 nextdb = 'next414.db'
 
 rebase_baseline_branch = 'chromeos-4.12'
-android_baseline_branch = "android-4.9"
+android_baseline_branch = "chromeos-4.12-android"
+# android_repo = "https://android.googlesource.com/kernel/common"
+android_repo = "https://chromium.googlesource.com/chromiumos/third_party/kernel-next"
 
 rebase_baseline = 'v4.12'
 stable_baseline = 'v4.12.14'
-rebase_target = 'v4.14-rc4'
+rebase_target = 'v4.14-rc6'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -16,8 +18,8 @@ upstream_path = "linux-upstream"
 next_path = "linux-next"
 
 # Clear subject_droplist as follows to keep andoid patches
-# subject_droplist = [ ]
-subject_droplist = [ "ANDROID:", "Android:", "android:" ]
+subject_droplist = [ ]
+# subject_droplist = [ "ANDROID:", "Android:", "android:" ]
 droplist = [ ]
 
 topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],

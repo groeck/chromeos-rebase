@@ -10,7 +10,9 @@ upstream_path=$(python -c "from config import upstream_path; print upstream_path
 next_path=$(python -c "from config import next_path; print next_path;")
 
 rebase_baseline_branch=$(python -c "from config import rebase_baseline_branch; print rebase_baseline_branch;")
+
 android_baseline_branch=$(python -c "from config import android_baseline_branch; print android_baseline_branch;")
+android_repo=$(python -c  "from config import android_repo; print android_repo;")
 
 upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from config import nextdb; print nextdb;")
@@ -41,7 +43,7 @@ then
 	git pull
 	popd
 else
-	git clone https://android.googlesource.com/kernel/common ${android_path}
+	git clone ${android_repo} ${android_path}
 	pushd ${android_path}
 	git checkout -b ${android_baseline_branch} origin/${android_baseline_branch}
 	git remote add upstream git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
