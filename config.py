@@ -1,15 +1,19 @@
-rebasedb = 'rebase414.db'
-upstreamdb = 'upstream414.db'
-nextdb = 'next414.db'
+rebasedb = 'rebase417.db'
+upstreamdb = 'upstream417.db'
+nextdb = 'next417.db'
 
-rebase_baseline_branch = 'chromeos-4.12'
-android_baseline_branch = "chromeos-4.12-android"
-# android_repo = "https://android.googlesource.com/kernel/common"
-android_repo = "https://chromium.googlesource.com/chromiumos/third_party/kernel-next"
+rebase_baseline_branch = 'chromeos-4.14'
+android_baseline_branch = "android-4.14"
 
-rebase_baseline = 'v4.12'
-stable_baseline = 'v4.12.14'
-rebase_target = 'v4.14-rc6'
+android_repo = "https://android.googlesource.com/kernel/common"
+next_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git"
+upstream_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+stable_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
+chromeos_repo = "https://chromium.googlesource.com/chromiumos/third_party/kernel"
+
+rebase_baseline = 'v4.14'
+stable_baseline = 'v4.14.35'
+rebase_target = 'v4.17-rc2'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -20,7 +24,8 @@ next_path = "linux-next"
 # Clear subject_droplist as follows to keep andoid patches
 subject_droplist = [ ]
 # subject_droplist = [ "ANDROID:", "Android:", "android:" ]
-droplist = [ ]
+
+droplist = [ 'drivers/net/wireless/iwl7000', 'drivers/gpu/drm/i915', 'drivers/gpu/drm/amd' ]
 
 topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
 	[ "drivers/extcon/extcon-cros_ec", "Documentation/devicetree/bindings/extcon/extcon-cros-ec.txt",
