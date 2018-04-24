@@ -60,7 +60,7 @@ for commit in commits.splitlines():
 
 conn.commit()
 
-# Create list of SHAs from android 4.4.
+# Create list of SHAs from android baseline
 # Skip if entry is already in database.
 os.chdir(android_path)
 commits = subprocess.check_output(['git', 'log', '--oneline', '--reverse', rebase_baseline + '..'])
@@ -77,8 +77,8 @@ for commit in commits.splitlines():
 
 conn.commit()
 
-# get complete list of commits from chromeos-4.4.
-# Assume that the chromeos 4.4 branch exists and has been checked out.
+# get complete list of commits from rebase baseline
+# Assume that the baseline branch exists and has been checked out.
 
 os.chdir(chromeos_path)
 commits = subprocess.check_output(['git', 'log', '--oneline', "--reverse", rebase_baseline + '..'])
