@@ -22,10 +22,12 @@ upstream_path = "linux-upstream"
 next_path = "linux-next"
 
 # Clear subject_droplist as follows to keep andoid patches
-subject_droplist = [ ]
-# subject_droplist = [ "ANDROID:", "Android:", "android:" ]
+# subject_droplist = [ ]
+subject_droplist = [ "ANDROID:", "Android:", "android:" ]
 
-droplist = [ 'drivers/net/wireless/iwl7000', 'drivers/gpu/drm/i915', 'drivers/gpu/drm/amd' ]
+droplist = [ ( 'drivers/net/wireless/iwl7000', 'Intel'),
+	     ( 'drivers/gpu/drm/i915', 'Intel'),
+	     ( 'drivers/gpu/drm/amd', 'AMD' ) ]
 
 topiclist = [ [ "chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
 	[ "drivers/extcon/extcon-cros_ec", "Documentation/devicetree/bindings/extcon/extcon-cros-ec.txt",
