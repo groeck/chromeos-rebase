@@ -56,6 +56,10 @@ if [[ -d "${android_path}" ]]; then
 	else
 		git checkout -b "${android_baseline_branch}" "origin/${android_baseline_branch}"
 	fi
+	git remote -v | grep upstream || {
+		git remote add upstream "${upstream_repo}"
+	}
+	git fetch upstream
 	popd
 else
 	git clone "${android_repo}" "${android_path}"
