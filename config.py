@@ -6,9 +6,9 @@ rebase_baseline_branch = 'chromeos-4.14'
 android_baseline_branch = "android-4.14"
 
 android_repo = "https://android.googlesource.com/kernel/common"
-next_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git"
-upstream_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
-stable_repo = "git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
+next_repo = "https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next"
+upstream_repo = "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux"
+stable_repo = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = "https://chromium.googlesource.com/chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.14'
