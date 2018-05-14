@@ -10,6 +10,10 @@ stable_path=$(python -c "from config import stable_path; print stable_path;")
 stable_repo=$(python -c  "from config import stable_repo; print stable_repo;")
 
 upstream_path=$(python -c "from config import upstream_path; print upstream_path;")
+if [[ "$(dirname ${upstream_path})" = "." ]]; then
+	# Needs to be an absolute path name
+	upstream_path="$(pwd)/${upstream_path}"
+fi
 upstream_repo=$(python -c  "from config import upstream_repo; print upstream_repo;")
 
 next_path=$(python -c "from config import next_path; print next_path;")
@@ -24,6 +28,15 @@ android_path=$(python -c "from config import android_path; print android_path;")
 upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from config import nextdb; print nextdb;")
 
+if [[ -d "${upstream_path}" ]]; then
+	pushd "${upstream_path}"
+	git checkout master
+	git pull
+	popd
+else
+	git clone "${upstream_repo}" "${upstream_path}"
+fi
+
 if [[ -d "${chromeos_path}" ]]; then
 	pushd "${chromeos_path}"
 	git fetch origin
@@ -34,7 +47,7 @@ if [[ -d "${chromeos_path}" ]]; then
 		git checkout -b "${rebase_baseline_branch}" "origin/${rebase_baseline_branch}"
 	fi
 	git remote -v | grep upstream || {
-		git remote add upstream "${upstream_repo}"
+		git remote add upstream "${upstream_path}"
 	}
 	git fetch upstream
 	popd
@@ -42,7 +55,7 @@ else
 	git clone "${chromeos_repo}" "${chromeos_path}"
 	pushd "${chromeos_path}"
 	git checkout -b "${rebase_baseline_branch}" "origin/${rebase_baseline_branch}"
-	git remote add upstream "${upstream_repo}"
+	git remote add upstream "${upstream_path}"
 	git fetch upstream
 	popd
 fi
@@ -57,7 +70,7 @@ if [[ -d "${android_path}" ]]; then
 		git checkout -b "${android_baseline_branch}" "origin/${android_baseline_branch}"
 	fi
 	git remote -v | grep upstream || {
-		git remote add upstream "${upstream_repo}"
+		git remote add upstream "${upstream_path}"
 	}
 	git fetch upstream
 	popd
@@ -65,7 +78,7 @@ else
 	git clone "${android_repo}" "${android_path}"
 	pushd "${android_path}"
 	git checkout -b "${android_baseline_branch}" "origin/${android_baseline_branch}"
-	git remote add upstream "${upstream_repo}"
+	git remote add upstream "${upstream_path}"
 	git fetch upstream	# for tags
 	popd
 fi
@@ -83,14 +96,6 @@ python initdb.py
 
 if [[ ! -e "${upstreamdb}" || "$1" = "-f" ]]; then
 	echo "Initializing upstream database"
-	if [[ -d "${upstream_path}" ]]; then
-		pushd "${upstream_path}"
-		git checkout master
-		git pull
-		popd
-	else
-		git clone "${upstream_repo}" "${upstream_path}"
-	fi
 	python initdb-upstream.py
 fi
 
@@ -100,9 +105,17 @@ if [[ ! -e "${nextdb}" || "$1" = "-f" ]]; then
 		pushd "${next_path}"
 		git fetch origin
 		git reset --hard origin/master
+		git remote -v | grep upstream || {
+			git remote add upstream "${upstream_path}"
+		}
+		git fetch upstream
 		popd
 	else
 		git clone "${next_repo}" "${next_path}"
+		pushd "${next_path}"
+		git remote add upstream "${upstream_path}"
+		git fetch upstream	# for tags
+		popd
 	fi
 	python initdb-next.py
 fi
