@@ -28,6 +28,24 @@ android_path=$(python -c "from config import android_path; print android_path;")
 upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from config import nextdb; print nextdb;")
 
+usage()
+{
+    echo "Usage: $0 [-f]"
+    exit 1
+}
+
+use_force=0
+
+while getopts f opt
+do
+    case ${opt} in
+    f)	use_force=1;;
+    *)	usage;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
 # Simple clone:
 # Clone repository, do not add 'upstream' remote
 clone_simple()
@@ -87,12 +105,12 @@ clone_complex "${next_path}" "${next_repo}" "master"
 echo "Initializing database"
 python initdb.py
 
-if [[ ! -e "${upstreamdb}" || "$1" = "-f" ]]; then
+if [[ ! -e "${upstreamdb}" || use_force != 0 ]]; then
 	echo "Initializing upstream database"
 	python initdb-upstream.py
 fi
 
-if [[ ! -e "${nextdb}" || "$1" = "-f" ]]; then
+if [[ ! -e "${nextdb}" || use_force != 0 ]]; then
 	echo "Initializing next database"
 	python initdb-next.py
 fi
