@@ -79,7 +79,11 @@ clone_complex()
 	git fetch origin
 	if git rev-parse --verify "${branch}" >/dev/null 2>&1; then
 		git checkout "${branch}"
-		git pull
+		if ! git pull; then
+		    # git pull may fail if the remote repository was rebased.
+		    # Pull it the hard way.
+		    git reset --hard "origin/${branch}"
+		fi
 	else
 		git checkout -b "${branch}" "origin/${branch}"
 	fi
