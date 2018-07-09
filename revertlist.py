@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-"
-# from __future__ import print_function
+from __future__ import print_function
 import sqlite3
 import os
 import re
@@ -32,7 +32,7 @@ for (date, sha, desc) in c.fetchall():
   m = rp.search(desc)
   if m:
     ndesc = m.group(1)
-    print "Found revert : '%s' (%s)" % (desc.replace("'", "''"), sha)
+    print("Found revert : '%s' (%s)" % (desc.replace("'", "''"), sha))
     ndesc = ndesc.replace("'", "''")
     c2.execute("select date, sha from commits where description is '%s'"
                % ndesc)
@@ -41,17 +41,17 @@ for (date, sha, desc) in c.fetchall():
     fsha = c2.fetchone()
     if fsha:
       if date > fsha[0]:
-        # print "    Matching commit : %s" % fsha[1]
-        print "    Marking %s for drop" % fsha[1]
+        # print("    Matching commit : %s" % fsha[1])
+        print("    Marking %s for drop" % fsha[1])
         c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
                    % fsha[1])
         c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'"
                    % fsha[1])
       else:
-        print "    Matching commit later than reverse"
+        print("    Matching commit later than reverse")
     else:
-      print "    No matching commit found"
-    print "    Marking %s for drop" % sha
+      print("    No matching commit found")
+    print("    Marking %s for drop" % sha)
     c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
     c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'" % sha)
 
