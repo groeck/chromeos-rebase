@@ -48,10 +48,17 @@ for (sha, desc, disposition) in c.fetchall():
     m = rp.search(desc)
     mf = rpf.search(desc)
     if m:
-        # print "Found regex match for '%s'" % desc.replace("'", "''")
-        ndesc=m.group(2)
-        rdesc=m.group(2)
-	ndesc=ndesc.replace("'", "''")
+        # print "Regex match for '%s'" % desc.replace("'", "''")
+        ndesc = m.group(2)
+        rdesc = m.group(2)
+        # Try to match again to catch and remove multiple tags.
+        m = rp.search(ndesc)
+        while m:
+          # print "  Recursive regex match for '%s'" % ndesc.replace("'", "''")
+          ndesc = m.group(2)
+          rdesc = m.group(2)
+          m = rp.search(ndesc)
+        ndesc=ndesc.replace("'", "''")
 	# print "    Match subject '%s'" % ndesc
 	cu.execute("select sha, description, in_baseline from commits where description='%s'" % ndesc)
 	fsha = cu.fetchone()
@@ -89,7 +96,7 @@ for (sha, desc, disposition) in c.fetchall():
             print "Regex match for '%s'" % desc.replace("'", "''")
 	    print "    Match subject '%s'" % ndesc
 	    print "    No upstream match for '%s' [marked as '%s'], trying fuzzy match" % (sha, disposition)
-	    (mdesc, result) = process.extractOne(rdesc, alldescs)
+	    (mdesc, result) = process.extractOne(rdesc, alldescs, score_cutoff = 86)
 	    # Looks like everything gets a match of 86.
 	    if result <= 86:
 	        print "    Basic subject match %d insufficient" % result
@@ -128,7 +135,7 @@ for (sha, desc, disposition) in c.fetchall():
 		(ratio, setratio) = patch_ratio(fsha[0], sha)
 		c2.execute("UPDATE commits SET pscore=%d where sha='%s'" %
 							((ratio + setratio)/2, sha))
-	        if (result <= 90 or smatch < 98) and smatch != 100:
+	        if (result <= 90 or smatch < 98) and smatch != 100 and (result <= 95 or smatch <= 95):
 	            print "    Subject match %d/%d insufficient" % (result, smatch)
 		    c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" % sha)
 	            continue
