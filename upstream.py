@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-"
 import sqlite3
 import os
 import subprocess
@@ -20,13 +21,13 @@ c2 = merge.cursor()
 
 cu = upstream.cursor()
 
-def get_patch(path, sha):
+def get_patch(path, psha):
     os.chdir(path)
-    patch = subprocess.check_output(['git', 'show', '--format="%b"', '-U1', sha])
+    patch = subprocess.check_output(['git', 'show', '--format="%b"', '-U1', psha])
     os.chdir(workdir)
     i = re.search("^diff", patch, flags=re.MULTILINE).group()
     if i:
-        ind=patch.index(i)
+        ind = patch.index(i)
         return patch[ind:]
     return
 
@@ -39,7 +40,7 @@ def patch_ratio(usha, lsha):
     return (0, 0)
 
 cu.execute("select description from commits")
-alldescs=cu.fetchall()
+alldescs = cu.fetchall()
 
 c.execute("select sha, description, disposition from commits")
 for (sha, desc, disposition) in c.fetchall():
@@ -58,7 +59,7 @@ for (sha, desc, disposition) in c.fetchall():
           ndesc = m.group(2)
           rdesc = m.group(2)
           m = rp.search(ndesc)
-        ndesc=ndesc.replace("'", "''")
+        ndesc = ndesc.replace("'", "''")
         # print "    Match subject '%s'" % ndesc
         cu.execute("select sha, description, in_baseline from commits where description='%s'" % ndesc)
         fsha = cu.fetchone()
@@ -86,7 +87,7 @@ for (sha, desc, disposition) in c.fetchall():
             c2.execute("UPDATE commits SET sscore=100 where sha='%s'" % sha)
             (ratio, setratio) = patch_ratio(fsha[0], sha)
             c2.execute("UPDATE commits SET pscore=%d where sha='%s'" %
-                                                        ((ratio + setratio)/2, sha))
+                       ((ratio + setratio)/2, sha))
             # Like many others, 160 is a magic number derived from experiments.
             if ratio + setratio > 160:
                 c2.execute("UPDATE commits SET reason=('upstream') where sha='%s'" % sha)
@@ -96,7 +97,7 @@ for (sha, desc, disposition) in c.fetchall():
             print "Regex match for '%s'" % desc.replace("'", "''")
             print "    Match subject '%s'" % ndesc
             print "    No upstream match for '%s' [marked as '%s'], trying fuzzy match" % (sha, disposition)
-            (mdesc, result) = process.extractOne(rdesc, alldescs, score_cutoff = 86)
+            (mdesc, result) = process.extractOne(rdesc, alldescs, score_cutoff=86)
             # Looks like everything gets a match of 86.
             if result <= 86:
                 print "    Basic subject match %d insufficient" % result
@@ -106,7 +107,7 @@ for (sha, desc, disposition) in c.fetchall():
                     c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" % sha)
                     c2.execute("UPDATE commits SET sscore=%d where sha='%s'" % (result, sha))
                 continue
-            smatch=fuzz.token_set_ratio(rdesc, mdesc)
+            smatch = fuzz.token_set_ratio(rdesc, mdesc)
             print "    subject match results %d/%d" % (result, smatch)
             c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
                                         ((result + smatch)/2, sha))
@@ -134,15 +135,15 @@ for (sha, desc, disposition) in c.fetchall():
                     continue
                 (ratio, setratio) = patch_ratio(fsha[0], sha)
                 c2.execute("UPDATE commits SET pscore=%d where sha='%s'" %
-                                                        ((ratio + setratio)/2, sha))
+                           ((ratio + setratio)/2, sha))
                 if (result <= 90 or smatch < 98) and smatch != 100 and (result <= 95 or smatch <= 95):
                     print "    Subject match %d/%d insufficient" % (result, smatch)
                     c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" % sha)
                     continue
                 c2.execute("select filename from files where sha is '%s'" % sha)
-                lfilenames=c2.fetchall()
+                lfilenames = c2.fetchall()
                 cu.execute("select filename from files where sha is '%s'" % fsha[0])
-                ufilenames=cu.fetchall()
+                ufilenames = cu.fetchall()
                 if lfilenames != ufilenames:
                     print "    File name mismatch, skipping"
                     c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" % sha)
