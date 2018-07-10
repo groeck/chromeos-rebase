@@ -4,6 +4,8 @@ import sqlite3
 import os
 import subprocess
 import re
+import operator
+from collections import defaultdict
 # requires "pip install fuzzywuzzy"
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -40,8 +42,28 @@ def patch_ratio(usha, lsha):
       return (fuzz.ratio(upatch, lpatch), fuzz.token_set_ratio(upatch, lpatch))
   return (0, 0)
 
+def best_match(s):
+  matches = []
+  for _word in s.split():
+    _match = process.extractOne(s, _alldescs[_word], score_cutoff=86)
+    if _match:
+      matches.append(_match)
+  if not matches:
+    return (0, 0)
+  best = max(matches, key=operator.itemgetter(1))
+  return (best[0], best[1])
+
 cu.execute("select description from commits")
 alldescs = cu.fetchall()
+
+# Split descriptions into a dictionary of of word-hashed lists.
+# By searching the resulting lists, we can speed up processing
+# significantly.
+_alldescs = defaultdict(list)
+for desc in alldescs:
+  words = desc[0].split()
+  for word in words:
+    _alldescs[word].append(desc[0])
 
 c.execute("select sha, description, disposition from commits")
 for (sha, desc, disposition) in c.fetchall():
@@ -107,7 +129,8 @@ for (sha, desc, disposition) in c.fetchall():
       print("    Match subject '%s'" % ndesc)
       print("    No upstream match for '%s' [marked as %s], trying fuzzy match"
             % (sha, disposition))
-      (mdesc, result) = process.extractOne(rdesc, alldescs, score_cutoff=86)
+      # (mdesc, result) = process.extractOne(rdesc, alldescs, score_cutoff=86)
+      (mdesc, result) = best_match(rdesc)
       # Looks like everything gets a match of 86.
       if result <= 86:
         print("    Basic subject match %d insufficient" % result)
@@ -124,7 +147,7 @@ for (sha, desc, disposition) in c.fetchall():
       c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
                  ((result + smatch)/2, sha))
       cu.execute("select sha, description, in_baseline from commits where description='%s'"
-                 % mdesc[0].replace("'", "''"))
+                 % mdesc.replace("'", "''"))
       fsha = cu.fetchone()
       if fsha:
         c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"
@@ -190,7 +213,7 @@ for (sha, desc, disposition) in c.fetchall():
                      % sha)
       else:
         print("    NOTICE: missing upstream match for '%s'" %
-              mdesc[0].replace("'", "''"))
+              mdesc.replace("'", "''"))
 
 merge.commit()
 merge.close()
