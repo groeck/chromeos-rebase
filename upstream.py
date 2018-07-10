@@ -11,7 +11,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from config import rebasedb, upstreamdb, chromeos_path, upstream_path
 
-rp = re.compile('(UPSTREAM: |FROMGIT: |FROMLIST: |BACKPORT: )(.*)')
+rp = re.compile('(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)(.*)')
 rpf = re.compile('(FIXUP: |Fixup: )(.*)')
 
 workdir = os.getcwd()
