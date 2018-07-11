@@ -57,9 +57,10 @@ def best_match(s):
   """
 
   matches = []
-  s = re.sub("[^a-zA-Z0-9 ]+", "", s)
+  s = re.sub("[^a-zA-Z0-9_ ]+", "", s)
   for word in s.split():
-    match = process.extractOne(s, _alldescs[word], score_cutoff=86)
+    match = process.extractOne(s, _alldescs[word],
+                               scorer=fuzz.token_sort_ratio, score_cutoff=65)
     if match:
       matches.append(match)
   if not matches:
@@ -82,7 +83,7 @@ def getallsubjects():
   cu = upstream.cursor()
   cu.execute("select description from commits")
   for desc in cu.fetchall():
-    subject = re.sub("[^a-zA-Z0-9 ]+", "", desc[0])
+    subject = re.sub("[^a-zA-Z0-9_ ]+", "", desc[0])
     words = subject.split()
     for word in words:
       _alldescs[word].append(desc[0])
@@ -96,7 +97,7 @@ def doit():
   """
 
   rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
-  rpf = re.compile("(FIXUP: |Fixup: )(.*)")
+  rpf = re.compile("(FIXUP: *|Fixup: *)(.*)")
 
   merge = sqlite3.connect(rebasedb)
   c = merge.cursor()
@@ -163,8 +164,11 @@ def doit():
         print("    No upstream match for '%s' [marked %s], trying fuzzy match"
               % (sha, disposition))
         (mdesc, result) = best_match(rdesc)
-        # Looks like everything gets a match of 86.
-        if result <= 86:
+        if result == 0:
+          print("    No close match")
+          continue
+        if result <= 75:
+          print("    Best candidate: %s" % mdesc)
           print("    Basic subject match %d insufficient" % result)
           # If the patch is tagged UPSTREAM:, but upstream does not have
           # a matching subject, something is odd. Need to revisit.
@@ -174,6 +178,8 @@ def doit():
             c2.execute("UPDATE commits SET sscore=%d where sha='%s'"
                        % (result, sha))
           continue
+	# Use default ratio (not fuzz.token_sort_ratio) for further matching.
+        result = fuzz.ratio(rdesc, mdesc)
         smatch = fuzz.token_set_ratio(rdesc, mdesc)
         print("    subject match results %d/%d" % (result, smatch))
         c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
