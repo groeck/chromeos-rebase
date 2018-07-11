@@ -21,14 +21,6 @@ _rpf = re.compile("(FIXUP: |Fixup: )(.*)")
 
 workdir = os.getcwd()
 
-merge = sqlite3.connect(rebasedb)
-upstream = sqlite3.connect(upstreamdb)
-
-c = merge.cursor()
-c2 = merge.cursor()
-
-cu = upstream.cursor()
-
 # List of all subjects, split into dictionary indexed by each word
 # in the subject.
 _alldescs = defaultdict(list)
@@ -90,13 +82,15 @@ def getallsubjects():
     _alldescs[] is populated.
   """
 
+  upstream = sqlite3.connect(upstreamdb)
+  cu = upstream.cursor()
   cu.execute("select description from commits")
   for desc in cu.fetchall():
     subject = re.sub("[^a-zA-Z0-9 ]+", "", desc[0])
     words = subject.split()
     for word in words:
       _alldescs[word].append(desc[0])
-
+  upstream.close()
 
 def doit():
   """Do the actual work.
@@ -104,6 +98,13 @@ def doit():
   Read all commits from database, compare against upstream commits,
   and mark accordingly.
   """
+
+  merge = sqlite3.connect(rebasedb)
+  c = merge.cursor()
+  c2 = merge.cursor()
+  upstream = sqlite3.connect(upstreamdb)
+  cu = upstream.cursor()
+
   c.execute("select sha, description, disposition from commits")
   for (sha, desc, disposition) in c.fetchall():
     if disposition == "drop":
