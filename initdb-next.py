@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-"
+'''Generate database with commits which are in -next but not in mainline.
+'''
+
+from __future__ import print_function
 import sqlite3
 import os
 import subprocess
@@ -8,9 +13,9 @@ next_pick = rebase_target + '..'
 workdir = os.getcwd()
 
 try:
-    os.remove(nextdb)
-except:
-    pass
+  os.remove(nextdb)
+except OSError:
+  pass
 
 conn = sqlite3.connect(nextdb)
 
@@ -28,18 +33,22 @@ conn.commit()
 
 os.chdir(next_path)
 
-commits = subprocess.check_output(['git', 'log', '--oneline', '--no-merges', next_pick])
+commits = subprocess.check_output(['git', 'log', '--oneline', '--no-merges',
+                                   next_pick])
 for commit in commits.splitlines():
-    if commit != "":
-        elem = commit.split(" ", 1)
-        sha = elem[0]
-        description = elem[1].rstrip('\n')
-	description = description.decode('latin-1') if isinstance(description, str) else description
-	c.execute("INSERT INTO commits(sha, description, in_baseline) VALUES (?, ?, ?)", (sha, description,0,))
-	filenames = subprocess.check_output(['git', 'show', '--name-only', '--format=', sha])
-	for fn in filenames.splitlines():
-	    if fn != "":
-		c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha,fn))
+  if commit != "":
+    elem = commit.split(" ", 1)
+    sha = elem[0]
+    description = elem[1].rstrip('\n')
+    description = description.decode('latin-1') \
+        if isinstance(description, str) else description
+    c.execute("INSERT INTO commits(sha, description, in_baseline) VALUES (?, ?, ?)",
+              (sha, description, 0,))
+    filenames = subprocess.check_output(['git', 'show', '--name-only',
+                                         '--format=', sha])
+    for fn in filenames.splitlines():
+      if fn != "":
+        c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha, fn))
 
 conn.commit()
 conn.close()
