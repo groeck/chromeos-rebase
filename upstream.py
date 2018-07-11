@@ -44,6 +44,7 @@ def patch_ratio(usha, lsha):
 
 def best_match(s):
   matches = []
+  s = re.sub('[^a-zA-Z0-9 ]+', '', s)
   for _word in s.split():
     _match = process.extractOne(s, _alldescs[_word], score_cutoff=86)
     if _match:
@@ -61,7 +62,8 @@ alldescs = cu.fetchall()
 # significantly.
 _alldescs = defaultdict(list)
 for desc in alldescs:
-  words = desc[0].split()
+  _s=re.sub('[^a-zA-Z0-9 ]+', '', desc[0])
+  words = _s.split()
   for word in words:
     _alldescs[word].append(desc[0])
 
