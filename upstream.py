@@ -11,7 +11,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from config import rebasedb, upstreamdb, chromeos_path, upstream_path
 
-rp = re.compile('(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)(.*)')
+rp = re.compile('(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)')
 rpf = re.compile('(FIXUP: |Fixup: )(.*)')
 
 workdir = os.getcwd()
@@ -75,16 +75,8 @@ for (sha, desc, disposition) in c.fetchall():
   mf = rpf.search(desc)
   if m:
     # print("Regex match for '%s'" % desc.replace("'", "''"))
-    ndesc = m.group(2)
+    ndesc = m.group(2).replace("'", "''")
     rdesc = m.group(2)
-    # Try to match again to catch and remove multiple tags.
-    m = rp.search(ndesc)
-    while m:
-      # print("  Recursive regex match for '%s'" % ndesc.replace("'", "''"))
-      ndesc = m.group(2)
-      rdesc = m.group(2)
-      m = rp.search(ndesc)
-    ndesc = ndesc.replace("'", "''")
     # print("    Match subject '%s'" % ndesc)
     cu.execute("select sha, description, in_baseline from commits where description='%s'"
                % ndesc)
