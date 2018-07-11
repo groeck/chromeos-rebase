@@ -16,17 +16,13 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import sqlite3
 
-_rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
-_rpf = re.compile("(FIXUP: |Fixup: )(.*)")
-
-workdir = os.getcwd()
-
 # List of all subjects, split into dictionary indexed by each word
 # in the subject.
 _alldescs = defaultdict(list)
 
 
 def get_patch(path, psha):
+  workdir = os.getcwd()
   os.chdir(path)
   patch = subprocess.check_output(["git", "show", "--format='%b'", "-U1", psha])
   os.chdir(workdir)
@@ -99,6 +95,9 @@ def doit():
   and mark accordingly.
   """
 
+  rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
+  rpf = re.compile("(FIXUP: |Fixup: )(.*)")
+
   merge = sqlite3.connect(rebasedb)
   c = merge.cursor()
   c2 = merge.cursor()
@@ -109,8 +108,8 @@ def doit():
   for (sha, desc, disposition) in c.fetchall():
     if disposition == "drop":
       continue
-    m = _rp.search(desc)
-    mf = _rpf.search(desc)
+    m = rp.search(desc)
+    mf = rpf.search(desc)
     if m:
       # print("Regex match for '%s'" % desc.replace("'", "''"))
       ndesc = m.group(2).replace("'", "''")
