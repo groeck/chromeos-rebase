@@ -53,6 +53,8 @@ clone_simple()
     local destdir=$1
     local repository=$2
 
+    echo "Cloning ${repository} into ${destdir}"
+
     if [[ -d "${destdir}" ]]; then
 	pushd "${destdir}"
 	git checkout master
@@ -73,6 +75,8 @@ clone_complex()
     local destdir=$1
     local repository=$2
     local branch=$3
+
+    echo "Cloning ${repository}:${branch} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
 	pushd "${destdir}"
