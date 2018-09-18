@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase418.db'
-upstreamdb = 'upstream418.db'
-nextdb = 'next418.db'
+rebasedb = 'rebase419.db'
+upstreamdb = 'upstream419.db'
+nextdb = 'next419.db'
 
 rebase_baseline_branch = 'chromeos-4.14'
 android_baseline_branch = "android-4.14"
@@ -18,8 +18,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.14'
-stable_baseline = 'v4.14.55'
-rebase_target = 'v4.18-rc4'
+stable_baseline = 'v4.14.69'
+rebase_target = 'v4.19-rc4'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -32,8 +32,9 @@ next_path = "linux-next"
 subject_droplist = ["ANDROID:", "Android:", "android:"]
 
 droplist = [('drivers/net/wireless/iwl7000', 'Intel'),
-            ('drivers/gpu/drm/i915', 'Intel'),
-            ('drivers/gpu/drm/amd', 'AMD')]
+#           ('drivers/gpu/drm/i915', 'Intel'),
+#           ('drivers/gpu/drm/amd', 'AMD')
+	    ]
 
 topiclist = \
     [["chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
@@ -58,6 +59,8 @@ topiclist = \
       "Documentation/devicetree/bindings/power"],
      ["drivers/usb", "include/linux/usb", "include/uapi/linux/usb",
       "Documentation/devicetree/bindings/usb"],
+     ["drivers/gpu/drm/amd"],
+     ["drivers/gpu/drm/i915"],
      ["drivers/gpu", "include/drm", "Documentation/devicetree/bindings/drm",
       "include/uapi/drm"],
      ["drivers/media", "include/media", "include/uapi/linux/videodev2.h",
