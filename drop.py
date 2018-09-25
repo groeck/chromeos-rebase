@@ -45,6 +45,28 @@ for (_sha,) in c.fetchall():
 
 conn.commit()
 
+# Try again. This time drop duplicates.
+
+dsha = []
+
+c.execute("select sha,patchid,disposition from commits")
+for (_sha,_patchid,_disposition,) in c.fetchall():
+  if _disposition is 'drop':
+    continue
+  if _sha in dsha:
+    continue
+  c2.execute("select sha from commits where patchid is '%s'" % _patchid)
+  for (__sha,) in c2.fetchall():
+    if __sha in dsha:
+      continue
+    if _sha != __sha:
+      print("Dropping SHA %s as duplicate of %s" % (__sha, _sha))
+      c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % __sha)
+      c2.execute("UPDATE commits SET reason=('duplicate') where sha='%s'" % __sha)
+      dsha.append(__sha)
+
+conn.commit()
+
 conn.close()
 
 # c.execute('SELECT * FROM commits')
