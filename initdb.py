@@ -21,11 +21,12 @@ conn = sqlite3.connect(rebasedb)
 c = conn.cursor()
 
 # Create table
-c.execute("CREATE TABLE commits (date integer, sha text, description text, \
+c.execute("CREATE TABLE commits (date integer, sha text, patchid text, description text, \
                                 topic integer, disposition text, reason text, \
                                 sscore integer, pscore integer, dsha text)")
 c.execute("CREATE UNIQUE INDEX commit_date ON commits (date)")
 c.execute("CREATE INDEX commit_sha ON commits (sha)")
+c.execute("CREATE INDEX patch_id ON commits (patchid)")
 
 c.execute("CREATE TABLE files (sha text, filename text)")
 c.execute("CREATE INDEX file_sha ON files (sha)")
@@ -98,6 +99,11 @@ for commit in commits.splitlines():
     description = elem[1].rstrip('\n')
     description = description.decode('latin-1') \
                 if isinstance(description, str) else description
+
+    ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
+    spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
+    patchid = spid.split(" ", 1)[0]
+
     sdate = subprocess.check_output(['git', 'show', '--format="%ct"',
                                      '-s', sha])
     sdate = sdate.rstrip('\n')
@@ -112,8 +118,8 @@ for commit in commits.splitlines():
     mprevdate = date
     # Initially assume we'll drop everything because it is not listed when
     # running "rebase -i".
-    c.execute("INSERT INTO commits(date, sha, description, disposition, reason) VALUES (?, ?, ?, ?, ?)",
-              (date, sha, description, "drop", "merge",))
+    c.execute("INSERT INTO commits(date, sha, patchid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?)",
+              (date, sha, patchid, description, "drop", "merge",))
     filenames = subprocess.check_output(['git', 'show', '--name-only',
                                          '--format=', sha])
     for fn in filenames.splitlines():
