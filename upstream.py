@@ -34,10 +34,32 @@ def get_patch(path, psha):
 
 
 def patch_ratio(usha, lsha):
+  """ compare patches
+
+  Args:
+    usha, lsha: Two SHAs to compare
+
+  Returns:
+    Tuple with two different fuzzy matches
+
+  Fuzzy match is applied to first 1,000 lines in each patch
+  to avoid stalls. If one of the patches has more than 1,000
+  lines, also compare the number of lines in each patch and
+  return (0,0) if the mismatch is too significant.
+
+  """
   lpatch = get_patch(upstream_path, usha)
   if lpatch:
     upatch = get_patch(chromeos_path, lsha)
     if upatch:
+      llen = lpatch.count('\n')
+      ulen = upatch.count('\n')
+      # Large patches: more than 20% difference in patch size is a mismatch
+      if llen > 2000 or ulen > 2000:
+        if abs(llen - ulen) > llen / 5:
+	  return (0, 0)
+      lpatch = "\n".join(lpatch.splitlines()[:2000])
+      upatch = "\n".join(upatch.splitlines()[:2000])
       return (fuzz.ratio(upatch, lpatch), fuzz.token_set_ratio(upatch, lpatch))
   return (0, 0)
 
