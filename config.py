@@ -18,8 +18,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.14'
-stable_baseline = 'v4.14.72'
-rebase_target = 'v4.19-rc6'
+stable_baseline = 'v4.14.73'
+rebase_target = 'v4.19-rc7'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
