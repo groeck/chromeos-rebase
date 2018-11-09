@@ -2,7 +2,20 @@
 from __future__ import print_function
 import sqlite3
 import os
+import time
 from config import rebasedb, subject_droplist, droplist
+
+def NOW():
+  return int(time.time())
+
+def do_drop(c, sha, reason):
+  c.execute("select disposition from commits where sha is '%s'" % sha)
+  found = c.fetchone()
+  if found[0] != "drop":
+    print("Dropping SHA %s: %s" % (sha, reason))
+    c.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
+    c.execute("UPDATE commits SET reason=('%s') where sha='%s'" % (reason, sha))
+    c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
 
 workdir = os.getcwd()
 
@@ -18,10 +31,7 @@ c.execute("select sha, description from commits")
 for (sha, desc) in c.fetchall():
   for prefix in subject_droplist:
     if desc.startswith(prefix):
-      c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                 % sha)
-      c2.execute("UPDATE commits SET reason=('android') where sha='%s'"
-                 % sha)
+      do_drop(c2, sha, "android")
 
 conn.commit()
 
@@ -34,10 +44,7 @@ for (_sha,) in c.fetchall():
     dropped = 0
     for (_dir, _reason) in droplist:
       if filename.startswith(_dir):
-        c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                   % _sha)
-        c2.execute("UPDATE commits SET reason=('%s') where sha='%s'"
-                   % (_reason, _sha))
+        do_drop(c2, _sha, _reason)
         dropped = 1
         break
     if dropped:
@@ -60,9 +67,7 @@ for (_sha,_patchid,_disposition,) in c.fetchall():
     if __sha in dsha:
       continue
     if _sha != __sha:
-      print("Dropping SHA %s as duplicate of %s" % (__sha, _sha))
-      c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % __sha)
-      c2.execute("UPDATE commits SET reason=('duplicate') where sha='%s'" % __sha)
+      do_drop(c2, __sha, "duplicate")
       dsha.append(__sha)
 
 conn.commit()
