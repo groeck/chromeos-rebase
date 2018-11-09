@@ -3,7 +3,11 @@ from __future__ import print_function
 import sqlite3
 import os
 import re
+import time
 from config import rebasedb
+
+def NOW():
+  return int(time.time())
 
 workdir = os.getcwd()
 
@@ -27,8 +31,11 @@ rp = re.compile('Revert "(.*)"')
 # c.execute("INSERT INTO files VALUES (sha,filename)")
 # sha and filename must be in ' '
 
-c.execute("select date, sha, description from commits")
-for (date, sha, desc) in c.fetchall():
+c.execute("select date, sha, disposition, description from commits")
+for (date, sha, disposition, desc) in c.fetchall():
+  # If the patch is already dropped, don't bother any further
+  if disposition == "drop":
+    continue
   m = rp.search(desc)
   if m:
     ndesc = m.group(1)
@@ -47,13 +54,16 @@ for (date, sha, desc) in c.fetchall():
                    % fsha[1])
         c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'"
                    % fsha[1])
+        c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
       else:
         print("    Matching commit later than reverse")
     else:
       print("    No matching commit found")
+    # Hmmm .. the below seems redundant ad drops everything.
     print("    Marking %s for drop" % sha)
     c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
     c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'" % sha)
+    c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
 
 conn.commit()
 
