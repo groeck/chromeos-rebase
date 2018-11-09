@@ -108,7 +108,9 @@ clone_complex()
 
 clone_complex "${chromeos_path}" "${chromeos_repo}" "${rebase_baseline_branch}"
 clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
-clone_complex "${next_path}" "${next_repo}" "master"
+# Always recreate next from scratch
+# rm -rf "${next_path}"
+# clone_complex "${next_path}" "${next_repo}" "master"
 
 echo "Initializing database"
 python initdb.py
@@ -118,10 +120,10 @@ if [[ ! -e "${upstreamdb}" || use_force != 0 ]]; then
 	python initdb-upstream.py
 fi
 
-if [[ ! -e "${nextdb}" || use_force != 0 ]]; then
-	echo "Initializing next database"
-	python initdb-next.py
-fi
+# if [[ ! -e "${nextdb}" || use_force != 0 ]]; then
+# 	echo "Initializing next database"
+#	python initdb-next.py
+# fi
 
 echo "Calculating initial drop list"
 python drop.py
