@@ -7,6 +7,7 @@ import operator
 import os
 import re
 import subprocess
+import time
 
 from config import chromeos_path
 from config import rebasedb
@@ -19,6 +20,10 @@ import sqlite3
 # List of all subjects, split into dictionary indexed by each word
 # in the subject.
 _alldescs = defaultdict(list)
+
+
+def NOW():
+  return int(time.time())
 
 
 def get_patch(path, psha):
@@ -57,7 +62,7 @@ def patch_ratio(usha, lsha):
       # Large patches: more than 20% difference in patch size is a mismatch
       if llen > 2000 or ulen > 2000:
         if abs(llen - ulen) > llen / 5:
-	  return (0, 0)
+          return (0, 0)
       lpatch = "\n".join(lpatch.splitlines()[:2000])
       upatch = "\n".join(upatch.splitlines()[:2000])
       return (fuzz.ratio(upatch, lpatch), fuzz.token_set_ratio(upatch, lpatch))
@@ -92,7 +97,8 @@ def best_match(s):
 
 
 def getallsubjects():
-  """Split descriptions into a dictionary of of word-hashed lists.
+  """
+  Split descriptions into a dictionary of of word-hashed lists.
 
   By searching the resulting lists, we can speed up processing
   significantly.
@@ -111,8 +117,34 @@ def getallsubjects():
       _alldescs[word].append(desc[0])
   upstream.close()
 
+
+def update_commit(c, sha, disposition, reason, sscore, pscore):
+  """
+  Update a commit entry in the database if the disposition changes
+  """
+
+  c.execute("select disposition from commits where sha='%s'" % sha)
+  disp = c.fetchall()
+  if not disp or disp != disposition:
+    c.execute("UPDATE commits SET disposition=('%s') where sha='%s'" %
+              (disposition, sha))
+    c.execute("UPDATE commits SET reason=('%s') where sha='%s'" %
+              (reason, sha))
+    if sscore:
+      c.execute("UPDATE commits SET sscore=%d where sha='%s'" %
+                (sscore, sha))
+    if pscore:
+      c.execute("UPDATE commits SET pscore=%d where sha='%s'" %
+                (pscore, sha))
+    c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
+  else:
+    print("Registered disposition for sha %s: %s" % (sha, disp))
+    print("Not updating database for SHA '%s', requested disposition=%s, reason=%d" % (sha, disposition, reason))
+
+
 def doit():
-  """Do the actual work.
+  """
+  Do the actual work.
 
   Read all commits from database, compare against upstream commits,
   and mark accordingly.
@@ -152,34 +184,30 @@ def doit():
           print("    FIXUP patch")
           print("    Found matching upstream commit %s ('%s'), drop" %
                 (fsha[0], fsha[1].replace("'", "''")))
-          c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                     % sha)
-          c2.execute("UPDATE commits SET reason=('upstream') where sha='%s'"
-                     % sha)
-          c2.execute("UPDATE commits SET sscore=100 where sha='%s'" % sha)
+          update_commit(c2, sha, 'drop', 'upstream', 100)
           continue
         # print("    Upstream subject for %s matches %s" % (fsha[1], sha))
         # print("    Local description: %s" % desc)
         # print("    Upstream description: %s" % ndesc)
         # print("    In v4.9: %d" % fsha[2])
         if in_baseline == 1:
-          c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                     % sha)
+          disposition = 'drop'
         else:
-          c2.execute("UPDATE commits SET disposition=('replace') where sha='%s'"
-                     % sha)
+          disposition = 'replace'
+
         # This is a perfect match. Set sscore to 100.
-        c2.execute("UPDATE commits SET sscore=100 where sha='%s'" % sha)
+        sscore = 100
+
         (ratio, setratio) = patch_ratio(fsha[0], sha)
-        c2.execute("UPDATE commits SET pscore=%d where sha='%s'" %
-                   ((ratio + setratio)/2, sha))
+        pscore = (ratio + setratio) / 2
+
         # Like many others, 160 is a magic number derived from experiments.
         if ratio + setratio > 160:
-          c2.execute("UPDATE commits SET reason=('upstream') where sha='%s'" %
-                     sha)
+          reason = 'upstream'
         else:
-          c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'" %
-                     sha)
+          reason = 'revisit'
+
+        update_commit(c2, sha, disposition, reason, sscore, pscore)
       else:
         print("Regex match for '%s'" % desc.replace("'", "''"))
         print("    Match subject '%s'" % ndesc)
@@ -200,7 +228,7 @@ def doit():
             c2.execute("UPDATE commits SET sscore=%d where sha='%s'"
                        % (result, sha))
           continue
-	# Use default ratio (not fuzz.token_sort_ratio) for further matching.
+        # Use default ratio (not fuzz.token_sort_ratio) for further matching.
         result = fuzz.ratio(rdesc, mdesc)
         smatch = fuzz.token_set_ratio(rdesc, mdesc)
         print("    subject match results %d/%d" % (result, smatch))
@@ -223,11 +251,7 @@ def doit():
             dsha = c2.fetchone()
             if dsha:
               print("    FIXUP: Found upstream patch as replacement. dropping")
-              c2.execute("UPDATE commits SET disposition=('drop') "
-                         "where sha='%s'" % sha)
-              c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
-                         % sha)
-              c2.execute("UPDATE commits SET sscore=100 where sha='%s'" % sha)
+              update_commit(c2, sha, 'drop', 'revisit', 100)
             else:
               print("    FIXUP: No replacement target. Revisit.")
               c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
@@ -261,17 +285,14 @@ def doit():
           # We have a match.
           if in_baseline == 1:
             print("    Drop sha '%s' (close match)" % sha)
-            c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                       % sha)
-            c2.execute("UPDATE commits SET reason=('upstream') where sha='%s'"
-                       % sha)
+            disposition='drop'
+            reason='upstream'
           else:
             print("    Replace sha '%s' with '%s' (close match)" %
                   (sha, fsha[0]))
-            c2.execute("UPDATE commits SET disposition=('replace') "
-                       "where sha='%s'" % sha)
-            c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
-                       % sha)
+            disposition='replace'
+            reason='revisit'
+          update_commit(c2, sha, disposition, reason)
         else:
           print("    NOTICE: missing upstream match for '%s'" %
                 mdesc.replace("'", "''"))
