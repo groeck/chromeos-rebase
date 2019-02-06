@@ -118,7 +118,7 @@ def getallsubjects():
   upstream.close()
 
 
-def update_commit(c, sha, disposition, reason, sscore, pscore):
+def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
   """
   Update a commit entry in the database if the disposition changes
   """
