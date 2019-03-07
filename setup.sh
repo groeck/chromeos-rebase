@@ -56,10 +56,10 @@ clone_simple()
     echo "Cloning ${repository} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
-	pushd "${destdir}"
+	pushd "${destdir}" >/dev/null
 	git checkout master
 	git pull
-	popd
+	popd >/dev/null
     else
 	git clone "${repository}" "${destdir}"
     fi
@@ -79,7 +79,7 @@ clone_complex()
     echo "Cloning ${repository}:${branch} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
-	pushd "${destdir}"
+	pushd "${destdir}" >/dev/null
 	git fetch origin
 	if git rev-parse --verify "${branch}" >/dev/null 2>&1; then
 		git checkout "${branch}"
@@ -95,14 +95,14 @@ clone_complex()
 		git remote add upstream "${upstream_path}"
 	}
 	git fetch upstream
-	popd
+	popd >/dev/null
     else
 	git clone "${repository}" "${destdir}"
-	pushd "${destdir}"
+	pushd "${destdir}" >/dev/null
 	git checkout -b "${branch}" "origin/${branch}"
 	git remote add upstream "${upstream_path}"
 	git fetch upstream
-	popd
+	popd >/dev/null
     fi
 }
 
