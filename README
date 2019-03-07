@@ -8,3 +8,7 @@ to list patches associated with a given topic. Output is a list
 of patches which can be used as input to "git rebase -i".
 
 process-dbm-csv.sh generates a list of patches in csv format.
+
+Prerequisites:
+
+pip install fuzzywuzzy
