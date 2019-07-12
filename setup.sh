@@ -35,11 +35,13 @@ usage()
 }
 
 use_force=0
+verbose=0
 
-while getopts f opt
+while getopts fv opt
 do
     case ${opt} in
     f)	use_force=1;;
+    f)	verbose=1;;
     *)	usage;;
     esac
 done
@@ -52,13 +54,20 @@ clone_simple()
 {
     local destdir=$1
     local repository=$2
+    local force=$3
 
     echo "Cloning ${repository} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
 	pushd "${destdir}" >/dev/null
 	git checkout master
-	git pull
+	if [[ -n "${force}" ]]; then
+	    # This is needed if the origin may have been rebased
+	    git fetch origin
+	    git reset --hard origin/master
+	else
+	    git pull
+	fi
 	popd >/dev/null
     else
 	git clone "${repository}" "${destdir}"
@@ -80,6 +89,7 @@ clone_complex()
 
     if [[ -d "${destdir}" ]]; then
 	pushd "${destdir}" >/dev/null
+	git reset --hard HEAD
 	git fetch origin
 	if git rev-parse --verify "${branch}" >/dev/null 2>&1; then
 		git checkout "${branch}"
@@ -108,22 +118,16 @@ clone_complex()
 
 clone_complex "${chromeos_path}" "${chromeos_repo}" "${rebase_baseline_branch}"
 clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
-# Always recreate next from scratch
-# rm -rf "${next_path}"
-# clone_complex "${next_path}" "${next_repo}" "master"
+clone_simple "${next_path}" "${next_repo}" "force"
 
 echo "Initializing database"
 python initdb.py
 
-if [[ ! -e "${upstreamdb}" || use_force != 0 ]]; then
-	echo "Initializing upstream database"
-	python initdb-upstream.py
-fi
+echo "Initializing upstream database"
+python initdb-upstream.py
 
-# if [[ ! -e "${nextdb}" || use_force != 0 ]]; then
-# 	echo "Initializing next database"
-#	python initdb-next.py
-# fi
+echo "Initializing next database"
+python initdb-next.py
 
 echo "Calculating initial drop list"
 python drop.py
