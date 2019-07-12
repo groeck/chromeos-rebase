@@ -12,7 +12,9 @@ import time
 from config import chromeos_path
 from config import rebasedb
 from config import upstream_path
+from config import next_path
 from config import upstreamdb
+from config import nextdb
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import sqlite3
@@ -38,7 +40,7 @@ def get_patch(path, psha):
   return
 
 
-def patch_ratio(usha, lsha):
+def patch_ratio(usha, lsha, ref=upstream_path):
   """ compare patches
 
   Args:
@@ -53,7 +55,7 @@ def patch_ratio(usha, lsha):
   return (0,0) if the mismatch is too significant.
 
   """
-  lpatch = get_patch(upstream_path, usha)
+  lpatch = get_patch(ref, usha)
   if lpatch:
     upatch = get_patch(chromeos_path, lsha)
     if upatch:
@@ -96,7 +98,7 @@ def best_match(s):
   return (best[0], best[1])
 
 
-def getallsubjects():
+def getallsubjects(db=upstreamdb):
   """
   Split descriptions into a dictionary of of word-hashed lists.
 
@@ -107,15 +109,16 @@ def getallsubjects():
     _alldescs[] is populated.
   """
 
-  upstream = sqlite3.connect(upstreamdb)
-  cu = upstream.cursor()
+  _alldescs = defaultdict(list)
+  db = sqlite3.connect(db)
+  cu = db.cursor()
   cu.execute("select description from commits")
   for desc in cu.fetchall():
     subject = re.sub("[^a-zA-Z0-9_ ]+", "", desc[0])
     words = subject.split()
     for word in words:
       _alldescs[word].append(desc[0])
-  upstream.close()
+  db.close()
 
 
 def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
@@ -142,12 +145,12 @@ def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
     print("Not updating database for SHA '%s', requested disposition=%s, reason=%d" % (sha, disposition, reason))
 
 
-def doit():
+def doit(db=upstreamdb, path=upstream_path, name='upstream'):
   """
   Do the actual work.
 
-  Read all commits from database, compare against upstream commits,
-  and mark accordingly.
+  Read all commits from database, compare against commits in provided
+  database, and mark accordingly.
   """
 
   rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
@@ -156,8 +159,8 @@ def doit():
   merge = sqlite3.connect(rebasedb)
   c = merge.cursor()
   c2 = merge.cursor()
-  upstream = sqlite3.connect(upstreamdb)
-  cu = upstream.cursor()
+  db = sqlite3.connect(db)
+  cu = db.cursor()
 
   c.execute("select sha, description, disposition from commits")
   for (sha, desc, disposition) in c.fetchall():
@@ -182,9 +185,9 @@ def doit():
           print("Regex match for %s '%s'" % (sha, desc.replace("'", "''")))
           print("    Match subject '%s'" % ndesc)
           print("    FIXUP patch")
-          print("    Found matching upstream commit %s ('%s'), drop" %
-                (fsha[0], fsha[1].replace("'", "''")))
-          update_commit(c2, sha, 'drop', 'upstream', 100)
+          print("    Found matching %s commit %s ('%s'), drop" %
+                (name, fsha[0], fsha[1].replace("'", "''")))
+          update_commit(c2, sha, 'drop', "%s/fixup" % name, 100)
           continue
         # print("    Upstream subject for %s matches %s" % (fsha[1], sha))
         # print("    Local description: %s" % desc)
@@ -198,12 +201,12 @@ def doit():
         # This is a perfect match. Set sscore to 100.
         sscore = 100
 
-        (ratio, setratio) = patch_ratio(fsha[0], sha)
+        (ratio, setratio) = patch_ratio(fsha[0], sha, ref=path)
         pscore = (ratio + setratio) / 2
 
         # Like many others, 160 is a magic number derived from experiments.
         if ratio + setratio > 160:
-          reason = 'upstream'
+          reason = name
         else:
           reason = 'revisit'
 
@@ -211,8 +214,8 @@ def doit():
       else:
         print("Regex match for '%s'" % desc.replace("'", "''"))
         print("    Match subject '%s'" % ndesc)
-        print("    No upstream match for '%s' [marked %s], trying fuzzy match"
-              % (sha, disposition))
+        print("    No match in %s for '%s' [marked %s], trying fuzzy match"
+              % (name, sha, disposition))
         (mdesc, result) = best_match(rdesc)
         if result == 0:
           print("    No close match")
@@ -250,8 +253,8 @@ def doit():
             c2.execute("select sha from commits where dsha is '%s'" % fsha[0])
             dsha = c2.fetchone()
             if dsha:
-              print("    FIXUP: Found upstream patch as replacement. dropping")
-              update_commit(c2, sha, 'drop', 'revisit', 100)
+              print("    FIXUP: Found patch in %s as replacement. dropping")
+              update_commit(c2, sha, 'drop', 'revisit/fixup', 100)
             else:
               print("    FIXUP: No replacement target. Revisit.")
               c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
@@ -270,13 +273,12 @@ def doit():
           lfilenames = c2.fetchall()
           cu.execute("select filename from files where sha is '%s'" % fsha[0])
           ufilenames = cu.fetchall()
+          scrutiny = 0
           if lfilenames != ufilenames:
-            print("    File name mismatch, skipping")
-            c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
-                       % sha)
-            continue
+            print("    File name mismatch, increasing scrutiny")
+            scrutiny = 20
           print("    patch match results %d/%d" % (ratio, setratio))
-          if (smatch < 100 and (ratio <= 90 or setratio <= 90)) or ratio <= 70:
+          if (smatch < 100 and (ratio <= 90 or setratio <= 90)) or ratio <= 70 + scrutiny:
             print("    code match %d/%d insufficient" % (ratio, setratio))
             print("    Mark sha '%s' for revisit" % sha)
             c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
@@ -286,7 +288,7 @@ def doit():
           if in_baseline == 1:
             print("    Drop sha '%s' (close match)" % sha)
             disposition='drop'
-            reason='upstream'
+            reason=name
           else:
             print("    Replace sha '%s' with '%s' (close match)" %
                   (sha, fsha[0]))
@@ -294,12 +296,24 @@ def doit():
             reason='revisit'
           update_commit(c2, sha, disposition, reason)
         else:
-          print("    NOTICE: missing upstream match for '%s'" %
-                mdesc.replace("'", "''"))
+          print("    NOTICE: missing match in %s for '%s'" %
+                (name, mdesc.replace("'", "''")))
 
   merge.commit()
   merge.close()
-  upstream.close()
+  db.close()
 
+# First run against upstream (mainline).
 getallsubjects()
 doit()
+
+# repeat against -next. This will generate a list of patches
+# to be replaced with patches found in -next (which are probably
+# a better match to future upstream patches). At the very least,
+# this gives us an idea how many of the local patches are actually
+# queued to the next kernel release.
+# TODO: Check upstream/mainline and -next for Fixup: patches
+# of patches which are going to be applied, and apply those
+# as well.
+getallsubjects(nextdb)
+doit(nextdb, next_path, 'next')
