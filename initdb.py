@@ -79,7 +79,7 @@ def update_stable(path, list, origin):
   c = conn.cursor()
 
   os.chdir(path)
-  commits = subprocess.check_output(['git', 'log', '--oneline', '--reverse',
+  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--oneline', '--reverse',
                                      list])
   os.chdir(workdir)
 
@@ -106,7 +106,7 @@ def update_commits():
   c = conn.cursor()
 
   os.chdir(chromeos_path)
-  commits = subprocess.check_output(['git', 'log', '--oneline', "--reverse",
+  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--oneline', '--reverse',
                                      rebase_baseline + '..'])
 
   prevdate = 0
@@ -160,8 +160,7 @@ def update_commits():
   for patch in patches.splitlines():
     elem = patch.split(" ", 2)
     # print "patch: " + patch
-    # print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" %
-    #        (elem[0], elem[1], elem[2])
+    # print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2])
     if elem[0] == "+":
       # patch not found upstream
       sha = elem[1][:12]
