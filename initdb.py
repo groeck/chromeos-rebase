@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-"
 import sqlite3
 import os
+import re
 import subprocess
 import time
 from config import rebasedb, \
@@ -9,6 +10,12 @@ from config import rebasedb, \
 
 stable_commits = rebase_baseline + '..' + stable_baseline
 baseline_commits = rebase_baseline + '..'
+
+cherrypick=re.compile("cherry picked from commit ([a-z0-9]+)")
+stable=re.compile("commit ([a-z0-9]+) upstream")
+stable2=re.compile("Upstream commit ([a-z0-9]+)")
+upstream=re.compile("(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)")
+chromium=re.compile("(CHROMIUM: *|FROMLIST: *)+(.*)")
 
 workdir = os.getcwd()
 
@@ -38,12 +45,14 @@ def createdb():
   # Create table
   c.execute("CREATE TABLE commits (date integer, \
                                    created timestamp, updated timestamp, \
-                                   sha text, patchid text, \
+                                   sha text, usha text, \
+                                   patchid text, \
                                    description text, topic integer, \
-				   disposition text, reason text, \
+                                   disposition text, reason text, \
                                    sscore integer, pscore integer, dsha text)")
   c.execute("CREATE UNIQUE INDEX commit_date ON commits (date)")
   c.execute("CREATE INDEX commit_sha ON commits (sha)")
+  c.execute("CREATE INDEX upstream_sha ON commits (usha)")
   c.execute("CREATE INDEX patch_id ON commits (patchid)")
 
   c.execute("CREATE TABLE files (sha text, filename text)")
@@ -142,10 +151,31 @@ def update_commits():
       if found:
         continue
 
+      # check for cherry pick lines. If so, record the upstream SHA associated
+      # with this commit. Only look for commits which may be upstream or may
+      # have been merged from a stable release.
+      usha=""
+      if not chromium.match(description):
+        u = upstream.match(description)
+        desc = subprocess.check_output(['git', 'show', '-s', sha])
+        for d in desc.splitlines():
+          m=None
+          if u:
+            m = cherrypick.search(d)
+          else:
+            m = stable.search(d)
+	    if not m:
+              m = stable2.search(d)
+          if m:
+            usha=m.group(1)[:12]
+            # The patch may have been picked multiple times; only record
+            # the first entry.
+            break
+
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i".
-      c.execute("INSERT INTO commits(date, created, updated, sha, patchid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), sha, patchid, description, "drop", "default",))
+      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, NOW(), NOW(), sha, usha, patchid, description, "drop", "default",))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
