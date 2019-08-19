@@ -14,7 +14,7 @@ try:
 except:
     pass
 
-rf = re.compile('^Fixes: ([a-zA-Z0-9]+).*')
+rf = re.compile('^\s*Fixes: ([a-zA-Z0-9]+).*')
 
 conn = sqlite3.connect(upstreamdb)
 
@@ -51,8 +51,9 @@ def handle(range, baseline):
 		c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha, fn))
 	# Now check if this patch fixes a previous patch.
 	description = subprocess.check_output(['git', 'show', '-s', '--pretty=format:%b', sha])
-	m = rf.search(description)
-	if m and m.group(1):
+	for d in description.splitlines():
+	  m = rf.search(d)
+	  if m and m.group(1):
 	    try:
 	        # Normalize fsha to 12 characters.
 		cmd = 'git show -s --pretty=format:%%H %s 2>/dev/null' % m.group(1)
@@ -61,7 +62,7 @@ def handle(range, baseline):
 		# Insert in reverse order: sha is fixed by fsha
 		c.execute("INSERT into fixes (sha, fsha) VALUES (?, ?)", (fsha[0:12], sha[0:12]))
 	    except:
-		print "Skipping '%s': Not found" % m.group(0)
+		print "Skipping '%s' for %s: Not found" % (m.group(0), sha)
 		# The Fixes: tag may be wrong. The sha may not be in the
 		# upstream kernel, or the format may be completely wrong and
 		# m.group(1) may not be a sha in the first place.
