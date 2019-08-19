@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase52.db'
-upstreamdb = 'upstream52.db'
-nextdb = 'next52.db'
+rebasedb = 'rebase53-rc5.db'
+upstreamdb = 'upstream53.db'
+nextdb = 'next53.db'
 
 rebase_baseline_branch = 'chromeos-4.19'
 android_baseline_branch = "android-4.19"
@@ -18,8 +18,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.58'
-rebase_target = 'v5.2'
+stable_baseline = 'v4.19.66'
+rebase_target = 'v5.3-rc5'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -38,35 +38,47 @@ droplist = [('drivers/net/wireless/iwl7000', 'Intel'),
 
 topiclist = \
     [["chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"],
-     ["drivers/extcon/extcon-cros_ec",
+     ["drivers/iio/common/cros_ec_sensors",
+      "drivers/iio/accel/cros_ec_accel_legacy.c",
+      "drivers/iio/pressure/cros_ec_baro.c",
+      "drivers/iio/counter/cros_ec_sensors_sync.c",
+      "drivers/iio/light/cros_ec_light_prox.c",
+      "include/linux/iio/common/cros_ec_sensors_core.h" ],
+     ["drivers/platform/chrome/wilco_ec", "drivers/rtc/rtc-wilco-ec",
+      "drivers/power/supply/wilco-charger",
+      "include/linux/platform_data/wilco-ec.h",
+      "Documentation/ABI/testing/debugfs-wilco-ec",
+      "Documentation/ABI/testing/sysfs-platform-wilco-ec" ],
+     ["drivers/extcon/extcon-usbc-cros_ec",
       "Documentation/devicetree/bindings/extcon/extcon-cros-ec.txt",
       "drivers/mfd/cros_ec", "drivers/power/cros",
       "drivers/rtc/rtc-cros-ec", "drivers/platform/chrome",
       "drivers/platform/x86/chrome", "drivers/platform/arm/chrome",
       "drivers/input/keyboard/cros_ec",
-      "drivers/pwm/pwm-cros-ec.c", "drivers/iio/common/cros_ec_sensors",
+      "drivers/pwm/pwm-cros-ec.c",
       "drivers/regulator/cros_ec",
       "drivers/i2c/busses/i2c-cros-ec", "include/linux/mfd/cros_ec",
       "include/linux/chromeos",
       "Documentation/devicetree/bindings/chrome"],
-     ["drivers/gpu/drm/bridge/analogix",
-      "include/drm/bridge/analogix_dp.h",
-      "Documentation/devicetree/bindings/display/bridge/analogix_dp.txt",
-      "Documentation/devicetree/bindings/drm/bridge/anx7688.txt"],
      ["drivers/power", "drivers/base/power", "kernel/power",
       "include/dt-bindings/power", "include/linux/power",
       "include/linux/pm", "Documentation/power", "arch/x86/power",
       "Documentation/devicetree/bindings/power"],
+     ["drivers/usb/gadget"],
      ["drivers/usb", "include/linux/usb", "include/uapi/linux/usb",
       "Documentation/devicetree/bindings/usb"],
+     ["drivers/gpu/arm"],
      ["drivers/gpu/drm/amd"],
      ["drivers/gpu/drm/i915"],
+     ["drivers/gpu/drm/mediatek"],
+     ["drivers/gpu/drm/msm"],
+     ["drivers/gpu/drm/panel"],
+     ["drivers/gpu/drm/rockchip"],
+     ["drivers/gpu/drm/virtio", "include/drm/virtio_drm.h"],
      ["drivers/gpu", "include/drm", "Documentation/devicetree/bindings/drm",
       "include/uapi/drm"],
      ["drivers/media", "include/media", "include/uapi/linux/videodev2.h",
       "include/uapi/linux/v4l2-controls.h"],
-     ["drivers/input/touchscreen/atmel_mxt_ts.c",
-      "include/linux/platform_data/atmel_mxt_ts.h"],
      ["drivers/input", "include/linux/input"],
      ["drivers/iio", "drivers/staging/iio", "Documentation/driver-api/iio",
       "Documentation/devicetree/bindings/iio",
@@ -87,6 +99,8 @@ topiclist = \
       "include/net", "include/dt-bindings/net", "include/linux/net",
       "include/uapi/linux/sockios.h"],
      ["sound/soc/intel"],
+     ["sound/soc/mediatek"],
+     ["sound/soc/rockchip"],
      ["sound", "Documentation/devicetree/bindings/sound", "include/sound",
       "include/uapi/sound"],
      ["security", "include/linux/alt-syscall.h",
@@ -99,13 +113,18 @@ topiclist = \
       "Documentation/devicetree/bindings/reserved-memory/ramoops.txt",
       "Documentation/devicetree/bindings/misc/ramoops.txt",
       "Documentation/ramoops.txt"],
+     ["fs/ecryptfs"],
+     ["fs/esdfs"],
      ["fs"],
      ["drivers/hid"],
+     ["drivers/md", "init/do_mounts_dm.c", "Documentation/device-mapper/boot.txt"],
      ["drivers/thermal", "include/linux/thermal",
       "Documentation/devicetree/bindings/thermal"],
      ["Documentation/devicetree/bindings/regulator", "drivers/regulator",
       "include/linux/regulator"],
      ["drivers/scsi"],
+     ["drivers/virtio", "include/uapi/linux/virtwl.h"],
+     ["drivers/tty/sysrq.c"],
      ["drivers/firmware/google"],
      ["drivers/char/tpm", "Documentation/devicetree/bindings/security/tpm"]
     ]
