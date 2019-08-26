@@ -11,9 +11,10 @@ from config import rebasedb, \
 stable_commits = rebase_baseline + '..' + stable_baseline
 baseline_commits = rebase_baseline + '..'
 
-cherrypick=re.compile("cherry picked from commit ([a-z0-9]+)")
-stable=re.compile("commit ([a-z0-9]+) upstream")
-stable2=re.compile("Upstream commit ([a-z0-9]+)")
+# "commit" is sometimes seen multiple times, such as with commit 6093aabdd0ee
+cherrypick=re.compile("cherry picked from (commit )+([a-z0-9]+)")
+stable=re.compile("(commit )+([a-z0-9]+) upstream")
+stable2=re.compile("Upstream (commit )+([a-z0-9]+)")
 upstream=re.compile("(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)")
 chromium=re.compile("(CHROMIUM: *|FROMLIST: *)+(.*)")
 
@@ -167,7 +168,7 @@ def update_commits():
 	    if not m:
               m = stable2.search(d)
           if m:
-            usha=m.group(1)[:12]
+            usha=m.group(2)[:12]
             # The patch may have been picked multiple times; only record
             # the first entry.
             break
