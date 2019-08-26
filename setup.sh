@@ -17,6 +17,10 @@ fi
 upstream_repo=$(python -c  "from config import upstream_repo; print upstream_repo;")
 
 next_path=$(python -c "from config import next_path; print next_path;")
+if [[ "$(dirname ${next_path})" = "." ]]; then
+	# Needs to be an absolute path name
+	next_path="$(pwd)/${next_path}"
+fi
 next_repo=$(python -c  "from config import next_repo; print next_repo;")
 
 rebase_baseline_branch=$(python -c "from config import rebase_baseline_branch; print rebase_baseline_branch;")
@@ -79,6 +83,7 @@ clone_simple "${stable_path}" "${stable_repo}"
 
 # Complex clone:
 # Clone repository, check out branch, add 'upstream' remote
+# Also, optionally, add 'next' remote
 clone_complex()
 {
     local destdir=$1
@@ -105,6 +110,10 @@ clone_complex()
 		git remote add upstream "${upstream_path}"
 	}
 	git fetch upstream
+	git remote -v | grep next || {
+		git remote add next "${next_path}"
+	}
+	git fetch next
 	popd >/dev/null
     else
 	git clone "${repository}" "${destdir}"
@@ -112,13 +121,16 @@ clone_complex()
 	git checkout -b "${branch}" "origin/${branch}"
 	git remote add upstream "${upstream_path}"
 	git fetch upstream
+	git remote add next "${next_path}"
+	git fetch next
 	popd >/dev/null
     fi
 }
 
+clone_simple "${next_path}" "${next_repo}" "force"
+
 clone_complex "${chromeos_path}" "${chromeos_repo}" "${rebase_baseline_branch}"
 clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
-clone_simple "${next_path}" "${next_repo}" "force"
 
 echo "Initializing database"
 python initdb.py
@@ -128,6 +140,9 @@ python initdb-upstream.py
 
 echo "Initializing next database"
 python initdb-next.py
+
+echo "Updating rebase database with upstream commits"
+python update.py
 
 echo "Calculating initial drop list"
 python drop.py
