@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase53-rc5.db'
+rebasedb = 'rebase53-rc6.db'
 upstreamdb = 'upstream53.db'
 nextdb = 'next53.db'
 
@@ -19,7 +19,7 @@ chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
 stable_baseline = 'v4.19.67'
-rebase_target = 'v5.3-rc5'
+rebase_target = 'v5.3-rc6'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
