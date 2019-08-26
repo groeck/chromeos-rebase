@@ -30,7 +30,7 @@ c.execute("CREATE TABLE files (sha text, filename text)")
 c.execute("CREATE INDEX file_sha ON files (sha)")
 c.execute("CREATE INDEX file_name ON files (filename)")
 
-c.execute("CREATE TABLE fixes (sha text, fsha text)")
+c.execute("CREATE TABLE fixes (sha text, fsha text, patchid text)")
 c.execute("CREATE INDEX sha ON fixes (sha)")
 
 conn.commit()
@@ -79,8 +79,15 @@ def handle(range, baseline):
               pass
           if fsha:
             print "Commit %s has been fixed by %s" % (fsha[0:12], sha)
-            # Insert in reverse order: sha is fixed by fsha
-            c.execute("INSERT into fixes (sha, fsha) VALUES (?, ?)", (fsha[0:12], sha))
+            # Calculate patch ID for fixing commit.
+            ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
+            spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
+            patchid = spid.split(" ", 1)[0]
+
+            # Insert in reverse order: sha is fixed by fsha.
+            # patchid is the patch ID associated with fsha (in the database).
+            c.execute("INSERT into fixes (sha, fsha, patchid) VALUES (?, ?, ?)",
+                      (fsha[0:12], sha, patchid))
 
     conn.commit()
 
