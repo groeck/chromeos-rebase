@@ -17,6 +17,7 @@ stable=re.compile("(commit )+([a-z0-9]+) upstream")
 stable2=re.compile("Upstream (commit )+([a-z0-9]+)")
 upstream=re.compile("(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)")
 chromium=re.compile("(CHROMIUM: *|FROMLIST: *)+(.*)")
+changeid=re.compile("\s*Change-Id:\s+(I[a-z0-9]+)")
 
 workdir = os.getcwd()
 
@@ -48,6 +49,7 @@ def createdb():
                                    created timestamp, updated timestamp, \
                                    sha text, usha text, \
                                    patchid text, \
+                                   changeid text, \
                                    description text, topic integer, \
                                    disposition text, reason text, \
                                    sscore integer, pscore integer, dsha text)")
@@ -125,9 +127,9 @@ def update_commits():
     if commit != "":
       elem = commit.split(" ", 1)
       sha = elem[0]
-      description = elem[1].rstrip('\n')
-      description = description.decode('latin-1') \
-                  if isinstance(description, str) else description
+      subject = elem[1].rstrip('\n')
+      subject = subject.decode('latin-1') \
+                  if isinstance(subject, str) else subject
 
       ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
       spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
@@ -156,8 +158,8 @@ def update_commits():
       # with this commit. Only look for commits which may be upstream or may
       # have been merged from a stable release.
       usha=""
-      if not chromium.match(description):
-        u = upstream.match(description)
+      if not chromium.match(subject):
+        u = upstream.match(subject)
         desc = subprocess.check_output(['git', 'show', '-s', sha])
         for d in desc.splitlines():
           m=None
@@ -165,7 +167,7 @@ def update_commits():
             m = cherrypick.search(d)
           else:
             m = stable.search(d)
-	    if not m:
+            if not m:
               m = stable2.search(d)
           if m:
             usha=m.group(2)[:12]
@@ -173,10 +175,19 @@ def update_commits():
             # the first entry.
             break
 
+      # Search for embedded Change-Id string.
+      # If found, add it to database.
+      desc = subprocess.check_output(['git', 'show', '-s', sha])
+      for d in desc.decode('latin-1').splitlines():
+        chid = changeid.match(d)
+        if chid:
+          chid = chid.group(1)
+          break
+
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i".
-      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), sha, usha, patchid, description, "drop", "default",))
+      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, changeid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, NOW(), NOW(), sha, usha, patchid, chid, subject, "drop", "default",))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
