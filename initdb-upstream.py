@@ -20,7 +20,7 @@ c = conn.cursor()
 c2 = conn.cursor()
 
 # Create tables
-c.execute("CREATE TABLE commits (sha text, description text, in_baseline integer)")
+c.execute("CREATE TABLE commits (sha text, subject text, in_baseline integer)")
 c.execute("CREATE UNIQUE INDEX commit_sha ON commits (sha)")
 
 c.execute("CREATE TABLE files (sha text, filename text)")
@@ -37,10 +37,10 @@ def handle(range, baseline):
       if commit != "":
         elem = commit.split(" ", 1)
         sha = elem[0]
-        description = elem[1].rstrip('\n')
-        description = description.decode('latin-1') if isinstance(description, str) else description
-        c.execute("INSERT INTO commits(sha, description, in_baseline) VALUES (?, ?, ?)",
-                  (sha, description, baseline,))
+        subject = elem[1].rstrip('\n')
+        subject = subject.decode('latin-1') if isinstance(subject, str) else subject
+        c.execute("INSERT INTO commits(sha, subject, in_baseline) VALUES (?, ?, ?)",
+                  (sha, subject, baseline,))
         filenames = subprocess.check_output(['git', 'show', '--name-only', '--format=', sha])
         for fn in filenames.splitlines():
           if fn != "":

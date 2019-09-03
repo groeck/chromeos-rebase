@@ -50,7 +50,7 @@ def createdb():
                                    sha text, usha text, \
                                    patchid text, \
                                    changeid text, \
-                                   description text, topic integer, \
+                                   subject text, topic integer, \
                                    disposition text, reason text, \
                                    sscore integer, pscore integer, dsha text)")
   c.execute("CREATE UNIQUE INDEX commit_date ON commits (date)")
@@ -186,7 +186,7 @@ def update_commits():
 
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i".
-      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, changeid, description, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (date, NOW(), NOW(), sha, usha, patchid, chid, subject, "drop", "default",))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])

@@ -7,7 +7,7 @@ fi
 
 rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
 
-sql="select disposition,sha,dsha,description from commits where topic=${t1}"
+sql="select disposition,sha,dsha,subject from commits where topic=${t1}"
 
 tlist=${t1}
 
@@ -31,7 +31,7 @@ do
     f1=$(echo ${line} | awk -F '|' '{print $1}')	# disposition
     f2=$(echo ${line} | awk -F '|' '{print $2}')	# sha
     f3=$(echo ${line} | awk -F '|' '{print $3}')	# replacement sha
-    f4=$(echo ${line} | awk -F '|' '{print $4}')	# description
+    f4=$(echo ${line} | awk -F '|' '{print $4}')	# subject
 
     case "${f1}" in
     "replace")

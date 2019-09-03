@@ -100,7 +100,7 @@ def best_match(s):
 
 def getallsubjects(db=upstreamdb):
   """
-  Split descriptions into a dictionary of of word-hashed lists.
+  Split subjects into a dictionary of of word-hashed lists.
 
   By searching the resulting lists, we can speed up processing
   significantly.
@@ -112,7 +112,7 @@ def getallsubjects(db=upstreamdb):
   _alldescs = defaultdict(list)
   db = sqlite3.connect(db)
   cu = db.cursor()
-  cu.execute("select description from commits")
+  cu.execute("select subject from commits")
   for desc in cu.fetchall():
     subject = re.sub("[^a-zA-Z0-9_ ]+", "", desc[0])
     words = subject.split()
@@ -162,7 +162,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
   db = sqlite3.connect(db)
   cu = db.cursor()
 
-  c.execute("select sha, description, disposition from commits")
+  c.execute("select sha, subject, disposition from commits")
   for (sha, desc, disposition) in c.fetchall():
     if disposition == "drop":
       continue
@@ -173,8 +173,8 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
       ndesc = m.group(2).replace("'", "''")
       rdesc = m.group(2)
       # print("    Match subject '%s'" % ndesc)
-      cu.execute("select sha, description, in_baseline from commits "
-                 "where description='%s'"
+      cu.execute("select sha, subject, in_baseline from commits "
+                 "where subject='%s'"
                  % ndesc)
       fsha = cu.fetchone()
       if fsha:
@@ -190,8 +190,8 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
           update_commit(c2, sha, 'drop', "%s/fixup" % name, 100)
           continue
         # print("    Upstream subject for %s matches %s" % (fsha[1], sha))
-        # print("    Local description: %s" % desc)
-        # print("    Upstream description: %s" % ndesc)
+        # print("    Local subject: %s" % desc)
+        # print("    Upstream subject: %s" % ndesc)
         # print("    In v4.9: %d" % fsha[2])
         if in_baseline == 1:
           disposition = 'drop'
@@ -237,8 +237,8 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
         print("    subject match results %d/%d" % (result, smatch))
         c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
                    ((result + smatch)/2, sha))
-        cu.execute("select sha, description, in_baseline from commits "
-                   "where description='%s'" % mdesc.replace("'", "''"))
+        cu.execute("select sha, subject, in_baseline from commits "
+                   "where subject='%s'" % mdesc.replace("'", "''"))
         fsha = cu.fetchone()
         if fsha:
           c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"

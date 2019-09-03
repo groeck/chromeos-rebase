@@ -27,7 +27,7 @@ c2 = conn.cursor()
 
 # Drop all Android patches. We'll pick them up from the most recent version.
 
-c.execute("select sha, description from commits")
+c.execute("select sha, subject from commits")
 for (sha, desc) in c.fetchall():
   for prefix in subject_droplist:
     if desc.startswith(prefix):
@@ -80,4 +80,4 @@ conn.close()
 # for entry in c.execute(SELECT * FROM commits ORDER BY date'):
 #     print entry
 #     print entry.sha
-#     print entry.description
+#     print entry.subject

@@ -8,7 +8,7 @@ fi
 
 rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
 
-sql="select sha,topic,description from commits where sha is \"${sha}\""
+sql="select sha,topic,subject from commits where sha is \"${sha}\""
 
 sqlite3 ${rebasedb} "${sql}" | sed -e 's/|/	/g'
 exit 0
@@ -35,7 +35,7 @@ do
     f1=$(echo ${line} | awk -F '|' '{print $1}')	# disposition
     f2=$(echo ${line} | awk -F '|' '{print $2}')	# sha
     f3=$(echo ${line} | awk -F '|' '{print $3}')	# replacement sha
-    f4=$(echo ${line} | awk -F '|' '{print $4}')	# description
+    f4=$(echo ${line} | awk -F '|' '{print $4}')	# subject
 
     case "${f1}" in
     "replace")

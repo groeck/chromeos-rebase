@@ -31,7 +31,7 @@ rp = re.compile('Revert "(.*)"')
 # c.execute("INSERT INTO files VALUES (sha,filename)")
 # sha and filename must be in ' '
 
-c.execute("select date, sha, disposition, description from commits")
+c.execute("select date, sha, disposition, subject from commits")
 for (date, sha, disposition, desc) in c.fetchall():
   # If the patch is already dropped, don't bother any further
   if disposition == "drop":
@@ -41,7 +41,7 @@ for (date, sha, disposition, desc) in c.fetchall():
     ndesc = m.group(1)
     print("Found revert : '%s' (%s)" % (desc.replace("'", "''"), sha))
     ndesc = ndesc.replace("'", "''")
-    c2.execute("select date, sha from commits where description is '%s'"
+    c2.execute("select date, sha from commits where subject is '%s'"
                % ndesc)
     # Search for matching original commit. Only revert its first occurrance,
     # and only if its date is older than the revert.
@@ -77,4 +77,4 @@ conn.close()
 # for entry in c.execute(SELECT * FROM commits ORDER BY date'):
 #     print entry
 #     print entry.sha
-#     print entry.description
+#     print entry.subject

@@ -21,12 +21,12 @@ def findsha(uconn, sha, desc):
     return sha
 
   # The SHA is not upstream, or not known at all.
-  # See if we can find the commit description;
+  # See if we can find the commit subject;
 
   s = subject.search(desc)
   if s:
     sdesc = s.group(2).replace("'", "''")
-    c.execute("select sha from commits where description is '%s'" % sdesc)
+    c.execute("select sha from commits where subject is '%s'" % sdesc)
     usha = c.fetchone()
     if usha:
       print "  Found upstream SHA '%s'" % usha
@@ -47,7 +47,7 @@ def update_commits():
   nconn = sqlite3.connect(nextdb)
   c = conn.cursor()
 
-  c.execute("select sha, usha, description from commits where usha != ''")
+  c.execute("select sha, usha, subject from commits where usha != ''")
   for (sha, usha, desc) in c.fetchall():
     uusha = findsha(uconn, usha, desc)
     # if it is not in the upstream database, maybe it is in -next.
