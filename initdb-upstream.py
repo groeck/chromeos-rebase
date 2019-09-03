@@ -14,9 +14,6 @@ try:
 except:
     pass
 
-rf = re.compile('^\s*Fixes: ([a-zA-Z0-9]+).*')
-rdesc = re.compile('.* \("([^"]+)"\).*')
-
 conn = sqlite3.connect(upstreamdb)
 
 c = conn.cursor()
@@ -29,9 +26,6 @@ c.execute("CREATE UNIQUE INDEX commit_sha ON commits (sha)")
 c.execute("CREATE TABLE files (sha text, filename text)")
 c.execute("CREATE INDEX file_sha ON files (sha)")
 c.execute("CREATE INDEX file_name ON files (filename)")
-
-c.execute("CREATE TABLE fixes (sha text, fsha text, patchid text)")
-c.execute("CREATE INDEX sha ON fixes (sha)")
 
 conn.commit()
 
@@ -51,43 +45,6 @@ def handle(range, baseline):
         for fn in filenames.splitlines():
           if fn != "":
             c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha, fn))
-        # Now check if this patch fixes a previous patch.
-        description = subprocess.check_output(['git', 'show', '-s', '--pretty=format:%b', sha])
-        for d in description.splitlines():
-          m = rf.search(d)
-          fsha=None
-          if m and m.group(1):
-            try:
-              # Normalize fsha to 12 characters.
-              cmd = 'git show -s --pretty=format:%%H %s 2>/dev/null' % m.group(1)
-              fsha = subprocess.check_output(cmd, shell=True)
-            except:
-              print "Commit '%s' for SHA '%s': Not found" % (m.group(0), sha)
-              m=rdesc.search(d)
-              if m:
-                desc=m.group(1)
-                desc = desc.replace("'", "''")
-                c2.execute("select sha from commits where description is '%s'" % desc)
-                fsha = c2.fetchone()
-                if fsha:
-                  fsha=fsha[0]
-                  print "  Real SHA is '%s'" % fsha
-              # The Fixes: tag may be wrong. The sha may not be in the
-              # upstream kernel, or the format may be completely wrong and
-              # m.group(1) may not be a sha in the first place.
-              # In that case, do nothing.
-              pass
-          if fsha:
-            print "Commit %s has been fixed by %s" % (fsha[0:12], sha)
-            # Calculate patch ID for fixing commit.
-            ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-            spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
-            patchid = spid.split(" ", 1)[0]
-
-            # Insert in reverse order: sha is fixed by fsha.
-            # patchid is the patch ID associated with fsha (in the database).
-            c.execute("INSERT into fixes (sha, fsha, patchid) VALUES (?, ?, ?)",
-                      (fsha[0:12], sha, patchid))
 
     conn.commit()
 
