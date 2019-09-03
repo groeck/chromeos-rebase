@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase53-rc6.db'
+rebasedb = 'rebase53-rc7.db'
 upstreamdb = 'upstream53.db'
 nextdb = 'next53.db'
 
@@ -18,7 +18,7 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.67'
+stable_baseline = 'v4.19.69'
 rebase_target = 'v5.3-rc6'
 
 chromeos_path = "linux-chrome"
@@ -103,7 +103,7 @@ topiclist = \
      ["sound/soc/rockchip"],
      ["sound", "Documentation/devicetree/bindings/sound", "include/sound",
       "include/uapi/sound"],
-     ["security", "include/linux/alt-syscall.h",
+     ["security", "include/linux/alt-syscall.h", "include/linux/syscalls.h",
       "arch/arm64/kernel/alt-syscall.c",
       "arch/x86/kernel/alt-syscall.c", "kernel/alt-syscall.ch"],
      ["android", "Documentation/android", "drivers/android",
@@ -126,5 +126,9 @@ topiclist = \
      ["drivers/virtio", "include/uapi/linux/virtwl.h"],
      ["drivers/tty/sysrq.c"],
      ["drivers/firmware/google"],
-     ["drivers/char/tpm", "Documentation/devicetree/bindings/security/tpm"]
+     ["drivers/char/tpm", "Documentation/devicetree/bindings/security/tpm"],
+     ["include/linux/low-mem-notify.h", "mm/low-mem-notify.c",
+      "tools/mm/low-mem-test.c", "drivers/char/mem.c"],
+     ["mm", "include/linux/mm_metrics.h", "include/linux/swapops.h"],
+     ["include/linux/sched", "kernel/sched"]
     ]
