@@ -3,7 +3,7 @@ import os
 from config import rebasedb, topiclist
 
 def get_topic(file):
-    for (subdir, topic, ) in topics:
+    for (subdir, topic, name, ) in topics:
         if file.startswith(subdir):
 	    return topic
     return 0
@@ -21,20 +21,20 @@ def update_sha(sha, topic, file="", base=""):
     if result:
         if result[0] == 'drop':
 	    # print "Disposition for '%s' is '%s', skipping" % (sha, result[0])
-	    return 0
+	    return count
         if result[1] != 0:
 	    if result[1] != topic:
 		if file != "":
 		    print "topic already set to %d for sha '%s' [%s], skipping" % (result[1], sha, file)
 		else:
 		    print "topic already set to %d for sha '%s' [none], skipping" % (result[1], sha)
-	    return 0
+	    return count
     else:
         print "No entry for sha '%s' found in database" % sha
-        return 0
+        return count
     print "  Adding sha '%s' to topic %d [%s]" % (sha, topic, file)
     c.execute("UPDATE commits SET topic=%d where sha='%s'" % (topic, sha))
-    count = count + 1
+    count += 1
     # print "Attached SHA '%s' to topic %d" % (sha, topic)
     # Attach all SHAs touching the same set of files to the same topic.
     c.execute("select filename from files where sha is '%s'" % (sha))
@@ -49,14 +49,14 @@ def update_sha(sha, topic, file="", base=""):
 		filelist.append([fsha, topic, filename, base])
   return count
 
-def handle_topic(topic, subdir):
+def handle_topic(topic, subdir, name):
     count = 0
-    print "Handling topic %d, subdirectory/file '%s'" % (topic, subdir)
+    print "Handling topic %d (%s), subdirectory/file '%s'" % (topic, name, subdir)
     c.execute("select sha, filename from files where filename like '%s%%'" % subdir)
     for (sha, filename,) in c.fetchall():
         if filename.startswith(subdir):
-	    count = count + update_sha(sha, topic, filename, subdir)
-    print "Topic %d (%s): %d entries" % (topic, subdir, count)
+	    count += update_sha(sha, topic, filename, subdir)
+    print "Topic %d (%s): %d entries" % (topic, name, count)
 
 c.execute("select sha from commits order by date")
 for (sha,) in c.fetchall():
@@ -64,13 +64,13 @@ for (sha,) in c.fetchall():
 
 topic = 1
 topics = [ ]
-for subdirs in topiclist:
+for [name, subdirs] in topiclist:
     for subdir in subdirs:
-	topics.append((subdir, topic))
+	topics.append((subdir, topic, name))
     topic = topic + 1
 
-for (subdir, topic, ) in topics:
-    handle_topic(topic, subdir)
+for (subdir, topic, name, ) in topics:
+    handle_topic(topic, subdir, name)
 
 topic = topic + 1
 
@@ -86,7 +86,7 @@ while True:
 	subdir=""
 	if files:
 	    # Try to find a directory name outside include and Documentation
-	    # asn use it as file and base (topic)
+	    # and use it as file and base (topic)
 	    file = files[0] + '+'
 	    subdir = os.path.dirname(files[0])
 	    while files and (files[0].startswith('Documentation') or files[0].endswith('.h') or subdir == ""):
@@ -98,13 +98,12 @@ while True:
 	# Based on a sha, we found a file and subdirectory. Use it to attach
 	# any matching SHAs to this subdirectory if the match is in a source
 	# directory.
-	#
 	if subdir.startswith('include') or subdir.startswith('Documentation') or subdir=="":
             count = update_sha(sha[0], topic, file, subdir)
 	    print "Topic %d [%s]: %d entries" % (topic, file, count)
 	else:
-	    topics.append((subdir, topic))
-            handle_topic(topic, subdir)
+	    topics.append((subdir, topic, subdir))
+            handle_topic(topic, subdir, subdir)
     else:
         break
     topic = topic + 1
