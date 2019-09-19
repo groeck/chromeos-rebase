@@ -203,10 +203,12 @@ def add_topics_sheets(requests):
     addsheet(requests, index, other_topic, "other")
     conn.close()
 
-def add_sha(sheet, id, sheet_id, sha, description, disposition, dsha):
+def add_sha(requests, sheet_id, sha, subject, disposition, dsha):
     comment = ""
     if disposition =="replace" and dsha:
         comment = "with %s" % dsha
+
+    print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheet_id))
 
     requests.append({
         'appendCells': {
@@ -214,7 +216,7 @@ def add_sha(sheet, id, sheet_id, sha, description, disposition, dsha):
             'rows': [
                 { 'values': [
                     {'userEnteredValue': {'stringValue': sha}},
-                    {'userEnteredValue': {'stringValue': description}},
+                    {'userEnteredValue': {'stringValue': subject}},
                     {'userEnteredValue': {'stringValue': disposition}},
                     {'userEnteredValue': {'stringValue': comment}},
                 ]}
@@ -228,15 +230,15 @@ def add_commits(requests):
     c = conn.cursor()
     c2 = conn.cursor()
 
-    c.execute("select sha, dsha, description, disposition, topic from commits where topic > 0")
-    for (sha, dsha, description, disposition, topic) in c.fetchall():
-        c2.execute("select topic, name from topics where topics=%d" % topic)
-	if c2:
+    c.execute("select sha, dsha, subject, disposition, topic from commits where topic > 0")
+    for (sha, dsha, subject, disposition, topic) in c.fetchall():
+        c2.execute("select topic, name from topics where topic=%d" % topic)
+	if c2.fetchone():
 	    sheet_id = topic
 	else:
 	    sheet_id = other_topic
 
-	add_sha(requests, sheet_id, sha, description, disposition, dsha)
+	add_sha(requests, sheet_id, sha, subject, disposition, dsha)
 
 def doit(sheet, id, requests):
     body = {
@@ -255,9 +257,9 @@ def main():
     create_summary(requests)
     add_topics_sheets(requests)
     doit(sheet, id, requests)
-    # requests = [ ]
-    # add_commits(sheet, id)
-    # doit(sheet, id, requests)
+    requests = [ ]
+    add_commits(requests)
+    doit(sheet, id, requests)
 
 if __name__ == '__main__':
     main()
