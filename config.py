@@ -111,7 +111,7 @@ topiclist = \
      ["mtd",
       ["drivers/mtd", "include/linux/mtd", "include/uapi/mtd",
        "Documentation/mtd", "Documentation/devicetree/bindings/mtd"]],
-     ["Bluetooth",
+     ["bluetooth",
       ["net/bluetooth", "drivers/bluetooth",
        "Documentation/devicetree/bindings/net/btusb.txt",
        "include/net/bluetooth"]],
