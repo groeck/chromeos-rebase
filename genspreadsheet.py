@@ -26,6 +26,8 @@ from config import rebasedb, \
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
+other_topic = 0
+
 def getsheet():
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
@@ -61,7 +63,7 @@ def create_spreadsheet(sheet, title):
     response = request.execute()
     return response.get('spreadsheetId')
 
-def add_topics_summary(sheet, id, requests):
+def add_topics_summary(requests):
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
     version = rebase_target.strip('v')
@@ -133,9 +135,7 @@ def add_sheet_header(requests, id, fields):
         }
     })
 
-def create_summary(sheet, id):
-    requests = [ ]
-
+def create_summary(requests):
     requests.append({
         'updateSheetProperties': {
             # 'sheetId': 0,
@@ -166,18 +166,9 @@ def create_summary(sheet, id):
     add_sheet_header(requests, 0, 'Topic, Owner, Reviewer, Status, Topic branch, Comments')
 
     # Now add all topics
-    add_topics_summary(sheet, id, requests)
+    add_topics_summary(requests)
 
-    body = {
-        'requests': requests
-    }
-
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
-    response = request.execute()
-
-def addsheet(sheet, id, index, topic, name):
-    requests = [ ]
-
+def addsheet(requests, index, topic, name):
     print('Adding sheet id=%d index=%d title="%s"' % (topic, index, name))
 
     requests.append({
@@ -193,41 +184,80 @@ def addsheet(sheet, id, index, topic, name):
     # Generate header row
     add_sheet_header(requests, topic, 'SHA, Description, Disposition, Comments')
 
+def add_topics_sheets(requests):
+    global other_topic
+
+    conn = sqlite3.connect(rebasedb)
+    c = conn.cursor()
+
+    c.execute("select topic, name from topics order by name")
+
+    # Add "other" topic at the very end
+    index = 1
+    for (topic, name) in c.fetchall():
+        addsheet(requests, index, topic, name)
+	if topic >= other_topic:
+	    other_topic = topic + 1
+	index += 1
+
+    addsheet(requests, index, other_topic, "other")
+    conn.close()
+
+def add_sha(sheet, id, sheet_id, sha, description, disposition, dsha):
+    comment = ""
+    if disposition =="replace" and dsha:
+        comment = "with %s" % dsha
+
+    requests.append({
+        'appendCells': {
+            'sheetId': sheet_id,
+            'rows': [
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': sha}},
+                    {'userEnteredValue': {'stringValue': description}},
+                    {'userEnteredValue': {'stringValue': disposition}},
+                    {'userEnteredValue': {'stringValue': comment}},
+                ]}
+            ],
+            'fields': '*'
+        }
+    })
+
+def add_commits(requests):
+    conn = sqlite3.connect(rebasedb)
+    c = conn.cursor()
+    c2 = conn.cursor()
+
+    c.execute("select sha, dsha, description, disposition, topic from commits where topic > 0")
+    for (sha, dsha, description, disposition, topic) in c.fetchall():
+        c2.execute("select topic, name from topics where topics=%d" % topic)
+	if c2:
+	    sheet_id = topic
+	else:
+	    sheet_id = other_topic
+
+	add_sha(requests, sheet_id, sha, description, disposition, dsha)
+
+def doit(sheet, id, requests):
     body = {
-            'requests': requests
+        'requests': requests
     }
 
     request = sheet.batchUpdate(spreadsheetId=id, body=body)
     response = request.execute()
 
-def add_topics_sheets(sheet, id):
-    conn = sqlite3.connect(rebasedb)
-    c = conn.cursor()
-    c2 = conn.cursor()
-
-    c.execute("select topic, name from topics order by name")
-
-    # Add "other" topic at the very end
-    other = 0
-    index = 1
-    for (topic, name) in c.fetchall():
-        addsheet(sheet, id, index, topic, name)
-	if topic >= other:
-	    other = topic + 1
-	index += 1
-
-    addsheet(sheet, id, index, other, "other")
-
-    # Now go through all commits and add to spreadsheets
-
-    conn.close()
-
 def main():
     sheet = getsheet()
     id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline,
                                                         rebase_target))
-    create_summary(sheet, id)
-    add_topics_sheets(sheet, id)
+
+    requests = [ ]
+    create_summary(requests)
+    add_topics_sheets(requests)
+    doit(sheet, id, requests)
+    # requests = [ ]
+    # add_commits(sheet, id)
+    # doit(sheet, id, requests)
 
 if __name__ == '__main__':
     main()
