@@ -51,6 +51,9 @@ def update_sha(sha, topic, file="", base=""):
 
 def handle_topic(topic, subdir, name):
     count = 0
+    c.execute("select topic from topics where topic is %d" % topic)
+    if not c.fetchone():
+        c.execute("INSERT INTO topics(topic, name) VALUES (?, ?)", (topic, name,))
     print "Handling topic %d (%s), subdirectory/file '%s'" % (topic, name, subdir)
     c.execute("select sha, filename from files where filename like '%s%%'" % subdir)
     for (sha, filename,) in c.fetchall():

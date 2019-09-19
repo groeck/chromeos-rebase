@@ -142,7 +142,7 @@ def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
     c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
   else:
     print("Registered disposition for sha %s: %s" % (sha, disp))
-    print("Not updating database for SHA '%s', requested disposition=%s, reason=%d" % (sha, disposition, reason))
+    print("Not updating database for SHA '%s', requested disposition=%s, reason=%s" % (sha, disposition, reason))
 
 
 def doit(db=upstreamdb, path=upstream_path, name='upstream'):
@@ -206,7 +206,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
 
         # Like many others, 160 is a magic number derived from experiments.
         if ratio + setratio > 160:
-          reason = name
+          reason = '%s/match' % name
         else:
           reason = 'revisit'
 
@@ -288,7 +288,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
           if in_baseline == 1:
             print("    Drop sha '%s' (close match)" % sha)
             disposition='drop'
-            reason=name
+            reason = '%s/match' % name
           else:
             print("    Replace sha '%s' with '%s' (close match)" %
                   (sha, fsha[0]))

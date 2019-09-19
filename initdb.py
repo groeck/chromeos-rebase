@@ -65,6 +65,9 @@ def createdb():
   c.execute("CREATE TABLE stable (sha, origin)")
   c.execute("CREATE UNIQUE INDEX stable_sha ON stable (sha)")
 
+  c.execute("CREATE TABLE topics (topic integer, name text)")
+  c.execute("CREATE UNIQUE INDEX topics_index ON topics (topic)")
+
   # Save (commit) the changes
   conn.commit()
   conn.close()
@@ -187,7 +190,7 @@ def update_commits():
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i".
       c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), sha, usha, patchid, chid, subject, "drop", "default",))
+                (date, NOW(), NOW(), sha, usha, patchid, chid, subject, "drop", "upstream",))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
@@ -217,10 +220,10 @@ def update_commits():
         c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
       else:
         # We need to check if the commit is already marked as drop
-        # with a reason other than "default". If so, don't update it.
+        # with a reason other than "upstream". If so, don't update it.
         c.execute("select disposition, reason from commits where sha='%s'" % sha)
         found = c.fetchone()
-        if found and found[0] == "drop" and found[1] == "default":
+        if found and found[0] == "drop" and found[1] == "upstream":
           c.execute("UPDATE commits SET disposition=('pick') where sha='%s'" % sha)
           c.execute("UPDATE commits SET reason=('') where sha='%s'" % sha)
           c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
