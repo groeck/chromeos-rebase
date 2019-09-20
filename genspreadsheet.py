@@ -26,9 +26,10 @@ from config import rebasedb, \
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-other_topic = 0
+other_topic = 0 # Sheet Id to be used for "other" topic
 
 def getsheet():
+    """ Get and return reference to spreadsheet """
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -53,6 +54,7 @@ def getsheet():
     return service.spreadsheets()
 
 def create_spreadsheet(sheet, title):
+    """ Create a spreadsheet and return reference to it """
     spreadsheet = {
         'properties': {
             'title': title
@@ -63,18 +65,38 @@ def create_spreadsheet(sheet, title):
     response = request.execute()
     return response.get('spreadsheetId')
 
+def resize_sheet(requests, id, start, end):
+    requests.append({
+      'autoResizeDimensions': {
+        'dimensions': {
+          'sheetId': id,
+          'dimension': 'COLUMNS',
+          'startIndex': start,
+          'endIndex': end
+        }
+      }
+    })
+
 def add_topics_summary(requests):
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
+    c2 = conn.cursor()
     version = rebase_target.strip('v')
+    counted_rows = 0
 
     c.execute("select topic, name from topics order by name")
     rowindex = 1
     for (topic, name) in c.fetchall():
+        # Only add summary entry if there are commits touching this topic
+        c2.execute("select topic from commits where topic=%d" % topic)
+        rows = 0
+        for r in c2.fetchall():
+            rows += 1
+        counted_rows += rows
         requests.append({
             'pasteData': {
-                'data': '%s,,,,chromeos-%s-%s' %
-                            (name, version,
+                'data': '%s,%d,,,,chromeos-%s-%s' %
+                            (name, rows, version,
                              name.replace('/','-')),
                 'type': 'PASTE_NORMAL',
                 'delimiter': ',',
@@ -86,10 +108,15 @@ def add_topics_summary(requests):
         })
         rowindex += 1
 
-    # Finally create an 'others' topic. We'll use it for unnamed topics.
+    allrows = 0
+    c2.execute("select topic from commits where topic != 0")
+    for r in c2.fetchall():
+        allrows += 1
+
+    # Now create an 'others' topic. We'll use it for unnamed topics.
     requests.append({
         'pasteData': {
-            'data': 'other,,,,chromeos-%s-other' % version,
+            'data': 'other,%d,,,,chromeos-%s-other' % (allrows - counted_rows, version),
             'type': 'PASTE_NORMAL',
             'delimiter': ',',
             'coordinate': {
@@ -99,9 +126,22 @@ def add_topics_summary(requests):
         }
     })
 
+    # As last step, auto-resize columns A, B, and F
+    resize_sheet(requests, 0, 0, 2)
+    resize_sheet(requests, 0, 5, 6)
+
     conn.close()
 
 def add_sheet_header(requests, id, fields):
+    """
+    Add provided header line to specified sheet.
+    Make it bold.
+
+    Args:
+        requests: Reference to list of requests to send to API.
+        id: Sheet Id
+        fields: string with comma-separated list of fields
+    """
     # Generate header row
     requests.append({
         'pasteData': {
@@ -152,6 +192,7 @@ def create_summary(requests):
     #        'rows': [
 #                { 'values': [
 #                    {"userEnteredValue": {"stringValue": "Topic"}},
+#                    {"userEnteredValue": {"stringValue": "Entries"}},
 #                    {"userEnteredValue": {"stringValue": "Owner"}},
 #                    {"userEnteredValue": {"stringValue": "Reviewer"}},
 #                    {"userEnteredValue": {"stringValue": "Status"}},
@@ -163,7 +204,7 @@ def create_summary(requests):
 #        }
 #    })
 
-    add_sheet_header(requests, 0, 'Topic, Owner, Reviewer, Status, Topic branch, Comments')
+    add_sheet_header(requests, 0, 'Topic, Entries, Owner, Reviewer, Status, Topic branch, Comments')
 
     # Now add all topics
     add_topics_summary(requests)
@@ -196,9 +237,9 @@ def add_topics_sheets(requests):
     index = 1
     for (topic, name) in c.fetchall():
         addsheet(requests, index, topic, name)
-	if topic >= other_topic:
-	    other_topic = topic + 1
-	index += 1
+        if topic >= other_topic:
+            other_topic = topic + 1
+        index += 1
 
     addsheet(requests, index, other_topic, "other")
     conn.close()
@@ -230,15 +271,21 @@ def add_commits(requests):
     c = conn.cursor()
     c2 = conn.cursor()
 
+    sheets = set([ ])
+
     c.execute("select sha, dsha, subject, disposition, topic from commits where topic > 0")
     for (sha, dsha, subject, disposition, topic) in c.fetchall():
         c2.execute("select topic, name from topics where topic=%d" % topic)
-	if c2.fetchone():
-	    sheet_id = topic
-	else:
-	    sheet_id = other_topic
+        if c2.fetchone():
+            sheet_id = topic
+        else:
+            sheet_id = other_topic
 
-	add_sha(requests, sheet_id, sha, subject, disposition, dsha)
+        sheets.add(sheet_id)
+        add_sha(requests, sheet_id, sha, subject, disposition, dsha)
+
+    for s in sheets:
+        resize_sheet(requests, s, 0, 4)
 
 def doit(sheet, id, requests):
     body = {
