@@ -18,18 +18,18 @@ def update_sha(sha, topic, file="", base=""):
   count = 0
   while filelist:
     (sha, topic, file, base) = filelist.pop(0)
-    c.execute("select disposition, topic from commits where sha is '%s' order by date" % (sha))
+    c.execute("select disposition, reason, topic from commits where sha is '%s' order by date" % (sha))
     result = c.fetchone()
     if result:
-        if result[0] == 'drop':
+        if result[0] == 'drop' and result[1] != 'revisit':
 	    # print "Disposition for '%s' is '%s', skipping" % (sha, result[0])
 	    return count
-        if result[1] != 0:
-	    if result[1] != topic:
+        if result[2] != 0:
+	    if result[2] != topic:
 		if file != "":
-		    print "topic already set to %d for sha '%s' [%s], skipping" % (result[1], sha, file)
+		    print "topic already set to %d for sha '%s' [%s], skipping" % (result[2], sha, file)
 		else:
-		    print "topic already set to %d for sha '%s' [none], skipping" % (result[1], sha)
+		    print "topic already set to %d for sha '%s' [none], skipping" % (result[2], sha)
 	    return count
     else:
         print "No entry for sha '%s' found in database" % sha
