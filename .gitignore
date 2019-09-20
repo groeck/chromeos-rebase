@@ -1,2 +1,5 @@
 *.db
+credentials.json
 token.pickle
+__pycache__/
+linux-*/
