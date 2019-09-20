@@ -256,7 +256,7 @@ def add_topics_sheets(requests):
 def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
     comment = ""
     if disposition == "replace" and dsha:
-        comment = "with %s" % dsha
+        comment = "with upstream commit %s" % dsha
         if reason == "revisit":
             comment += " (revisit: imperfect match)"
     elif disposition == "drop" and reason == "revisit":
