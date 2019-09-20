@@ -29,6 +29,13 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 other_topic_id = 0 # Sheet Id to be used for "other" topic
 
+red = { 'red': 1, 'green': 0.4, 'blue': 0 }
+yellow = { 'red': 1, 'green': 1, 'blue': 0 }
+orange = { 'red': 1, 'green': 0.6, 'blue': 0 }
+green = { 'red': 0, 'green': 0.9, 'blue': 0 }
+blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
+black = { 'red': 1, 'green': 1, 'blue': 1 }
+
 def get_other_topic_id():
     """ Calculate other_topic_id """
 
@@ -222,6 +229,71 @@ def create_summary(requests):
     # Now add all topics
     add_topics_summary(requests)
 
+def add_description(requests):
+    """ Add describing text to 'Summary' sheet """
+    requests.append({
+        'appendCells': {
+            'sheetId': 0,
+            'rows': [ { },
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'Topic branch markers:'},
+                    },
+                 ]},
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'blue'},
+                      'userEnteredFormat': {
+                            'backgroundColor': blue
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue':
+                        'branch dropped: All patches upstream, no longer applicable, moved to another topic, or no longer needed' },
+                    },
+                 ]},
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'green'},
+                      'userEnteredFormat': {
+                            'backgroundColor': green
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue':
+                        'clean (no or minor conflicts)' },
+                    },
+                 ]},
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'yellow'},
+                      'userEnteredFormat': {
+                            'backgroundColor': yellow
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue':
+                        'mostly clean; problematic patches marked yellow' },
+                    },
+                 ]},
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'orange'},
+                      'userEnteredFormat': {
+                            'backgroundColor': orange
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue':
+                        'some problems; problematic patches marked orange' },
+                    },
+                 ]},
+                { 'values': [
+                    {'userEnteredValue': {'stringValue': 'red'},
+                      'userEnteredFormat': {
+                            'backgroundColor': red
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue':
+                        'severe problems' },
+                    },
+                 ]},
+            ],
+            'fields': '*'
+        }
+    })
+
 def addsheet(requests, index, topic, name):
     print('Adding sheet id=%d index=%d title="%s"' % (topic, index, name))
 
@@ -255,14 +327,19 @@ def add_topics_sheets(requests):
 
 def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
     comment = ""
+    color = black
+
     if disposition == "replace" and dsha:
         comment = "with upstream commit %s" % dsha
+        color = yellow
         if reason == "revisit":
             comment += " (revisit: imperfect match)"
+            color = orange
     elif disposition == "drop" and reason == "revisit":
+        color = red
         if dsha:
             comment = "revisit (imperfect match with upstream commit %s)" % dsha
-	else:
+        else:
             comment = "revisit (imperfect match)"
 
     print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheet_id))
@@ -272,10 +349,26 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
             'sheetId': sheet_id,
             'rows': [
                 { 'values': [
-                    {'userEnteredValue': {'stringValue': sha}},
-                    {'userEnteredValue': {'stringValue': subject}},
-                    {'userEnteredValue': {'stringValue': disposition}},
-                    {'userEnteredValue': {'stringValue': comment}},
+                    {'userEnteredValue': {'stringValue': sha},
+                      'userEnteredFormat': {
+                            'backgroundColor': color
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue': subject},
+                      'userEnteredFormat': {
+                            'backgroundColor': color
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue': disposition},
+                      'userEnteredFormat': {
+                            'backgroundColor': color
+                      }
+                    },
+                    {'userEnteredValue': {'stringValue': comment},
+                      'userEnteredFormat': {
+                            'backgroundColor': color
+                      }
+                    },
                 ]}
             ],
             'fields': '*'
@@ -303,10 +396,6 @@ def add_commits(requests):
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
 
-    # Now auto-resize columns A, B, and F in Summary sheet
-    resize_sheet(requests, 0, 0, 2)
-    resize_sheet(requests, 0, 5, 6)
-
 def doit(sheet, id, requests):
     body = {
         'requests': requests
@@ -327,6 +416,11 @@ def main():
     doit(sheet, id, requests)
     requests = [ ]
     add_commits(requests)
+    # Now auto-resize columns A, B, and F in Summary sheet
+    resize_sheet(requests, 0, 0, 2)
+    resize_sheet(requests, 0, 5, 6)
+    # Add description after resizing
+    add_description(requests)
     doit(sheet, id, requests)
 
 if __name__ == '__main__':
