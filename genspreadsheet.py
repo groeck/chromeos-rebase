@@ -253,10 +253,17 @@ def add_topics_sheets(requests):
     addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
-def add_sha(requests, sheet_id, sha, subject, disposition, dsha):
+def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
     comment = ""
-    if disposition =="replace" and dsha:
+    if disposition == "replace" and dsha:
         comment = "with %s" % dsha
+        if reason == "revisit":
+            comment += " (revisit: imperfect match)"
+    elif disposition == "drop" and reason == "revisit":
+        if dsha:
+            comment = "revisit (imperfect match with upstream commit %s)" % dsha
+	else:
+            comment = "revisit (imperfect match)"
 
     print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheet_id))
 
@@ -282,8 +289,8 @@ def add_commits(requests):
 
     sheets = set([ ])
 
-    c.execute("select sha, dsha, subject, disposition, topic from commits where topic > 0")
-    for (sha, dsha, subject, disposition, topic) in c.fetchall():
+    c.execute("select sha, dsha, subject, disposition, reason, topic from commits where topic > 0")
+    for (sha, dsha, subject, disposition, reason, topic) in c.fetchall():
         c2.execute("select topic, name from topics where topic=%d" % topic)
         if c2.fetchone():
             sheet_id = topic
@@ -291,7 +298,7 @@ def add_commits(requests):
             sheet_id = other_topic_id
 
         sheets.add(sheet_id)
-        add_sha(requests, sheet_id, sha, subject, disposition, dsha)
+        add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha)
 
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
