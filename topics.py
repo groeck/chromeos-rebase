@@ -2,9 +2,11 @@ import sqlite3
 import os
 from config import rebasedb, topiclist
 
-def get_topic(file):
+def get_topic(file, n=None):
     for (subdir, topic, name, ) in topics:
-        if file.startswith(subdir):
+        if file and file.startswith(subdir):
+	    return topic
+	if n and n == name:
 	    return topic
     return 0
 
@@ -105,8 +107,12 @@ while True:
             count = update_sha(sha[0], topic, file, subdir)
 	    print "Topic %d [%s]: %d entries" % (topic, file, count)
 	else:
-	    topics.append((subdir, topic, subdir))
-            handle_topic(topic, subdir, subdir)
+	    t = get_topic(None, subdir)
+	    if t:
+                handle_topic(t, subdir, subdir)
+	    else:
+	        topics.append((subdir, topic, subdir))
+                handle_topic(topic, subdir, subdir)
     else:
         break
     topic = topic + 1
