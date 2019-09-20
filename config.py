@@ -18,7 +18,7 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.72'
+stable_baseline = 'v4.19.73'
 rebase_target = 'v5.3'
 
 chromeos_path = "linux-chrome"
@@ -37,7 +37,7 @@ droplist = [('drivers/net/wireless/iwl7000', 'Intel'),
 	    ]
 
 topiclist = \
-    [["cros",
+    [["chromeos",
       ["chromeos", "COMMIT-QUEUE.ini", "PRESUBMIT.cfg"]],
      ["cros_ec/iio",
       ["drivers/iio/common/cros_ec_sensors",
