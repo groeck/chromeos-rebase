@@ -34,7 +34,7 @@ yellow = { 'red': 1, 'green': 1, 'blue': 0 }
 orange = { 'red': 1, 'green': 0.6, 'blue': 0 }
 green = { 'red': 0, 'green': 0.9, 'blue': 0 }
 blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
-black = { 'red': 1, 'green': 1, 'blue': 1 }
+white = { 'red': 1, 'green': 1, 'blue': 1 }
 
 def get_other_topic_id():
     """ Calculate other_topic_id """
@@ -327,7 +327,7 @@ def add_topics_sheets(requests):
 
 def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
     comment = ""
-    color = black
+    color = white
 
     if disposition == "replace" and dsha:
         comment = "with upstream commit %s" % dsha
