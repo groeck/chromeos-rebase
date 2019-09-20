@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 #/usr/bin/env python3
 
 # Use information in rebase database to create rebase spreadsheet
@@ -26,7 +27,22 @@ from config import rebasedb, \
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-other_topic = 0 # Sheet Id to be used for "other" topic
+other_topic_id = 0 # Sheet Id to be used for "other" topic
+
+def get_other_topic_id():
+    """ Calculate other_topic_id """
+
+    global other_topic_id
+
+    conn = sqlite3.connect(rebasedb)
+    c = conn.cursor()
+
+    c.execute("select topic from topics order by name")
+    for (topic,) in c.fetchall():
+        if topic >= other_topic_id:
+            other_topic_id = topic + 1
+
+    conn.close()
 
 def getsheet():
     """ Get and return reference to spreadsheet """
@@ -95,11 +111,11 @@ def add_topics_summary(requests):
         counted_rows += rows
         requests.append({
             'pasteData': {
-                'data': '%s,%d,,,,chromeos-%s-%s' %
-                            (name, rows, version,
+                'data': '=HYPERLINK("#gid=%d","%s");%d;;;;chromeos-%s-%s' %
+                            (topic, name, rows, version,
                              name.replace('/','-')),
                 'type': 'PASTE_NORMAL',
-                'delimiter': ',',
+                'delimiter': ';',
                 'coordinate': {
                     'sheetId': 0,
                     'rowIndex': rowindex
@@ -113,22 +129,19 @@ def add_topics_summary(requests):
     for r in c2.fetchall():
         allrows += 1
 
-    # Now create an 'others' topic. We'll use it for unnamed topics.
+    # Now create an 'other' topic. We'll use it for unnamed topics.
     requests.append({
         'pasteData': {
-            'data': 'other,%d,,,,chromeos-%s-other' % (allrows - counted_rows, version),
+            'data': '=HYPERLINK("#gid=%d","other");%d;;;;chromeos-%s-other' %
+                             (other_topic_id, allrows - counted_rows, version),
             'type': 'PASTE_NORMAL',
-            'delimiter': ',',
+            'delimiter': ';',
             'coordinate': {
                 'sheetId': 0,
                 'rowIndex': rowindex
             }
         }
     })
-
-    # As last step, auto-resize columns A, B, and F
-    resize_sheet(requests, 0, 0, 2)
-    resize_sheet(requests, 0, 5, 6)
 
     conn.close()
 
@@ -226,22 +239,18 @@ def addsheet(requests, index, topic, name):
     add_sheet_header(requests, topic, 'SHA, Description, Disposition, Comments')
 
 def add_topics_sheets(requests):
-    global other_topic
-
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
     c.execute("select topic, name from topics order by name")
 
-    # Add "other" topic at the very end
     index = 1
     for (topic, name) in c.fetchall():
         addsheet(requests, index, topic, name)
-        if topic >= other_topic:
-            other_topic = topic + 1
         index += 1
 
-    addsheet(requests, index, other_topic, "other")
+    # Add 'other' topic at the very end
+    addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
 def add_sha(requests, sheet_id, sha, subject, disposition, dsha):
@@ -279,13 +288,17 @@ def add_commits(requests):
         if c2.fetchone():
             sheet_id = topic
         else:
-            sheet_id = other_topic
+            sheet_id = other_topic_id
 
         sheets.add(sheet_id)
         add_sha(requests, sheet_id, sha, subject, disposition, dsha)
 
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
+
+    # Now auto-resize columns A, B, and F in Summary sheet
+    resize_sheet(requests, 0, 0, 2)
+    resize_sheet(requests, 0, 5, 6)
 
 def doit(sheet, id, requests):
     body = {
@@ -299,6 +312,7 @@ def main():
     sheet = getsheet()
     id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline,
                                                         rebase_target))
+    get_other_topic_id()
 
     requests = [ ]
     create_summary(requests)
