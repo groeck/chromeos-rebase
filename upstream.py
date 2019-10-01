@@ -179,7 +179,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
     if m:
       # print("Regex match for '%s'" % desc.replace("'", "''"))
       ndesc = m.group(2).replace("'", "''")
-      rdesc = m.group(2)
+      rdesc = m.group(2).encode(encoding)
       # print("    Match subject '%s'" % ndesc)
       cu.execute("select sha, subject, in_baseline from commits "
                  "where subject='%s'"
@@ -273,10 +273,15 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                      ((ratio + setratio)/2, sha))
           if ((result <= 90 or smatch < 98) and smatch != 100 and
               (result <= 95 or smatch <= 95)):
-            print("    Subject match %d/%d insufficient" % (result, smatch))
-            c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
-                       % sha)
-            continue
+	    # Compare subject strings after ':'.
+	    # If there is a perfect match, look into patch contents after all
+	    rdesc2 = re.sub("[\S]+:\s*", "", rdesc)
+	    mdesc2 = re.sub("[\S]+:\s*", "", mdesc)
+	    if rdesc2 != mdesc2:
+              print("    Subject match %d/%d insufficient" % (result, smatch))
+              c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
+                         % sha)
+              continue
           c2.execute("select filename from files where sha is '%s'" % sha)
           lfilenames = c2.fetchall()
           cu.execute("select filename from files where sha is '%s'" % fsha[0])
