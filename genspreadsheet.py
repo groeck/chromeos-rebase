@@ -336,12 +336,25 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
         if reason == "revisit":
             comment += " (revisit: imperfect match)"
             color = orange
-    elif disposition == "drop" and reason == "revisit":
-        color = red
-        if dsha:
-            comment = "revisit (imperfect match with %s commit %s)" % (origin, dsha)
+    elif disposition == "drop":
+        if reason == "revisit":
+            color = red
+            if dsha:
+                comment = "revisit (imperfect match with %s commit %s)" % (origin, dsha)
+            else:
+                comment = "revisit (imperfect match)"
+        elif reason == "upstream/match":
+            color = yellow
+            comment = "%s commit %s" % (origin, dsha)
+        elif reason == "revisit/fixup":
+            color = yellow
+            comment = "fixup of %s commit %s" % (origin, dsha)
         else:
-            comment = "revisit (imperfect match)"
+            color = yellow
+            if dsha:
+                comment = "%s (%s commit %s)" % (reason, origin, dsha)
+            else:
+                comment = reason
 
     print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheet_id))
 
@@ -393,11 +406,11 @@ def add_commits(requests):
         else:
             sheet_id = other_topic_id
 
-	cu.execute("select sha from commits where sha='%s'" % dsha)
-	if cu.fetchone():
-	  origin = 'upstream'
-	else:
-	  origin = 'linux-next'
+        cu.execute("select sha from commits where sha='%s'" % dsha)
+        if cu.fetchone():
+          origin = 'upstream'
+        else:
+          origin = 'linux-next'
         sheets.add(sheet_id)
         add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
 
