@@ -29,8 +29,8 @@ android_baseline_branch=$(python -c "from config import android_baseline_branch;
 android_repo=$(python -c  "from config import android_repo; print android_repo;")
 android_path=$(python -c "from config import android_path; print android_path;")
 
-upstreamdb=$(python -c "from config import upstreamdb; print upstreamdb;")
-nextdb=$(python -c "from config import nextdb; print nextdb;")
+upstreamdb=$(python -c "from common import upstreamdb; print upstreamdb;")
+nextdb=$(python -c "from common import nextdb; print nextdb;")
 
 usage()
 {
