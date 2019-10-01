@@ -13,11 +13,14 @@ from config import chromeos_path
 from config import rebasedb
 from config import upstream_path
 from config import next_path
-from config import upstreamdb
-from config import nextdb
+from common import upstreamdb
+from common import nextdb
+
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import sqlite3
+
+encoding = "utf-8"
 
 # List of all subjects, split into dictionary indexed by each word
 # in the subject.
@@ -85,8 +88,10 @@ def best_match(s):
     with the same score, return first encountered match with this score.
   """
 
+  global _alldescs
+
   matches = []
-  s = re.sub("[^a-zA-Z0-9_ ]+", "", s)
+  s = re.sub("[^a-zA-Z0-9_/\s]+", " ", s)
   for word in s.split():
     match = process.extractOne(s, _alldescs[word],
                                scorer=fuzz.token_sort_ratio, score_cutoff=65)
@@ -109,15 +114,18 @@ def getallsubjects(db=upstreamdb):
     _alldescs[] is populated.
   """
 
+  global _alldescs
+
   _alldescs = defaultdict(list)
   db = sqlite3.connect(db)
   cu = db.cursor()
   cu.execute("select subject from commits")
   for desc in cu.fetchall():
-    subject = re.sub("[^a-zA-Z0-9_ ]+", "", desc[0])
-    words = subject.split()
+    subject = desc[0].encode(encoding)
+    wlist = re.sub("[^a-zA-Z0-9_\s]+", " ", subject)
+    words = wlist.split()
     for word in words:
-      _alldescs[word].append(desc[0])
+      _alldescs[word].append(subject)
   db.close()
 
 
