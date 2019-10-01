@@ -24,6 +24,7 @@ import time
 from config import rebasedb, \
         stable_path, android_path, chromeos_path, \
         rebase_baseline, stable_baseline, rebase_target
+from common import upstreamdb
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -325,12 +326,12 @@ def add_topics_sheets(requests):
     addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
-def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
+def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin):
     comment = ""
     color = white
 
     if disposition == "replace" and dsha:
-        comment = "with upstream commit %s" % dsha
+        comment = "with %s commit %s" % (origin, dsha)
         color = yellow
         if reason == "revisit":
             comment += " (revisit: imperfect match)"
@@ -338,7 +339,7 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
     elif disposition == "drop" and reason == "revisit":
         color = red
         if dsha:
-            comment = "revisit (imperfect match with upstream commit %s)" % dsha
+            comment = "revisit (imperfect match with %s commit %s)" % (origin, dsha)
         else:
             comment = "revisit (imperfect match)"
 
@@ -377,8 +378,10 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha):
 
 def add_commits(requests):
     conn = sqlite3.connect(rebasedb)
+    uconn = sqlite3.connect(upstreamdb)
     c = conn.cursor()
     c2 = conn.cursor()
+    cu = uconn.cursor()
 
     sheets = set([ ])
 
@@ -390,8 +393,13 @@ def add_commits(requests):
         else:
             sheet_id = other_topic_id
 
+	cu.execute("select sha from commits where sha='%s'" % dsha)
+	if cu.fetchone():
+	  origin = 'upstream'
+	else:
+	  origin = 'linux-next'
         sheets.add(sheet_id)
-        add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha)
+        add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
 
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
