@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase53.db'
-upstreamdb = 'upstream53.db'
-nextdb = 'next53.db'
+rebasedb = 'rebase54.db'
 
 rebase_baseline_branch = 'chromeos-4.19'
 android_baseline_branch = "android-4.19"
@@ -18,8 +16,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.73'
-rebase_target = 'v5.3'
+stable_baseline = 'v4.19.75'
+rebase_target = 'v5.4-rc1'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -223,12 +221,12 @@ topiclist = \
       ["drivers/remoteproc", "drivers/rpmsg"]],
      ["mfd",
       ["drivers/mfd"]],
+     ["arch/arm64",
+      ["arch/arm64"]],
      ["arch/arm",
       ["arch/arm"]],
-     ["arch/arm64",
-      ["arch/arm64", "drivers/platform/x86"]],
      ["arch/x86",
-      ["arch/x86"]],
+      ["arch/x86", "drivers/platform/x86"]],
      ["devicetree",
       ["Documentation/devicetree"]],
     ]
