@@ -57,6 +57,7 @@ topiclist = \
        "drivers/rtc/rtc-cros-ec", "drivers/platform/chrome",
        "drivers/platform/x86/chrome", "drivers/platform/arm/chrome",
        "drivers/input/keyboard/cros_ec",
+       "drivers/power/supply/cros_usbpd-charger.c",
        "drivers/pwm/pwm-cros-ec.c",
        "drivers/regulator/cros_ec",
        "drivers/i2c/busses/i2c-cros-ec", "include/linux/mfd/cros_ec",
