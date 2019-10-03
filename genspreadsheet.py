@@ -343,6 +343,9 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
                 comment = "revisit (imperfect match with %s commit %s)" % (origin, dsha)
             else:
                 comment = "revisit (imperfect match)"
+        elif reason == "upstream/fixup":
+            color = yellow
+            comment = "fixup of upstream patch %s" % dsha
         elif reason == "upstream/match":
             color = yellow
             comment = "%s commit %s" % (origin, dsha)
