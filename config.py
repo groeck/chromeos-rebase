@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase54.db'
+rebasedb = 'rebase54-rc7.db'
 
 rebase_baseline_branch = 'chromeos-4.19'
 android_baseline_branch = "android-4.19"
@@ -16,8 +16,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.75'
-rebase_target = 'v5.4-rc1'
+stable_baseline = 'v4.19.81'
+rebase_target = 'v5.4-rc7'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -64,7 +64,7 @@ topiclist = \
        "include/linux/chromeos",
        "Documentation/devicetree/bindings/chrome"]],
      ["power",
-      ["drivers/power", "drivers/base/power", "kernel/power",
+      ["drivers/power", "drivers/base/power", "kernel/power", "drivers/opp",
        "include/dt-bindings/power", "include/linux/power",
        "include/linux/pm", "Documentation/power", "arch/x86/power",
        "Documentation/devicetree/bindings/power"]],
@@ -89,7 +89,7 @@ topiclist = \
      ["drm/rockchip",
       ["drivers/gpu/drm/rockchip"]],
      ["drm/virtio",
-      ["drivers/gpu/drm/virtio", "include/drm/virtio_drm.h"]],
+      ["drivers/gpu/drm/virtio", "include/drm/virtio_drm.h", "include/uapi/drm/virtgpu_drm.h" ]],
      ["gpu/other",
       ["drm", "drivers/gpu", "include/drm", "Documentation/devicetree/bindings/drm",
        "include/uapi/drm"]],
@@ -119,6 +119,7 @@ topiclist = \
        "include/net/bluetooth"]],
      ["wireless",
       ["net/wireless", "drivers/net/wireless",
+       "include/uapi/linux/wireless.h",
        "Documentation/devicetree/bindings/net/wireless"]],
      ["net",
       ["drivers/net/usb", "net", "drivers/net", "include/linux/tcp.h",
@@ -219,7 +220,7 @@ topiclist = \
      ["iommu",
       ["drivers/iommu"]],
      ["remoteproc",
-      ["drivers/remoteproc", "drivers/rpmsg"]],
+      ["drivers/remoteproc", "drivers/rpmsg", "include/linux/rpmsg" ]],
      ["mfd",
       ["drivers/mfd"]],
      ["arch/arm64",
