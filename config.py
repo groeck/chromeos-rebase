@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase54-rc7.db'
+rebasedb = 'rebase54-rc8.db'
 
 rebase_baseline_branch = 'chromeos-4.19'
 android_baseline_branch = "android-4.19"
@@ -16,8 +16,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.81'
-rebase_target = 'v5.4-rc7'
+stable_baseline = 'v4.19.84'
+rebase_target = 'v5.4-rc8'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
@@ -197,10 +197,9 @@ topiclist = \
       ["arch/arm/boot/dts"]],
      ["acpi",
       ["drivers/acpi"]],
-     ["container/arm64",
-      ["arch/arm64/configs/chromiumos-container-vm-arm64_defconfig"]],
-     ["container/x86",
-      ["arch/x86/configs/chromiumos-container-vm-x86_64_defconfig",
+     ["container",
+      ["arch/arm64/configs/chromiumos-container-vm-arm64_defconfig",
+       "arch/x86/configs/chromiumos-container-vm-x86_64_defconfig",
        "arch/x86/configs/x86_64_arcvm_defconfig"]],
      ["drivers/mediatek",
       ["drivers/clk/mediatek",
