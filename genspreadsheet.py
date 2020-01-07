@@ -112,15 +112,18 @@ def add_topics_summary(requests):
     rowindex = 1
     for (topic, name) in c.fetchall():
         # Only add summary entry if there are commits touching this topic
-        c2.execute("select topic from commits where topic=%d" % topic)
+        c2.execute("select topic, disposition from commits where topic=%d" % topic)
         rows = 0
-        for r in c2.fetchall():
+        effrows = 0
+        for (r, d) in c2.fetchall():
             rows += 1
+            if d == 'pick':
+                effrows += 1
         counted_rows += rows
         requests.append({
             'pasteData': {
-                'data': '=HYPERLINK("#gid=%d","%s");%d;;;;chromeos-%s-%s' %
-                            (topic, name, rows, version,
+                'data': '=HYPERLINK("#gid=%d","%s");%d;%d;;;;chromeos-%s-%s' %
+                            (topic, name, rows, effrows, version,
                              name.replace('/','-')),
                 'type': 'PASTE_NORMAL',
                 'delimiter': ';',
@@ -140,7 +143,7 @@ def add_topics_summary(requests):
     # Now create an 'other' topic. We'll use it for unnamed topics.
     requests.append({
         'pasteData': {
-            'data': '=HYPERLINK("#gid=%d","other");%d;;;;chromeos-%s-other' %
+            'data': '=HYPERLINK("#gid=%d","other");%d;;;;;chromeos-%s-other' %
                              (other_topic_id, allrows - counted_rows, version),
             'type': 'PASTE_NORMAL',
             'delimiter': ';',
@@ -225,7 +228,7 @@ def create_summary(requests):
 #        }
 #    })
 
-    add_sheet_header(requests, 0, 'Topic, Entries, Owner, Reviewer, Status, Topic branch, Comments')
+    add_sheet_header(requests, 0, 'Topic, Entries, Effective Entries, Owner, Reviewer, Status, Topic branch, Comments')
 
     # Now add all topics
     add_topics_summary(requests)
@@ -440,9 +443,9 @@ def main():
     doit(sheet, id, requests)
     requests = [ ]
     add_commits(requests)
-    # Now auto-resize columns A, B, and F in Summary sheet
-    resize_sheet(requests, 0, 0, 2)
-    resize_sheet(requests, 0, 5, 6)
+    # Now auto-resize columns A, B, C, and G in Summary sheet
+    resize_sheet(requests, 0, 0, 3)
+    resize_sheet(requests, 0, 6, 7)
     # Add description after resizing
     add_description(requests)
     doit(sheet, id, requests)
