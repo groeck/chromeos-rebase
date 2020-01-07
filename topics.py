@@ -59,6 +59,7 @@ def handle_topic(topic, subdir, name):
     count = 0
     c.execute("select topic from topics where topic is %d" % topic)
     if not c.fetchone():
+        print "Adding topic %d (%s), subdirectory/file '%s' to database" % (topic, name, subdir)
         c.execute("INSERT INTO topics(topic, name) VALUES (?, ?)", (topic, name,))
     print "Handling topic %d (%s), subdirectory/file '%s'" % (topic, name, subdir)
     c.execute("select sha, filename from files where filename like '%s%%'" % subdir)
@@ -107,6 +108,7 @@ while True:
         # Based on a sha, we found a file and subdirectory. Use it to attach
         # any matching SHAs to this subdirectory if the match is in a source
         # directory.
+        print "Topic %d [%s, subdir %s]" % (topic, file, subdir)
         if subdir.startswith('include') or subdir.startswith('Documentation') or subdir=="":
             count = update_sha(sha[0], topic, file, subdir)
             print "Topic %d [%s]: %d entries" % (topic, file, count)
