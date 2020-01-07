@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase54-rc8.db'
+rebasedb = 'rebase541.db'
 
 rebase_baseline_branch = 'chromeos-4.19'
 android_baseline_branch = "android-4.19"
@@ -16,8 +16,8 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.84'
-rebase_target = 'v5.4-rc8'
+stable_baseline = 'v4.19.85'
+rebase_target = 'v5.4'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
