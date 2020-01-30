@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase541.db'
+rebasedb = 'rebase55.db'
 
-rebase_baseline_branch = 'chromeos-4.19'
-android_baseline_branch = "android-4.19"
+rebase_baseline_branch = 'chromeos-5.4'
+android_baseline_branch = "android-5.4"
 
 android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
@@ -15,9 +15,9 @@ upstream_repo = kernel_site + "pub/scm/linux/kernel/git/torvalds/linux"
 stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
-rebase_baseline = 'v4.19'
-stable_baseline = 'v4.19.85'
-rebase_target = 'v5.4'
+rebase_baseline = 'v5.4'
+stable_baseline = 'v5.4.7'
+rebase_target = 'v5.5-rc5'
 
 chromeos_path = "linux-chrome"
 stable_path = "linux-stable"
