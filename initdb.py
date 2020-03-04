@@ -5,11 +5,11 @@ import re
 import subprocess
 import time
 from config import rebasedb, \
-        stable_path, android_path, chromeos_path, \
-        rebase_baseline, stable_baseline, rebase_target
+        stable_path, android_path, chromeos_path, rebase_target
+from common import workdir, stable_baseline, rebase_baseline
 
-stable_commits = rebase_baseline + '..' + stable_baseline
-baseline_commits = rebase_baseline + '..'
+stable_commits = rebase_baseline() + '..' + stable_baseline()
+baseline_commits = rebase_baseline() + '..'
 
 # "commit" is sometimes seen multiple times, such as with commit 6093aabdd0ee
 cherrypick=re.compile("cherry picked from (commit )+([a-z0-9]+)")
@@ -18,8 +18,6 @@ stable2=re.compile("Upstream (commit )+([a-z0-9]+)")
 upstream=re.compile("(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)")
 chromium=re.compile("(CHROMIUM: *|FROMLIST: *)+(.*)")
 changeid=re.compile("\s*Change-Id:\s+(I[a-z0-9]+)")
-
-workdir = os.getcwd()
 
 def NOW():
   return int(time.time())
@@ -122,7 +120,7 @@ def update_commits():
 
   os.chdir(chromeos_path)
   commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--oneline', '--reverse',
-                                     rebase_baseline + '..'])
+                                     rebase_baseline() + '..'])
 
   prevdate = 0
   mprevdate = 0

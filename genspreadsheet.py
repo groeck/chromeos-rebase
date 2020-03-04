@@ -23,8 +23,8 @@ import subprocess
 import time
 from config import rebasedb, \
         stable_path, android_path, chromeos_path, \
-        rebase_baseline, stable_baseline, rebase_target
-from common import upstreamdb
+        rebase_target
+from common import upstreamdb, rebase_baseline
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -433,7 +433,7 @@ def doit(sheet, id, requests):
 
 def main():
     sheet = getsheet()
-    id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline,
+    id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline(),
                                                         rebase_target))
     get_other_topic_id()
 

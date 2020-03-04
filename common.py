@@ -1,10 +1,32 @@
 import os
 import sqlite3
+import subprocess
+
+from config import chromeos_path, rebase_baseline_branch
 
 workdir = os.getcwd()
 dbdir = workdir + '/database'
 upstreamdb = dbdir + '/upstream.db'
 nextdb = dbdir + '/next.db'
+
+def stable_baseline():
+  '''
+  Return most recent label in to-be-rebased branch
+  '''
+
+  currdir=os.getcwd()
+  os.chdir(workdir+'/'+chromeos_path)
+  tag=subprocess.check_output(['git', 'describe', rebase_baseline_branch])
+  os.chdir(currdir)
+  return tag.split('-')[0]
+
+def rebase_baseline():
+  '''
+  Return most recent label in to-be-rebased branch
+  '''
+
+  baseline=stable_baseline()
+  return baseline.split('.')[0]+'.'+baseline.split('.')[1]
 
 def stabledb(version):
   return dbdir + "/stable-" + version + '.db'

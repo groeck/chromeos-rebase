@@ -2,8 +2,8 @@ import os
 import re
 import sqlite3
 import subprocess
-from config import upstream_path, rebase_baseline, rebase_target
-from common import workdir, upstreamdb, createdb
+from config import upstream_path, rebase_target
+from common import rebase_baseline, workdir, upstreamdb, createdb
 
 def mktables(c):
   ''' Create tables '''
@@ -37,13 +37,13 @@ def update_baseline(c):
   c.execute("select sha from commits where in_baseline is 0")
   for (sha) in c.fetchall():
     try:
-      subprocess.check_output(['git', 'merge-base', '--is-ancestor', sha, rebase_baseline])
+      subprocess.check_output(['git', 'merge-base', '--is-ancestor', sha, rebase_baseline()])
       c.execute("UPDATE commits SET in_baseline=1 where sha='%s'" % sha)
     except:
       pass
 
 def update_upstreamdb():
-  start = rebase_baseline
+  start = rebase_baseline()
 
   try:
     # see if we previously handled anything. If yes, use it.
@@ -57,7 +57,7 @@ def update_upstreamdb():
       start = sha[0]
       # In this case, the baseline may have changed. Assume that it only
       # moves forward. Update database to reflect new baseline.
-      update_baseline(c, start, rebase_baseline)
+      update_baseline(c, start, rebase_baseline())
     else:
       fail
   except:
