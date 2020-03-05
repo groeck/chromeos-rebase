@@ -37,6 +37,8 @@ green = { 'red': 0, 'green': 0.9, 'blue': 0 }
 blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
 white = { 'red': 1, 'green': 1, 'blue': 1 }
 
+lastrow = 0
+
 def get_other_topic_id():
     """ Calculate other_topic_id """
 
@@ -101,25 +103,20 @@ def resize_sheet(requests, id, start, end):
       }
     })
 
-def add_topics_summary(requests):
-    conn = sqlite3.connect(rebasedb)
-    c = conn.cursor()
-    c2 = conn.cursor()
-    version = rebase_target.strip('v')
-    counted_rows = 0
 
-    c.execute("select topic, name from topics order by name")
-    rowindex = 1
-    for (topic, name) in c.fetchall():
-        # Only add summary entry if there are commits touching this topic
-        c2.execute("select topic, disposition from commits where topic=%d" % topic)
-        rows = 0
-        effrows = 0
-        for (r, d) in c2.fetchall():
-            rows += 1
-            if d == 'pick':
-                effrows += 1
-        counted_rows += rows
+def add_topics_summary_row(requests, conn, rowindex, topic, name):
+    c = conn.cursor()
+    version = rebase_target.strip('v')
+
+    c.execute("select topic, disposition from commits where topic=%d" % topic)
+    rows = 0
+    effrows = 0
+    for (r, d) in c.fetchall():
+        rows += 1
+        if d == 'pick':
+            effrows += 1
+    # Only add summary entry if there are commits associated with this topic
+    if rows:
         requests.append({
             'pasteData': {
                 'data': '=HYPERLINK("#gid=%d","%s");%d;%d;;;;chromeos-%s-%s' %
@@ -133,18 +130,45 @@ def add_topics_summary(requests):
                 }
             }
         })
-        rowindex += 1
+    return rows
+
+def add_topics_summary(requests):
+    global lastrow
+
+    conn = sqlite3.connect(rebasedb)
+    c = conn.cursor()
+    version = rebase_target.strip('v')
+    counted_rows = 0
+
+    # Handle 'chromeos' first and separately so we can exclude it from the
+    # backlog chart later.
+    c.execute("select topic from topics where name is 'chromeos'")
+    topic = c.fetchone()
+    if topic:
+        counted_rows = add_topics_summary_row(requests, conn, 1, topic[0],
+                                              'chromeos')
+
+    c.execute("select topic, name from topics order by name")
+    rowindex = 2
+    for (topic, name) in c.fetchall():
+        if name != 'chromeos':
+            added = add_topics_summary_row(requests, conn, rowindex,
+                                             topic, name)
+            if added:
+                counted_rows += added
+                rowindex += 1
 
     allrows = 0
-    c2.execute("select topic from commits where topic != 0")
-    for r in c2.fetchall():
+    c.execute("select topic from commits where topic != 0")
+    for r in c.fetchall():
         allrows += 1
 
     # Now create an 'other' topic. We'll use it for unnamed topics.
     requests.append({
         'pasteData': {
-            'data': '=HYPERLINK("#gid=%d","other");%d;;;;;chromeos-%s-other' %
-                             (other_topic_id, allrows - counted_rows, version),
+            'data': '=HYPERLINK("#gid=%d","other");%d;%d;;;;chromeos-%s-other' %
+                             (other_topic_id, allrows - counted_rows,
+                              allrows - counted_rows, version),
             'type': 'PASTE_NORMAL',
             'delimiter': ';',
             'coordinate': {
@@ -154,6 +178,7 @@ def add_topics_summary(requests):
         }
     })
 
+    lastrow = rowindex
     conn.close()
 
 def add_sheet_header(requests, id, fields):
@@ -317,13 +342,16 @@ def addsheet(requests, index, topic, name):
 def add_topics_sheets(requests):
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
+    c2 = conn.cursor()
 
+    index = 2
     c.execute("select topic, name from topics order by name")
-
-    index = 1
     for (topic, name) in c.fetchall():
-        addsheet(requests, index, topic, name)
-        index += 1
+        # Only add a sheet if there are commits associated with this topic
+        c2.execute("select sha from commits where topic is %d" % topic)
+        if c2.fetchone():
+            addsheet(requests, index, topic, name)
+            index += 1
 
     # Add 'other' topic at the very end
     addsheet(requests, index, other_topic_id, 'other')
@@ -431,6 +459,92 @@ def doit(sheet, id, requests):
     request = sheet.batchUpdate(spreadsheetId=id, body=body)
     response = request.execute()
 
+def add_chart(requests):
+    global lastrow
+
+    requests.append({
+        'addSheet': {
+            'properties': {
+                'sheetId': 9999,
+                'index': 1,
+                'title': 'Backlog Chart',
+            }
+        }
+    })
+
+    # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
+    # which is not counted as backlog.
+    requests.append({
+      'addChart': {
+        "chart": {
+          "chartId": 1,
+          "spec": {
+            "title": "Upstream Backlog",
+            "basicChart": {
+              "chartType": "COLUMN",
+              # "legendPosition": "BOTTOM_LEGEND",
+              "axis": [
+                {
+                  "position": "BOTTOM_AXIS",
+                  "title": "Topic"
+                },
+                {
+                  "position": "LEFT_AXIS",
+                  "title": "Backlog"
+                }
+              ],
+              "domains": [
+                {
+                  "domain": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 2,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 0,
+                          "endColumnIndex": 1
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "series": [
+                {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 2,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 2,
+                          "endColumnIndex": 3
+                        }
+                      ]
+                    }
+                  },
+                },
+              ]
+            }
+          },
+          "position": {
+            "overlayPosition": {
+              "anchorCell": {
+                "sheetId": 9999,
+                "rowIndex": 1,
+                "columnIndex": 0
+              },
+              "offsetXPixels": 20,
+              "widthPixels": 1600,
+              "heightPixels": 1000
+            }
+          }
+        }
+      }
+    })
+
 def main():
     sheet = getsheet()
     id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline(),
@@ -443,11 +557,16 @@ def main():
     doit(sheet, id, requests)
     requests = [ ]
     add_commits(requests)
+    doit(sheet, id, requests)
+    requests = [ ]
     # Now auto-resize columns A, B, C, and G in Summary sheet
     resize_sheet(requests, 0, 0, 3)
     resize_sheet(requests, 0, 6, 7)
     # Add description after resizing
     add_description(requests)
+    doit(sheet, id, requests)
+    requests = [ ]
+    add_chart(requests)
     doit(sheet, id, requests)
 
 if __name__ == '__main__':
