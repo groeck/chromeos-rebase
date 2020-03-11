@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase56-rc4.db'
+rebasedb = 'rebase56-rc5.db'
 
 rebase_baseline_branch = 'chromeos-5.4'
 android_baseline_branch = 'android-5.4'
 
-rebase_target = 'v5.6-rc4'
+rebase_target = 'v5.6-rc5'
 
 android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
@@ -125,7 +125,7 @@ topiclist = \
        "include/net", "include/dt-bindings/net", "include/linux/net",
        "include/uapi/linux/sockios.h"]],
      ["sound/intel",
-      ["sound/soc/intel"]],
+      ["sound/soc/intel", "sound/soc/sof/intel"]],
      ["sound/mediatek",
       ["sound/soc/mediatek"]],
      ["sound/rockchip",
