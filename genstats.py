@@ -27,6 +27,8 @@ from config import rebasedb, \
         rebase_target
 from common import upstreamdb, rebase_baseline
 
+stats_filename = "rebase-stats.id"
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
@@ -94,6 +96,56 @@ def create_spreadsheet(sheet, title):
     response = request.execute()
 
     return response.get('spreadsheetId')
+
+def doit(sheet, id, requests):
+    ''' Execute a request '''
+    body = {
+        'requests': requests
+    }
+
+    request = sheet.batchUpdate(spreadsheetId=id, body=body)
+    response = request.execute()
+    return response
+
+def delete_sheets(sheet, id, sheets):
+    ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
+    request = [ ]
+    for s in sheets:
+      sheetId = s['properties']['sheetId']
+      if sheetId != 0:
+        request.append({
+          "deleteSheet": {
+            "sheetId": sheetId
+          }
+        })
+      else:
+        request.append({
+          "updateCells": {
+            "range": {
+              "sheetId": sheetId
+            },
+            "fields": "userEnteredValue"
+          }
+        })
+
+    # We are letting this fail if there was nothing to clean. This will
+    # hopefully result in re-creating the spreadsheet.
+    doit(sheet, id, request)
+
+def init_spreadsheet(sheet):
+    try:
+        with open(stats_filename, 'r') as file:
+	    id = file.read()
+	request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+	response = request.execute()
+	sheets = response.get('sheets')
+	delete_sheets(sheet, id, sheets)
+    except:
+        id = create_spreadsheet(sheet, 'Backlog Statistics for chromeos-%s' % rebase_baseline().strip('v'))
+	with open(stats_filename, 'w') as file:
+	    file.write(id)
+
+    return id
 
 def resize_sheet(requests, id, start, end):
     requests.append({
@@ -181,9 +233,6 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
         })
     return rows
 
-def NOW():
-  return int(time.time())
-
 def add_topics_summary(requests):
     global lastrow
     global other_topic_id
@@ -257,7 +306,9 @@ def add_sheet_header(requests, id, fields):
         }
     })
 
-def create_summary(requests):
+def create_summary(sheet, id):
+    requests = [ ]
+
     requests.append({
         'updateSheetProperties': {
             # 'sheetId': 0,
@@ -268,38 +319,16 @@ def create_summary(requests):
         }
     })
 
-    #requests.append({
-    #    'appendCells': {
-    #        'sheetId': 0,
-    #        'rows': [
-#                { 'values': [
-#                    {"userEnteredValue": {"stringValue": "Topic"}},
-#                    {"userEnteredValue": {"stringValue": "Entries"}},
-#                    {"userEnteredValue": {"stringValue": "Owner"}},
-#                    {"userEnteredValue": {"stringValue": "Reviewer"}},
-#                    {"userEnteredValue": {"stringValue": "Status"}},
-#                    {"userEnteredValue": {"stringValue": "Topic branch"}},
-#                    {"userEnteredValue": {"stringValue": "Comments"}}
-#                ]}
-#            ],
-#            "fields": "*"
-#        }
-#    })
-
-    # add_sheet_header(requests, 0, 'Topic, Average age (days), Entries, Net Entries, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Unknown')
-    add_sheet_header(requests, 0, 'Topic, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Unknown, Net, Total, Average Age (days)')
+    add_sheet_header(requests, 0, 'Topic, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Other, Net, Total, Average Age (days)')
 
     # Now add all topics
     add_topics_summary(requests)
 
-def doit(sheet, id, requests):
-    body = {
-        'requests': requests
-    }
+    # As final step, resize it
+    resize_sheet(requests, 0, 0, 10)
 
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
-    response = request.execute()
-    return response
+    # and execute
+    doit(sheet, id, requests)
 
 def sourceRange(sheetId, rows, column):
     return {
@@ -387,8 +416,6 @@ def add_age_chart(sheet, id):
 
     request = [ ]
 
-    # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
-    # which is not counted as backlog.
     request.append({
       'addChart': {
         "chart": {
@@ -405,7 +432,7 @@ def add_age_chart(sheet, id):
                 },
                 {
                   "position": "LEFT_AXIS",
-                  "title": "Average Age"
+                  "title": "Average Age (days)"
                 }
               ],
               "domains": [ scope("domain", 0, lastrow + 1, 0) ],
@@ -439,16 +466,12 @@ def add_age_chart(sheet, id):
 
 def main():
     sheet = getsheet()
-    id = create_spreadsheet(sheet, 'Backlog Statistics for chromeos-%s' % rebase_baseline().strip('v'))
+    id = init_spreadsheet(sheet)
+
     get_other_topic_id()
 
-    requests = [ ]
-    create_summary(requests)
-    doit(sheet, id, requests)
-    requests = [ ]
-    # Now auto-resize columns A, B, C, in Summary sheet
-    resize_sheet(requests, 0, 0, 10)
-    doit(sheet, id, requests)
+    create_summary(sheet, id)
+
     add_backlog_chart(sheet, id)
     add_age_chart(sheet, id)
 
