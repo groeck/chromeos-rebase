@@ -141,7 +141,7 @@ def init_spreadsheet(sheet):
 	sheets = response.get('sheets')
 	delete_sheets(sheet, id, sheets)
     except:
-        id = create_spreadsheet(sheet, 'Backlog Statistics for chromeos-%s' % rebase_baseline().strip('v'))
+        id = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' % rebase_baseline().strip('v'))
 	with open(stats_filename, 'w') as file:
 	    file.write(id)
 
