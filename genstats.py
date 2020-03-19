@@ -339,8 +339,9 @@ def move_summary(sheet, id, index):
             'properties': {
                 'sheetId': 0,
                 'index': index,
+                'hidden': True,
             },
-            'fields': 'index'
+            'fields': 'index,hidden'
         }
     })
 
