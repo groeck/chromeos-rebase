@@ -112,11 +112,16 @@ def NOW():
 
 def add_topics_summary_row(requests, conn, rowindex, topic, name):
     c = conn.cursor()
+    c2 = conn.cursor()
     version = rebase_target.strip('v')
 
     age = 0
     now = NOW()
-    c.execute("select authored, subject, disposition from commits where topic=%d" % topic)
+    if topic:
+	search="select topic, authored, subject, disposition from commits where topic=%d" % topic
+    else:
+        search="select topic, authored, subject, disposition from commits where topic != 0"
+    c.execute(search)
     rows = 0
     effrows = 0
     upstream = 0
@@ -125,7 +130,13 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
     chromium = 0
     backport = 0
     other = 0
-    for (a, subject, d) in c.fetchall():
+    for (t, a, subject, d) in c.fetchall():
+        if topic == 0:
+	    c2.execute("select topic from topics where topic is %d" % t)
+	    # If the retrieved topic is in the named topic list, we are only
+	    # interested if we are not looking for 'other' topics.
+	    if c2.fetchall():
+	        continue
         rows += 1
         if d == 'pick':
             effrows += 1
@@ -159,7 +170,7 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
             age /= (3600 * 24)        # Display age in days
         requests.append({
             'pasteData': {
-                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' % (name, age, rows, effrows, upstream, backport, fromgit, fromlist, chromium, other),
+                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' % (name, upstream, backport, fromgit, fromlist, chromium, other, effrows, rows, age),
                 'type': 'PASTE_NORMAL',
                 'delimiter': ';',
                 'coordinate': {
@@ -197,64 +208,8 @@ def add_topics_summary(requests):
             if added:
                 rowindex += 1
 
-    # Now walk through unnamed ('other') topics
-    other_total = 0
-    other_net = 0
-    age = 0
-    upstream = 0
-    fromlist =  0
-    fromgit = 0
-    chromium = 0
-    backport = 0
-    other = 0
-    now = NOW()
-    c.execute("select topic, authored, subject, disposition from commits where topic != 0")
-    for (t, a, subject, d) in c.fetchall():
-	c.execute("select topic from topics where topic is %d" % t)
-	# If the retrieved topic is not in the named topic list, it is one we
-	# are interested in for 'others'.
-	if not c.fetchall():
-            other_total += 1
-	    if d == 'pick':
-                other_net += 1
-                age += (now - a)
-                m = rp.search(subject)
-                if m:
-                    what = m.group(1).replace(" ", "")
-		    if what == "BACKPORT:":
-                        m = rp.search(m.group(2))
-		        if m:
-			    what = m.group(1).replace(" ", "")
-                    if what == "CHROMIUM:" or what == "CHROMEOS:":
-                        chromium += 1
-                    elif what == "UPSTREAM:":
-                        upstream += 1
-                    elif what == "FROMLIST:":
-                        fromlist += 1
-                    elif what == "FROMGIT:":
-                        fromgit += 1
-                    elif what == "BACKPORT:":
-                        backport += 1
-                    else:
-                        other += 1
-                else:
-                    other += 1
-
-    if other_net:
-        age /= other_net
-        age /= (3600 * 24)        # Display age in days
-    # Now create 'other' topic entry.
-    requests.append({
-        'pasteData': {
-            'data': 'other;%d;%d;%d;%d;%d;%d;%d;%d;%d' % (age, other_total, other_net, upstream, backport, fromgit, fromlist, chromium, other),
-            'type': 'PASTE_NORMAL',
-            'delimiter': ';',
-            'coordinate': {
-                'sheetId': 0,
-                'rowIndex': rowindex
-            }
-        }
-    })
+    # Finally, do the same for 'other' topics, identified as topic==0.
+    added = add_topics_summary_row(requests, conn, rowindex, 0, "other")
 
     lastrow = rowindex
     conn.close()
@@ -331,7 +286,8 @@ def create_summary(requests):
 #        }
 #    })
 
-    add_sheet_header(requests, 0, 'Topic, Average age (days), Entries, Net Entries, Upstream, Backport, Fromgit, Fromlist, Chromium, Other')
+    # add_sheet_header(requests, 0, 'Topic, Average age (days), Entries, Net Entries, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Unknown')
+    add_sheet_header(requests, 0, 'Topic, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Unknown, Net, Total, Average Age (days)')
 
     # Now add all topics
     add_topics_summary(requests)
@@ -345,7 +301,7 @@ def doit(sheet, id, requests):
     response = request.execute()
     return response
 
-def add_chart(sheet, id):
+def add_backlog_chart(sheet, id):
     global lastrow
 
     request = [ ]
@@ -360,6 +316,7 @@ def add_chart(sheet, id):
             "title": "Upstream Backlog",
             "basicChart": {
               "chartType": "COLUMN",
+	      "stackedType": "STACKED",
               # "legendPosition": "BOTTOM_LEGEND",
               "axis": [
                 {
@@ -378,7 +335,7 @@ def add_chart(sheet, id):
                       "sources": [
                         {
                           "sheetId": 0,
-                          "startRowIndex": 2,
+                          "startRowIndex": 0,
                           "endRowIndex": lastrow + 1,
                           "startColumnIndex": 0,
                           "endColumnIndex": 1
@@ -395,12 +352,82 @@ def add_chart(sheet, id):
                       "sources": [
                         {
                           "sheetId": 0,
-                          "startRowIndex": 2,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 1,
+                          "endColumnIndex": 2
+                        },
+		      ]
+                    }
+                  },
+		}, {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 2,
+                          "endColumnIndex": 3
+                        },
+		      ]
+                    }
+                  },
+		}, {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
                           "endRowIndex": lastrow + 1,
                           "startColumnIndex": 3,
                           "endColumnIndex": 4
-                        }
-                      ]
+                        },
+		      ]
+                    }
+                  },
+		}, {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 4,
+                          "endColumnIndex": 5
+                        },
+		      ]
+                    }
+                  },
+		}, {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 5,
+                          "endColumnIndex": 6
+                        },
+		      ]
+                    }
+                  },
+		}, {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 6,
+                          "endColumnIndex": 7
+                        },
+		      ]
                     }
                   },
                 },
@@ -425,7 +452,94 @@ def add_chart(sheet, id):
         'updateSheetProperties': {
 	    'properties': {
 		'sheetId': sheetId,
-                'title': 'Backlog Chart',
+                'title': 'Backlog Count',
+ 	    },
+ 	    'fields': "title",
+ 	}
+    })
+    doit(sheet, id, request)
+
+def add_age_chart(sheet, id):
+    global lastrow
+
+    request = [ ]
+
+    # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
+    # which is not counted as backlog.
+    request.append({
+      'addChart': {
+        "chart": {
+          "chartId": 2,
+          "spec": {
+            "title": "Upstream Backlog Age",
+            "basicChart": {
+              "chartType": "COLUMN",
+              # "legendPosition": "BOTTOM_LEGEND",
+              "axis": [
+                {
+                  "position": "BOTTOM_AXIS",
+                  "title": "Topic"
+                },
+                {
+                  "position": "LEFT_AXIS",
+                  "title": "Average Age"
+                }
+              ],
+              "domains": [
+                {
+                  "domain": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 0,
+                          "endColumnIndex": 1
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "series": [
+		{
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": 0,
+                          "startRowIndex": 0,
+                          "endRowIndex": lastrow + 1,
+                          "startColumnIndex": 9,
+                          "endColumnIndex": 10
+                        },
+		      ]
+                    }
+                  },
+                },
+              ]
+            }
+          },
+          "position": {
+	    "newSheet": True,
+          }
+        }
+      }
+    })
+
+    response = doit(sheet, id, request)
+
+    # Extract sheet Id from response
+    reply = response.get('replies')
+    sheetId = reply[0]['addChart']['chart']['position']['sheetId']
+
+    request = [ ]
+    request.append({
+        'updateSheetProperties': {
+	    'properties': {
+		'sheetId': sheetId,
+                'title': 'Backlog Age',
  	    },
  	    'fields': "title",
  	}
@@ -443,9 +557,10 @@ def main():
     doit(sheet, id, requests)
     requests = [ ]
     # Now auto-resize columns A, B, C, in Summary sheet
-    resize_sheet(requests, 0, 0, 3)
+    resize_sheet(requests, 0, 0, 10)
     doit(sheet, id, requests)
-    add_chart(sheet, id)
+    add_backlog_chart(sheet, id)
+    add_age_chart(sheet, id)
 
 if __name__ == '__main__':
     main()
