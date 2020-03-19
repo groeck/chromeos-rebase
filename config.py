@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase56-rc5.db'
+rebasedb = 'rebase56-rc6.db'
 
 rebase_baseline_branch = 'chromeos-5.4'
 android_baseline_branch = 'android-5.4'
 
-rebase_target = 'v5.6-rc5'
+rebase_target = 'v5.6-rc6'
 
 android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
