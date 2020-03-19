@@ -301,6 +301,24 @@ def doit(sheet, id, requests):
     response = request.execute()
     return response
 
+def sourceRange(sheetId, rows, column):
+    return {
+      "sourceRange": {
+        "sources": [
+            {
+                "sheetId": sheetId,
+                "startRowIndex": 0,
+                "endRowIndex": rows,
+                "startColumnIndex": column,
+                "endColumnIndex": column + 1
+            }
+        ]
+      }
+    }
+
+def scope(name, sheetId, rows, column):
+    return { name: sourceRange(sheetId, rows, column) }
+
 def add_backlog_chart(sheet, id):
     global lastrow
 
@@ -328,109 +346,14 @@ def add_backlog_chart(sheet, id):
                   "title": "Backlog"
                 }
               ],
-              "domains": [
-                {
-                  "domain": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 0,
-                          "endColumnIndex": 1
-                        }
-                      ]
-                    }
-                  }
-                }
-              ],
+              "domains": [ scope("domain", 0, lastrow + 1, 0) ],
               "series": [
-                {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 1,
-                          "endColumnIndex": 2
-                        },
-		      ]
-                    }
-                  },
-		}, {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 2,
-                          "endColumnIndex": 3
-                        },
-		      ]
-                    }
-                  },
-		}, {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 3,
-                          "endColumnIndex": 4
-                        },
-		      ]
-                    }
-                  },
-		}, {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 4,
-                          "endColumnIndex": 5
-                        },
-		      ]
-                    }
-                  },
-		}, {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 5,
-                          "endColumnIndex": 6
-                        },
-		      ]
-                    }
-                  },
-		}, {
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 6,
-                          "endColumnIndex": 7
-                        },
-		      ]
-                    }
-                  },
-                },
+                  scope("series", 0, lastrow + 1, 1),
+                  scope("series", 0, lastrow + 1, 2),
+                  scope("series", 0, lastrow + 1, 3),
+                  scope("series", 0, lastrow + 1, 4),
+                  scope("series", 0, lastrow + 1, 5),
+                  scope("series", 0, lastrow + 1, 6)
               ]
             }
           },
@@ -485,40 +408,8 @@ def add_age_chart(sheet, id):
                   "title": "Average Age"
                 }
               ],
-              "domains": [
-                {
-                  "domain": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 0,
-                          "endColumnIndex": 1
-                        }
-                      ]
-                    }
-                  }
-                }
-              ],
-              "series": [
-		{
-                  "series": {
-                    "sourceRange": {
-                      "sources": [
-                        {
-                          "sheetId": 0,
-                          "startRowIndex": 0,
-                          "endRowIndex": lastrow + 1,
-                          "startColumnIndex": 9,
-                          "endColumnIndex": 10
-                        },
-		      ]
-                    }
-                  },
-                },
-              ]
+              "domains": [ scope("domain", 0, lastrow + 1, 0) ],
+              "series": [ scope("series", 0, lastrow + 1, 9) ]
             }
           },
           "position": {
@@ -548,8 +439,7 @@ def add_age_chart(sheet, id):
 
 def main():
     sheet = getsheet()
-    id = create_spreadsheet(sheet, 'Statistics for %s -> %s' % (rebase_baseline(),
-                                                        rebase_target))
+    id = create_spreadsheet(sheet, 'Backlog Statistics for chromeos-%s' % rebase_baseline().strip('v'))
     get_other_topic_id()
 
     requests = [ ]
