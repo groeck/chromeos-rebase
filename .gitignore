@@ -1,4 +1,6 @@
 *.db
+rebase-spreadsheet.id
+rebase-stats.id
 credentials.json
 token.pickle
 __pycache__/
