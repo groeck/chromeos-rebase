@@ -26,6 +26,8 @@ from config import rebasedb, \
         rebase_target
 from common import upstreamdb, rebase_baseline
 
+rebase_filename = "rebase-spreadsheet.id"
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 other_topic_id = 0 # Sheet Id to be used for "other" topic
@@ -90,6 +92,55 @@ def create_spreadsheet(sheet, title):
     request = sheet.create(body=spreadsheet, fields='spreadsheetId')
     response = request.execute()
     return response.get('spreadsheetId')
+
+def doit(sheet, id, requests):
+    body = {
+        'requests': requests
+    }
+
+    request = sheet.batchUpdate(spreadsheetId=id, body=body)
+    response = request.execute()
+
+def delete_sheets(sheet, id, sheets):
+    ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
+    request = [ ]
+    for s in sheets:
+      sheetId = s['properties']['sheetId']
+      if sheetId != 0:
+        request.append({
+          "deleteSheet": {
+            "sheetId": sheetId
+          }
+        })
+      else:
+        request.append({
+          "updateCells": {
+            "range": {
+              "sheetId": sheetId
+            },
+            "fields": "userEnteredValue"
+          }
+        })
+
+    # We are letting this fail if there was nothing to clean. This will
+    # hopefully result in re-creating the spreadsheet.
+    doit(sheet, id, request)
+
+def init_spreadsheet(sheet):
+    try:
+        with open(rebase_filename, 'r') as file:
+	    id = file.read()
+	request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+	response = request.execute()
+	sheets = response.get('sheets')
+	delete_sheets(sheet, id, sheets)
+    except:
+        id = create_spreadsheet(sheet, 'Rebase %s -> %s' %
+				(rebase_baseline(), rebase_target))
+	with open(rebase_filename, 'w') as file:
+	    file.write(id)
+
+    return id
 
 def resize_sheet(requests, id, start, end):
     requests.append({
@@ -451,14 +502,6 @@ def add_commits(requests):
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
 
-def doit(sheet, id, requests):
-    body = {
-        'requests': requests
-    }
-
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
-    response = request.execute()
-
 def add_chart(requests):
     global lastrow
 
@@ -547,8 +590,7 @@ def add_chart(requests):
 
 def main():
     sheet = getsheet()
-    id = create_spreadsheet(sheet, 'Rebase %s -> %s' % (rebase_baseline(),
-                                                        rebase_target))
+    id = init_spreadsheet(sheet)
     get_other_topic_id()
 
     requests = [ ]
