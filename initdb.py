@@ -44,7 +44,7 @@ def createdb():
 
   # Create table
   c.execute("CREATE TABLE commits (date integer, \
-                                   created timestamp, updated timestamp, \
+                                   created timestamp, updated timestamp, authored timestamp, \
                                    sha text, usha text, \
                                    patchid text, \
                                    changeid text, \
@@ -185,10 +185,14 @@ def update_commits():
           chid = chid.group(1)
           break
 
+      authored = subprocess.check_output(['git', 'show', '--format="%at"', '-s', sha])
+      authored = authored.rstrip('\n')
+      authored = authored.strip('"')
+
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i".
-      c.execute("INSERT INTO commits(date, created, updated, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), sha, usha, patchid, chid, subject, "drop", "upstream",))
+      c.execute("INSERT INTO commits(date, created, updated, authored, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, NOW(), NOW(), authored, sha, usha, patchid, chid, subject, "drop", "upstream",))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
