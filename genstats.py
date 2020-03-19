@@ -311,9 +311,9 @@ def create_summary(sheet, id):
 
     requests.append({
         'updateSheetProperties': {
-            # 'sheetId': 0,
             'properties': {
-                'title': 'Summary',
+                'sheetId': 0,
+                'title': 'Data',
             },
             'fields': 'title'
         }
@@ -329,6 +329,22 @@ def create_summary(sheet, id):
 
     # and execute
     doit(sheet, id, requests)
+
+def move_summary(sheet, id, index):
+    ''' Move 'Data' sheet to end of spreadsheet. '''
+    request = [ ]
+
+    request.append({
+        'updateSheetProperties': {
+            'properties': {
+                'sheetId': 0,
+                'index': index,
+            },
+            'fields': 'index'
+        }
+    })
+
+    doit(sheet, id, request)
 
 def sourceRange(sheetId, rows, column):
     return {
@@ -474,6 +490,8 @@ def main():
 
     add_backlog_chart(sheet, id)
     add_age_chart(sheet, id)
+
+    move_summary(sheet, id, 3)
 
 if __name__ == '__main__':
     main()
