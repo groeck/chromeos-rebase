@@ -5,8 +5,8 @@ import re
 import subprocess
 import time
 from config import rebasedb, \
-        stable_path, android_path, chromeos_path, rebase_target
-from common import workdir, stable_baseline, rebase_baseline
+        stable_path, android_path, chromeos_path
+from common import workdir, stable_baseline, rebase_baseline, rebase_target_tag
 
 stable_commits = rebase_baseline() + '..' + stable_baseline()
 baseline_commits = rebase_baseline() + '..'
@@ -203,7 +203,7 @@ def update_commits():
 
   # "git cherry -v <target>" on branch rebase_baseline gives us a list
   # of patches to apply.
-  patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target])
+  patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target_tag()])
   for patch in patches.splitlines():
     elem = patch.split(" ", 2)
     # print "patch: " + patch

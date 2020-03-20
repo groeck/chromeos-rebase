@@ -22,10 +22,8 @@ import os
 import re
 import subprocess
 import time
-from config import rebasedb, \
-        stable_path, android_path, chromeos_path, \
-        rebase_target
-from common import upstreamdb, rebase_baseline
+from config import rebasedb, stable_path, android_path, chromeos_path
+from common import upstreamdb, rebase_baseline, rebase_target_version
 
 stats_filename = "rebase-stats.id"
 
@@ -43,6 +41,8 @@ blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
 white = { 'red': 1, 'green': 1, 'blue': 1 }
 
 lastrow = 0
+
+version = rebase_target_version()
 
 def get_other_topic_id():
     """ Calculate other_topic_id """
@@ -183,7 +183,6 @@ def NOW():
 def add_topics_summary_row(requests, conn, rowindex, topic, name):
     c = conn.cursor()
     c2 = conn.cursor()
-    version = rebase_target.strip('v')
 
     age = 0
     now = NOW()
@@ -257,7 +256,6 @@ def add_topics_summary(requests):
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
-    version = rebase_target.strip('v')
 
     # Handle 'chromeos' first and separately so we can exclude it from the
     # backlog chart later.

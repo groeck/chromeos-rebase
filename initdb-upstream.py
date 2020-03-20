@@ -2,8 +2,8 @@ import os
 import re
 import sqlite3
 import subprocess
-from config import upstream_path, rebase_target
-from common import rebase_baseline, workdir, upstreamdb, createdb
+from config import upstream_path
+from common import rebase_baseline, workdir, upstreamdb, createdb, rebase_target_tag
 
 def mktables(c):
   ''' Create tables '''
@@ -65,8 +65,8 @@ def update_upstreamdb():
 
   os.chdir(upstream_path)
 
-  upstream_drop = start + '..' + rebase_target
-  upstream_pick = rebase_target + '..'
+  upstream_drop = start + '..' + rebase_target_tag()
+  upstream_pick = rebase_target_tag() + '..'
 
   conn = sqlite3.connect(upstreamdb)
   c = conn.cursor()

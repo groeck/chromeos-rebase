@@ -6,8 +6,8 @@ from __future__ import print_function
 import sqlite3
 import os
 import subprocess
-from config import next_path, rebase_target
-from common import workdir, nextdb, createdb
+from config import next_path
+from common import workdir, nextdb, createdb, rebase_target_tag
 
 def mktables(c):
   # Create tables
@@ -19,7 +19,7 @@ def mktables(c):
   c.execute("CREATE INDEX file_name ON files (filename)")
 
 def handle(c):
-  next_pick = rebase_target + '..'
+  next_pick = rebase_target_tag() + '..'
   commits = subprocess.check_output(['git', 'log', '--oneline', '--no-merges',
                                     next_pick])
   for commit in commits.splitlines():

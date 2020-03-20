@@ -21,10 +21,8 @@ import os
 import re
 import subprocess
 import time
-from config import rebasedb, \
-        stable_path, android_path, chromeos_path, \
-        rebase_target
-from common import upstreamdb, rebase_baseline
+from config import rebasedb, stable_path, android_path, chromeos_path
+from common import upstreamdb, rebase_baseline, rebase_target_tag, rebase_target_version
 
 rebase_filename = "rebase-spreadsheet.id"
 
@@ -134,7 +132,7 @@ def init_spreadsheet(sheet):
 	delete_sheets(sheet, id, sheets)
     except:
         id = create_spreadsheet(sheet, 'Rebase %s -> %s' %
-				(rebase_baseline(), rebase_target))
+				(rebase_baseline(), rebase_target_tag()))
 	with open(rebase_filename, 'w') as file:
 	    file.write(id)
 
@@ -156,7 +154,7 @@ def add_topics_summary(requests):
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
     c2 = conn.cursor()
-    version = rebase_target.strip('v')
+    version = rebase_target_version()
     counted_rows = 0
 
     c.execute("select topic, name from topics order by name")
