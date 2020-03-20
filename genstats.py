@@ -84,6 +84,32 @@ def getsheet():
     # service = discovery.build('sheets', 'v4', developerKey=API_KEY)
     return service.spreadsheets()
 
+def doit(sheet, id, requests):
+    ''' Execute a request '''
+    body = {
+        'requests': requests
+    }
+
+    request = sheet.batchUpdate(spreadsheetId=id, body=body)
+    response = request.execute()
+    return response
+
+def hide_sheet(sheet, id, sheetid, hide):
+    ''' Move 'Data' sheet to end of spreadsheet. '''
+    request = [ ]
+
+    request.append({
+        'updateSheetProperties': {
+            'properties': {
+                'sheetId': sheetid,
+                'hidden': hide,
+            },
+            'fields': 'hidden'
+        }
+    })
+
+    doit(sheet, id, request)
+
 def create_spreadsheet(sheet, title):
     """ Create a spreadsheet and return reference to it """
     spreadsheet = {
@@ -97,18 +123,10 @@ def create_spreadsheet(sheet, title):
 
     return response.get('spreadsheetId')
 
-def doit(sheet, id, requests):
-    ''' Execute a request '''
-    body = {
-        'requests': requests
-    }
-
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
-    response = request.execute()
-    return response
-
 def delete_sheets(sheet, id, sheets):
     ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
+    # Unhide 'Data' sheet. If it is hidden we can't remove the other sheets.
+    hide_sheet(sheet, id, 0, False)
     request = [ ]
     for s in sheets:
       sheetId = s['properties']['sheetId']
@@ -135,7 +153,7 @@ def delete_sheets(sheet, id, sheets):
 def init_spreadsheet(sheet):
     try:
         with open(stats_filename, 'r') as file:
-	    id = file.read()
+	    id = file.read().strip('\n')
 	request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
 	response = request.execute()
 	sheets = response.get('sheets')
@@ -330,18 +348,17 @@ def create_summary(sheet, id):
     # and execute
     doit(sheet, id, requests)
 
-def move_summary(sheet, id, index):
+def move_sheet(sheet, id, sheetid, to):
     ''' Move 'Data' sheet to end of spreadsheet. '''
     request = [ ]
 
     request.append({
         'updateSheetProperties': {
             'properties': {
-                'sheetId': 0,
-                'index': index,
-                'hidden': True,
+                'sheetId': sheetid,
+                'index': to,
             },
-            'fields': 'index,hidden'
+            'fields': 'index'
         }
     })
 
@@ -492,7 +509,8 @@ def main():
     add_backlog_chart(sheet, id)
     add_age_chart(sheet, id)
 
-    move_summary(sheet, id, 3)
+    move_sheet(sheet, id, 0, 3)
+    hide_sheet(sheet, id, 0, True)
 
 if __name__ == '__main__':
     main()
