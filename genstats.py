@@ -11,8 +11,6 @@
 
 from __future__ import print_function
 import pickle
-import os.path
-import re
 from googleapiclient import discovery
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -21,6 +19,7 @@ import sqlite3
 import os
 import re
 import subprocess
+import datetime
 import time
 from config import rebasedb, stable_path, android_path, chromeos_path
 from common import upstreamdb, rebase_baseline, rebase_target_version
@@ -392,7 +391,7 @@ def add_backlog_chart(sheet, id):
         "chart": {
           "chartId": 1,
           "spec": {
-            "title": "Upstream Backlog",
+            "title": "Upstream Backlog (updated %s)" % datetime.datetime.now().strftime("%x"),
             "basicChart": {
               "chartType": "COLUMN",
 	      "stackedType": "STACKED",
@@ -453,7 +452,7 @@ def add_age_chart(sheet, id):
         "chart": {
           "chartId": 2,
           "spec": {
-            "title": "Upstream Backlog Age",
+            "title": "Upstream Backlog Age (updated %s)" % datetime.datetime.now().strftime("%x"),
             "basicChart": {
               "chartType": "COLUMN",
               # "legendPosition": "BOTTOM_LEGEND",
