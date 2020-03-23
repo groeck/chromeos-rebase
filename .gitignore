@@ -1,4 +1,6 @@
 *.db
+*.db-journal
+*.pyc
 rebase-spreadsheet.id
 rebase-stats.id
 credentials.json
