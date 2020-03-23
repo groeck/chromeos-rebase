@@ -31,6 +31,7 @@ android_path=$(python -c "from config import android_path; print android_path;")
 
 upstreamdb=$(python -c "from common import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from common import nextdb; print nextdb;")
+rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
 
 usage()
 {
@@ -131,6 +132,9 @@ clone_simple "${next_path}" "${next_repo}" "force"
 
 clone_complex "${chromeos_path}" "${chromeos_repo}" "${rebase_baseline_branch}"
 clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
+
+# Remove and re-create all databases (for now)
+rm -f "${rebasedb}" "${nextdb}" "${upstreamdb}"
 
 echo "Initializing database"
 python initdb.py
