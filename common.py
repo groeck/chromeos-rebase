@@ -43,7 +43,7 @@ def rebase_target_tag():
     os.chdir(currdir)
     v=version.match(tag)
     if v:
-      tag=v.group(0)
+      tag=v.group(0).strip('\n')
     else:
       tag="HEAD"
   else:
