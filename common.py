@@ -29,7 +29,7 @@ def rebase_baseline():
   baseline=stable_baseline()
   return baseline.split('.')[0]+'.'+baseline.split('.')[1]
 
-version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+))+\s*")
+version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+)?)\s*")
 
 def rebase_target_tag():
   '''
