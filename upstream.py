@@ -12,7 +12,6 @@ import time
 from config import chromeos_path
 from config import rebasedb
 from config import upstream_path
-from config import next_path
 from common import upstreamdb
 from common import nextdb
 
@@ -328,5 +327,6 @@ doit()
 # TODO: Check upstream/mainline and -next for Fixup: patches
 # of patches which are going to be applied, and apply those
 # as well.
-getallsubjects(nextdb)
-doit(nextdb, next_path, 'next')
+if nextdb:
+    getallsubjects(nextdb)
+    doit(nextdb, next_path, 'next')

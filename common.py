@@ -4,11 +4,12 @@ import sqlite3
 import subprocess
 
 from config import upstream_path, chromeos_path, rebase_baseline_branch, rebase_target
+from config import next_repo
 
 workdir = os.getcwd()
 dbdir = workdir + '/database'
 upstreamdb = dbdir + '/upstream.db'
-nextdb = dbdir + '/next.db'
+nextdb = dbdir + '/next.db' if next_repo else None
 
 def stable_baseline():
   '''
@@ -53,9 +54,6 @@ def rebase_target_tag():
 
 def rebase_target_version():
   return rebase_target_tag().strip('v')
-
-def stabledb(version):
-  return dbdir + "/stable-" + version + '.db'
 
 def chromeosdb(version):
   return dbdir + "/chromeos-" + version + '.db'

@@ -45,7 +45,7 @@ def update_commits():
 
   conn = sqlite3.connect(rebasedb)
   uconn = sqlite3.connect(upstreamdb)
-  nconn = sqlite3.connect(nextdb)
+  nconn = sqlite3.connect(nextdb) if nextdb else None
   c = conn.cursor()
 
   c.execute("select sha, usha, subject from commits where usha != ''")
@@ -53,7 +53,7 @@ def update_commits():
     uusha = findsha(uconn, usha, desc)
     # if it is not in the upstream database, maybe it is in -next.
     # Try to pick it up from there.
-    if uusha is None:
+    if uusha is None and nconn:
       uusha = findsha(nconn, usha, desc)
     if usha != uusha:
       if not uusha:
@@ -64,6 +64,7 @@ def update_commits():
   conn.commit()
   conn.close()
   uconn.close()
-  nconn.close()
+  if nconn:
+      nconn.close()
 
 update_commits()

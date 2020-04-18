@@ -11,6 +11,7 @@ android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
 chromium_site = "https://chromium.googlesource.com/"
 
+# Set to None if unused
 android_repo = android_site + "kernel/common"
 next_repo = kernel_site + "pub/scm/linux/kernel/git/next/linux-next"
 upstream_repo = kernel_site + "pub/scm/linux/kernel/git/torvalds/linux"
@@ -18,10 +19,10 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 chromeos_path = "linux-chrome"
-stable_path = "linux-stable"
-android_path = "linux-android"
 upstream_path = "linux-upstream"
-next_path = "linux-next"
+stable_path = "linux-stable" if stable_repo else None
+android_path = "linux-android" if android_repo else None
+next_path = "linux-next" if next_repo else None
 
 # Clear subject_droplist as follows to keep andoid patches
 # subject_droplist = []

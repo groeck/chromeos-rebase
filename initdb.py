@@ -237,6 +237,8 @@ def update_commits():
 if not os.path.isfile(rebasedb):
   createdb()
 
-update_stable(stable_path, stable_commits, "stable")
-update_stable(android_path, baseline_commits, "android")
+if stable_path:
+    update_stable(stable_path, stable_commits, "stable")
+if android_path:
+    update_stable(android_path, baseline_commits, "android")
 update_commits()

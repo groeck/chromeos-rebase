@@ -25,9 +25,11 @@ next_repo=$(python -c  "from config import next_repo; print next_repo;")
 
 rebase_baseline_branch=$(python -c "from config import rebase_baseline_branch; print rebase_baseline_branch;")
 
-android_baseline_branch=$(python -c "from config import android_baseline_branch; print android_baseline_branch;")
 android_repo=$(python -c  "from config import android_repo; print android_repo;")
-android_path=$(python -c "from config import android_path; print android_path;")
+if [[ "${android_repo}" != "None" ]]; then
+    android_baseline_branch=$(python -c "from config import android_baseline_branch; print android_baseline_branch;")
+    android_path=$(python -c "from config import android_path; print android_path;")
+fi
 
 upstreamdb=$(python -c "from common import upstreamdb; print upstreamdb;")
 nextdb=$(python -c "from common import nextdb; print nextdb;")
@@ -80,7 +82,10 @@ clone_simple()
 }
 
 clone_simple "${upstream_path}" "${upstream_repo}"
-clone_simple "${stable_path}" "${stable_repo}"
+
+if [[ "${stable_repo}" != "None" ]]; then
+    clone_simple "${stable_path}" "${stable_repo}"
+fi
 
 # Complex clone:
 # Clone repository, check out branch, add 'upstream' remote
@@ -111,10 +116,12 @@ clone_complex()
 		git remote add upstream "${upstream_path}"
 	}
 	git fetch upstream
-	git remote -v | grep next || {
+	if [[ "${next_repo}" != "None" ]]; then
+	    git remote -v | grep next || {
 		git remote add next "${next_path}"
-	}
-	git fetch next
+	    }
+	    git fetch next
+	fi
 	popd >/dev/null
     else
 	git clone "${repository}" "${destdir}"
@@ -122,16 +129,23 @@ clone_complex()
 	git checkout -b "${branch}" "origin/${branch}"
 	git remote add upstream "${upstream_path}"
 	git fetch upstream
-	git remote add next "${next_path}"
-	git fetch next
+	if [[ "${next_repo}" != "None" ]]; then
+	    git remote add next "${next_path}"
+	    git fetch next
+	fi
 	popd >/dev/null
     fi
 }
 
-clone_simple "${next_path}" "${next_repo}" "force"
+if [[ "${next_repo}" != "None" ]]; then
+    clone_simple "${next_path}" "${next_repo}" "force"
+fi
 
 clone_complex "${chromeos_path}" "${chromeos_repo}" "${rebase_baseline_branch}"
-clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
+
+if [[ "${android_repo}" != "None" ]]; then
+    clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
+fi
 
 # Remove and re-create all databases (for now)
 rm -f "${rebasedb}" "${nextdb}" "${upstreamdb}"
@@ -142,8 +156,10 @@ python initdb.py
 echo "Initializing upstream database"
 python initdb-upstream.py
 
-echo "Initializing next database"
-python initdb-next.py
+if [[ "${next_repo}" != "None" ]]; then
+    echo "Initializing next database"
+    python initdb-next.py
+fi
 
 echo "Updating rebase database with upstream commits"
 python update.py

@@ -21,7 +21,7 @@ import re
 import subprocess
 import datetime
 import time
-from config import rebasedb, stable_path, android_path, chromeos_path
+from config import rebasedb
 from common import upstreamdb, rebase_baseline, rebase_target_version
 
 stats_filename = "rebase-stats.id"
