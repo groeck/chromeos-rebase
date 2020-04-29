@@ -3,7 +3,7 @@ from __future__ import print_function
 import sqlite3
 import os
 import time
-from config import rebasedb, subject_droplist, droplist
+from config import rebasedb, subject_droplist, sha_droplist, droplist
 
 def NOW():
   return int(time.time())
@@ -24,6 +24,14 @@ conn = sqlite3.connect(rebasedb)
 
 c = conn.cursor()
 c2 = conn.cursor()
+
+# Drop patches listed explicitly as to be dropped.
+# Only drop if the listed SHA is actually in the database.
+
+for sha, reason in sha_droplist:
+    c.execute("select sha from commits where sha is '%s'" % sha)
+    if c.fetchone():
+        do_drop(c2, sha, reason)
 
 # Drop all Android patches. We'll pick them up from the most recent version.
 

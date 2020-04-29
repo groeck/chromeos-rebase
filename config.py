@@ -28,6 +28,17 @@ next_path = "linux-next" if next_repo else None
 # subject_droplist = []
 subject_droplist = ["ANDROID:", "Android:", "android:"]
 
+# List of SHAs to be dropped manually, for example because they are
+# upstream but not auto-detected by the tool.
+sha_droplist = [
+	[ "9ab7893e57cd", "upstream commit 44758bafa536" ],
+	[ "5482ed86293b", "upstream commit d30f370d3a49" ],
+	[ "80269d1d18e8", "upstream commit 145d59baff59" ],
+	[ "64096771a56d", "upstream commit b9b05664ebf6" ],
+	[ "eff9d0917462", "upstream commit 93fe48a58590" ],
+	[ "b716d03da4f7", "upstream commit f567ff6c76f7" ],
+	]
+
 droplist = [('drivers/net/wireless/iwl7000', 'Intel'),
 #           ('drivers/gpu/drm/i915', 'Intel'),
 #           ('drivers/gpu/drm/amd', 'AMD')
