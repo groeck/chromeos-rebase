@@ -147,8 +147,8 @@ if [[ "${android_repo}" != "None" ]]; then
     clone_complex "${android_path}" "${android_repo}" "${android_baseline_branch}"
 fi
 
-# Remove and re-create all databases (for now)
-rm -f "${rebasedb}" "${nextdb}" "${upstreamdb}"
+# Remove and re-create all databases (for now) except upstream database.
+rm -f "${rebasedb}" "${nextdb}"
 
 echo "Initializing database"
 python initdb.py

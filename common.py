@@ -122,3 +122,38 @@ def get_integrated_tag(sha):
         return None
     except subprocess.CalledProcessError:
         return None
+
+
+# extract_numerics matches numeric parts of a Linux version as separate elements
+# For example, "v5.4" matches "5" and "4", and "v5.4.12" matches "5", "4", and "12"
+extract_numerics = re.compile(r'(?:v)?([0-9]+)\.([0-9]+)(?:\.([0-9]+))?(?:-rc([0-9]+))?\s*')
+
+def version_to_number(version):
+    """Convert Linux version to numeric value usable for comparisons.
+
+    A branch with higher version number will return a larger number.
+    Supports version numbers up to 999, and release candidates up to 99.
+
+    Returns 0 if the kernel version can not be extracted.
+    """
+
+    m = extract_numerics.match(version)
+    if m:
+        major = int(m.group(1))
+        minor1 = int(m.group(2))
+        minor2 = int(m.group(3)) if m.group(3) else 0
+        minor3 = int(m.group(4)) if m.group(4) else 0
+        total = major * 1000000000 + minor1 * 1000000 + minor2 * 1000
+        if minor3 != 0:
+            total -= (100 - minor3)
+        return total
+    return 0
+
+def is_in_baseline(version):
+    if version:
+      o1 = version_to_number(rebase_baseline())
+      o2 = version_to_number(version)
+
+      return o2 <= o1
+
+    return False

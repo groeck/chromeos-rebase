@@ -14,6 +14,7 @@ from config import rebasedb
 from config import upstream_path
 from common import upstreamdb
 from common import nextdb
+from common import is_in_baseline
 
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -180,14 +181,14 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
       ndesc = m.group(2).replace("'", "''")
       rdesc = m.group(2).encode(encoding)
       # print("    Match subject '%s'" % ndesc)
-      cu.execute("select sha, subject, in_baseline from commits "
+      cu.execute("select sha, subject, integrated from commits "
                  "where subject='%s'"
                  % ndesc)
       fsha = cu.fetchone()
       if fsha:
         c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"
                    % (fsha[0], sha))
-        in_baseline = fsha[2]
+        in_baseline = is_in_baseline(fsha[2])
         if mf:
           print("Regex match for %s '%s'" % (sha, desc.replace("'", "''")))
           print("    Match subject '%s'" % ndesc)
@@ -200,7 +201,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
         # print("    Local subject: %s" % desc)
         # print("    Upstream subject: %s" % ndesc)
         # print("    In v4.9: %d" % fsha[2])
-        if in_baseline == 1:
+        if in_baseline:
           disposition = 'drop'
         else:
           disposition = 'replace'
@@ -244,13 +245,13 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
         print("    subject match results %d/%d" % (result, smatch))
         c2.execute("UPDATE commits SET sscore=%d where sha='%s'" %
                    ((result + smatch)/2, sha))
-        cu.execute("select sha, subject, in_baseline from commits "
+        cu.execute("select sha, subject, integrated from commits "
                    "where subject='%s'" % mdesc.replace("'", "''"))
         fsha = cu.fetchone()
         if fsha:
           c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"
                      % (fsha[0], sha))
-          in_baseline = fsha[2]
+          in_baseline = is_in_baseline(fsha[2])
           print("    Upstream candidate %s ('%s')" %
                 (fsha[0], fsha[1].replace("'", "''")))
           if mf:
@@ -297,7 +298,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                        % sha)
             continue
           # We have a match.
-          if in_baseline == 1:
+          if in_baseline:
             print("    Drop sha '%s' (close match)" % sha)
             disposition='drop'
             reason = '%s/match' % name
@@ -327,6 +328,9 @@ doit()
 # TODO: Check upstream/mainline and -next for Fixup: patches
 # of patches which are going to be applied, and apply those
 # as well.
-if nextdb:
-    getallsubjects(nextdb)
-    doit(nextdb, next_path, 'next')
+# FIXME: This never really worked - next_path is not imported.
+# We'll also have to update nextdb to match the format of
+# upstreamdb if we really want this to work.
+# if nextdb:
+#     getallsubjects(nextdb)
+#     doit(nextdb, next_path, 'next')
