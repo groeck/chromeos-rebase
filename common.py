@@ -11,6 +11,13 @@ dbdir = workdir + '/database'
 upstreamdb = dbdir + '/upstream.db'
 nextdb = dbdir + '/next.db' if next_repo else None
 
+try:
+    from subprocess import DEVNULL # py3k
+except ImportError:
+    import os
+    DEVNULL = open(os.devnull, 'wb')
+
+
 def stable_baseline():
   '''
   Return most recent label in to-be-rebased branch
@@ -24,7 +31,7 @@ def stable_baseline():
 
 def rebase_baseline():
   '''
-  Return most recent label in to-be-rebased branch
+  Return most recent tag in to-be-rebased branch
   '''
 
   baseline=stable_baseline()
@@ -99,3 +106,19 @@ def createdb(db, op):
   # Save (commit) the changes
   conn.commit()
   conn.close()
+
+
+# match "vX.Y[.Z][.rcN]"
+version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+)?)\s*')
+
+def get_integrated_tag(sha):
+    """For a given SHA, find the first tag that includes it."""
+
+    try:
+        cmd = ['git', 'describe', '--match', 'v*', '--contains', sha]
+        tag = subprocess.check_output(cmd, stderr=DEVNULL)
+        return version.match(tag).group()
+    except AttributeError:
+        return None
+    except subprocess.CalledProcessError:
+        return None
