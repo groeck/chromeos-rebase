@@ -24,10 +24,16 @@ def update_sha(sha, topic, file="", base=""):
         disposition = result[0]
         reason = result[1]
         t = result[2]
-        if (disposition == 'drop' and reason != 'revisit' and reason != 'revisit/fixup'
-                               and reason != 'upstream/fixup' and reason != 'reverted'):
+        # Generate topic even if disposition is drop. We'll need it for statistics.
+        # Do not look into stable release and android patches since those will always be dropped.
+        if disposition == 'drop' and (reason == 'stable' or reason == 'android'):
             print "Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason)
             return count
+
+        #if (disposition == 'drop' and reason != 'revisit' and reason != 'revisit/fixup'
+        #                       and reason != 'upstream/fixup' and reason != 'reverted'):
+        #    print "Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason)
+        #    return count
         if t != 0:
             if t != topic:
                 if file != "":
@@ -83,6 +89,10 @@ for (subdir, topic, name, ) in topics:
     handle_topic(topic, subdir, name)
 
 topic = topic + 1
+
+# Identify left-over commits and assign dynamic topics.
+# This time skip entries with disposition=drop; we don't want
+# to create additional topics for those.
 
 while True:
     print "Topic %d" % topic
