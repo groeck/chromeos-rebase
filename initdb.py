@@ -92,8 +92,8 @@ def update_stable(path, list, origin):
   c = conn.cursor()
 
   os.chdir(path)
-  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--oneline', '--reverse',
-                                     list])
+  commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--oneline',
+                                     '--reverse', list])
   os.chdir(workdir)
 
   for commit in commits.splitlines():
@@ -119,8 +119,8 @@ def update_commits():
   c = conn.cursor()
 
   os.chdir(chromeos_path)
-  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--oneline', '--reverse',
-                                     rebase_baseline() + '..'])
+  commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--oneline',
+                                     '--reverse', rebase_baseline() + '..'])
 
   prevdate = 0
   mprevdate = 0
@@ -190,9 +190,15 @@ def update_commits():
       authored = authored.strip('"')
 
       # Initially assume we'll drop everything because it is not listed when
-      # running "rebase -i".
+      # running "rebase -i". Before doing that, check if the commit is a
+      # stable release commit. If so, mark it accordingly.
+      reason = 'upstream'
+      c.execute("select sha from stable where sha is '%s'" % sha)
+      if c.fetchone():
+        reason = 'stable'
+
       c.execute("INSERT INTO commits(date, created, updated, authored, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), authored, sha, usha, patchid, chid, subject, "drop", "upstream",))
+                (date, NOW(), NOW(), authored, sha, usha, patchid, chid, subject, "drop", reason,))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
