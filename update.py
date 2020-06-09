@@ -7,7 +7,7 @@ from common import upstreamdb, nextdb
 
 subject = re.compile("(ANDROID: *|CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)*(.*)")
 
-def findsha(uconn, sha, desc):
+def findsha(uconn, sha, patchid, desc):
   '''
   Try to find matching SHA in provided database.
   Return updated SHA, or None if not found.
@@ -15,22 +15,30 @@ def findsha(uconn, sha, desc):
 
   c = uconn.cursor()
 
-  c.execute("select sha from commits where sha is '%s'" % sha)
-  usha = c.fetchone()
-  if usha:
-    # print "  Found SHA %s in upstream database" % usha
-    return sha
+  if sha is not None:
+    c.execute("select sha from commits where sha is '%s'" % sha)
+    usha = c.fetchone()
+    if usha:
+      # print "  Found SHA %s in upstream database" % usha
+      return usha[0]
+
+  # Now look for patch id if provided
+  if patchid is not None:
+    c.execute("select sha from commits where patchid is '%s'" % patchid.decode())
+    usha = c.fetchone()
+    if usha:
+      # print "  Found SHA %s in upstream database based on patch ID" % usha
+      return usha[0]
 
   # The SHA is not upstream, or not known at all.
-  # See if we can find the commit subject;
-
+  # See if we can find the commit subject.
   s = subject.search(desc)
   if s:
     sdesc = s.group(2).replace("'", "''")
     c.execute("select sha from commits where subject is '%s'" % sdesc)
     usha = c.fetchone()
     if usha:
-      print "  Found upstream SHA '%s'" % usha
+      # print "  Found upstream SHA '%s' based on subject line" % usha
       return usha[0]
 
   return None
@@ -48,16 +56,16 @@ def update_commits():
   nconn = sqlite3.connect(nextdb) if nextdb else None
   c = conn.cursor()
 
-  c.execute("select sha, usha, subject from commits where usha != ''")
-  for (sha, usha, desc) in c.fetchall():
-    uusha = findsha(uconn, usha, desc)
+  c.execute("select sha, usha, patchid, subject from commits")
+  for (sha, usha, patchid, desc) in c.fetchall():
+    uusha = findsha(uconn, usha, patchid, desc)
     # if it is not in the upstream database, maybe it is in -next.
     # Try to pick it up from there.
     if uusha is None and nconn:
-      uusha = findsha(nconn, usha, desc)
+      uusha = findsha(nconn, usha, None, desc)
+    if not uusha:
+      uusha = ""
     if usha != uusha:
-      if not uusha:
-        uusha = ""
       print "SHA '%s': Updating usha '%s' with '%s'" % (sha, usha, uusha)
       c.execute("UPDATE commits set usha='%s' where sha='%s'" % (uusha, sha))
 
