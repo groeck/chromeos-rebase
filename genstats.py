@@ -231,11 +231,12 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
             else:
                 other += 1
 
-    # Only add summary entry if there are commits associated with this topic
-    if rows:
-        if effrows:
-            age /= effrows
-            age /= (3600 * 24)        # Display age in days
+    # Only add summary entry if there are active commits associated with this topic.
+    # Since the summary entry is used to generate statistics, do not add rows
+    # where all commits have been pushed upstream or have been reverted.
+    if effrows:
+        age /= effrows
+        age /= (3600 * 24)        # Display age in days
         requests.append({
             'pasteData': {
                 'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' % (name, upstream, backport, fromgit, fromlist, chromium, other, effrows, rows, age),
@@ -247,7 +248,7 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
                 }
             }
         })
-    return rows
+    return effrows
 
 def add_topics_summary(requests):
     global lastrow
