@@ -8,7 +8,7 @@ from config import rebasedb, subject_droplist, sha_droplist, droplist
 def NOW():
   return int(time.time())
 
-def do_drop(c, sha, reason):
+def do_drop(c, sha, reason, usha=None):
   c.execute("select disposition from commits where sha is '%s'" % sha)
   found = c.fetchone()
   if found[0] != "drop":
@@ -16,6 +16,8 @@ def do_drop(c, sha, reason):
     c.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
     c.execute("UPDATE commits SET reason=('%s') where sha='%s'" % (reason, sha))
     c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
+    if usha:
+      c.execute("UPDATE commits SET usha=('%s') where sha='%s'" % (usha, sha))
 
 workdir = os.getcwd()
 
@@ -28,10 +30,10 @@ c2 = conn.cursor()
 # Drop patches listed explicitly as to be dropped.
 # Only drop if the listed SHA is actually in the database.
 
-for sha, reason in sha_droplist:
+for sha, reason, usha in sha_droplist:
     c.execute("select sha from commits where sha is '%s'" % sha)
     if c.fetchone():
-        do_drop(c2, sha, reason)
+        do_drop(c2, sha, reason, usha=usha)
 
 # Drop all Android patches. We'll pick them up from the most recent version.
 
