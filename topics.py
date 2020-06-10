@@ -26,7 +26,7 @@ def update_sha(sha, topic, file="", base=""):
         t = result[2]
         # Generate topic even if disposition is drop. We'll need it for statistics.
         # Do not look into stable release and android patches since those will always be dropped.
-        if disposition == 'drop' and (reason == 'stable' or reason == 'android'):
+        if disposition == 'drop' and (reason == 'stable' or reason == 'android' or reason == 'Intel'):
             print "Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason)
             return count
 
