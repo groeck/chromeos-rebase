@@ -149,11 +149,26 @@ def version_to_number(version):
         return total
     return 0
 
-def is_in_baseline(version):
+
+def version_compare(v1, v2):
+    return version_to_number(v2) >= version_to_number(v1)
+
+
+# Return true if 1st version is included in the current baseline.
+# If no baseline is provided, use default.
+def is_in_baseline(version, baseline=rebase_baseline()):
     if version:
-      o1 = version_to_number(rebase_baseline())
-      o2 = version_to_number(version)
+      return version_compare(version, baseline)
 
-      return o2 <= o1
+    # If there is no version tag, it can not be included in any baseline.
+    return False
 
+
+# Return true if 1st version is included in the current baseline.
+# If no baseline is provided, use default.
+def is_in_target(version, target=rebase_target_tag()):
+    if version:
+      return version_compare(version, target)
+
+    # If there is no version tag, it can not be included in any target.
     return False
