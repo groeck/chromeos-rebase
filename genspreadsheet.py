@@ -161,10 +161,14 @@ def add_topics_summary(requests):
     rowindex = 1
     for (topic, name) in c.fetchall():
         # Only add summary entry if there are commits touching this topic
-        c2.execute("select topic, disposition from commits where topic=%d" % topic)
+        c2.execute("select disposition, reason from commits where topic=%d" % topic)
         rows = 0
         effrows = 0
-        for (r, d) in c2.fetchall():
+        for (d, r) in c2.fetchall():
+            # Skip entries associated with a topic if they are fully upstream
+            # and are not being replaced.
+            if d == 'drop' and r == 'upstream':
+	        continue
             rows += 1
             if d == 'pick':
                 effrows += 1
@@ -455,6 +459,10 @@ def add_commits(requests):
 
     c.execute("select sha, dsha, subject, disposition, reason, topic from commits where topic > 0")
     for (sha, dsha, subject, disposition, reason, topic) in c.fetchall():
+        # Skip entries associated with a topic if they are fully upstream
+	# and are not being replaced.
+        if disposition == 'drop' and reason == 'upstream':
+	    continue
         c2.execute("select topic, name from topics where topic=%d" % topic)
         if c2.fetchone():
             sheet_id = topic
