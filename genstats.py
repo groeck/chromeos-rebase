@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
-#/usr/bin/env python3
-
+# -*- coding: utf-8 -*-"
+#
 # Use information in rebase database to create rebase spreadsheet
 # Required python modules:
 # google-api-python-client google-auth-httplib2 google-auth-oauthlib
@@ -10,10 +10,6 @@
 # in credentials.json.
 
 from __future__ import print_function
-import pickle
-from googleapiclient import discovery
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 
 import sqlite3
 import os
@@ -21,7 +17,13 @@ import re
 import subprocess
 import datetime
 import time
-from config import rebasedb
+import pickle
+
+from googleapiclient import discovery
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+
+from config import rebasedb, topiclist_condensed
 from common import upstreamdb, rebase_baseline, rebase_target_version
 
 stats_filename = "rebase-stats.id"
@@ -29,8 +31,6 @@ stats_filename = "rebase-stats.id"
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
-
-other_topic_id = 0 # Sheet Id to be used for "other" topic
 
 red = { 'red': 1, 'green': 0.4, 'blue': 0 }
 yellow = { 'red': 1, 'green': 1, 'blue': 0 }
@@ -43,20 +43,160 @@ lastrow = 0
 
 version = rebase_target_version()
 
-def get_other_topic_id():
+def NOW():
+  return int(time.time())
+
+
+def get_other_topic_id(c):
     """ Calculate other_topic_id """
 
-    global other_topic_id
+    other_topic_id = 0
 
-    conn = sqlite3.connect(rebasedb)
-    c = conn.cursor()
-
-    c.execute("select topic from topics order by name")
-    for (topic,) in c.fetchall():
+    c.execute("select topic, name from topics order by name")
+    for topic, name in c.fetchall():
+        if name is 'other':
+            return topic
         if topic >= other_topic_id:
             other_topic_id = topic + 1
 
-    conn.close()
+    return other_topic_id
+
+
+def get_condensed_topic_name(topic_name):
+
+    for [condensed_name, topic_names] in topiclist_condensed:
+        for elem in topic_names:
+            if topic_name == elem:
+                return condensed_name
+    return topic_name
+
+
+def get_condensed_topic(c, topic_name):
+    for [condensed_name, topic_names] in topiclist_condensed:
+        for elem in topic_names:
+            if topic_name == elem:
+                c.execute("select topic from topics where name is '%s'" % topic_names[0])
+                topic = c.fetchone()
+                if topic:
+                    return topic[0]
+    c.execute("select topic from topics where name is '%s'" % topic_name)
+    topic = c.fetchone()
+    if topic:
+        return topic[0]
+    # oops
+    print("No topic found for %s" % topic_name)
+    return 0
+
+
+def get_topic_name(c, topic):
+
+    c.execute("select name from topics where topic is '%s'" % topic)
+    topic = c.fetchone()
+    if topic:
+        return topic[0]
+
+    return None
+
+def get_topics(c):
+    topics = {}
+    other_topic_id = None
+
+    c.execute("SELECT topic, name FROM topics ORDER BY name")
+    for topic, name in c.fetchall():
+        if name:
+            condensed_name = get_condensed_topic_name(name)
+            condensed_topic = get_condensed_topic(c, name)
+            topics[topic] = condensed_name
+            if condensed_name is 'other':
+                other_topic_id = condensed_topic
+
+    if not other_topic_id:
+        topics[get_other_topic_id(c)] = 'other'
+
+    return topics
+
+
+def get_tags(cu=None):
+    """Get dictionary with list of tags. Index is tag, content is tag timestamp"""
+
+    uconn = None
+    if not cu:
+        uconn = sqlite3.connect(upstreamdb)
+        cu = uconn.cursor()
+
+    tag_list = {}
+    largest_ts = 0
+
+    cu.execute("SELECT tag, timestamp FROM tags ORDER BY timestamp")
+    for (tag, timestamp) in cu.fetchall():
+        tag_list[tag] = timestamp
+        if timestamp > largest_ts:
+            largest_ts = timestamp
+
+    tag_list[u'ToT'] = largest_ts + 1
+
+    if uconn:
+        uconn.close()
+
+    return tag_list
+
+
+def do_topic_stats_count(topic_stats, tags, topic, committed_ts, integrated_ts):
+    """Count commit in topic stats if appropriate"""
+
+    for tag in tags:
+        tag_ts = tags[tag]
+        if committed_ts < tag_ts and tag_ts < integrated_ts:
+            topic_stats[topic][tag] += 1
+
+
+def get_topic_stats(c):
+    """ Return dict with commit statistics"""
+
+    uconn = sqlite3.connect(upstreamdb)
+    cu = uconn.cursor()
+
+    other_topic_id = get_other_topic_id(c)
+    tags = get_tags(cu)
+    topics = get_topics(c)
+
+    topic_stats = {}
+    for topic in list(set(topics.values())):
+        topic_stats[topic] = {}
+        for tag in tags:
+            topic_stats[topic][tag] = 0
+
+    c.execute("SELECT sha, usha, dsha, committed, topic, disposition from commits")
+    for (sha, usha, dsha, committed, topic, disposition,) in c.fetchall():
+        if topic in topics:
+            topic_name = topics[topic]
+        else:
+            topic_name = 'other'
+        if disposition != 'drop':
+            do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
+            continue
+        if not usha:
+            usha = dsha
+        if usha:
+            cu.execute("SELECT integrated from commits where sha is '%s'" % usha)
+            integrated = cu.fetchone()
+            if integrated:
+                integrated = integrated[0] if integrated[0] else None
+            if integrated:
+                # print("Counting sha %s topic %d disposition %s from %s to %s" % (sha, topic, disposition, committed, integrated))
+                do_topic_stats_count(topic_stats, tags, topic_name, committed, tags[integrated])
+            else: # Not yet integrated
+                if disposition != 'drop':
+                    # print("Counting sha %s topic %d disposition %s from %s (not integrated)" % (sha, topic, disposition, committed))
+                    do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
+                else:
+                    # print("Counting sha %s topic %d disposition %s from %s to ToT" % (sha, topic, disposition, committed))
+                    do_topic_stats_count(topic_stats, tags, topic_name, committed, tags['ToT'])
+
+    uconn.close()
+
+    return topic_stats
+
 
 def getsheet():
     """ Get and return reference to spreadsheet """
@@ -83,6 +223,7 @@ def getsheet():
     # service = discovery.build('sheets', 'v4', developerKey=API_KEY)
     return service.spreadsheets()
 
+
 def doit(sheet, id, requests):
     ''' Execute a request '''
     body = {
@@ -92,6 +233,7 @@ def doit(sheet, id, requests):
     request = sheet.batchUpdate(spreadsheetId=id, body=body)
     response = request.execute()
     return response
+
 
 def hide_sheet(sheet, id, sheetid, hide):
     ''' Move 'Data' sheet to end of spreadsheet. '''
@@ -109,6 +251,7 @@ def hide_sheet(sheet, id, sheetid, hide):
 
     doit(sheet, id, request)
 
+
 def create_spreadsheet(sheet, title):
     """ Create a spreadsheet and return reference to it """
     spreadsheet = {
@@ -121,6 +264,7 @@ def create_spreadsheet(sheet, title):
     response = request.execute()
 
     return response.get('spreadsheetId')
+
 
 def delete_sheets(sheet, id, sheets):
     ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
@@ -149,6 +293,7 @@ def delete_sheets(sheet, id, sheets):
     # hopefully result in re-creating the spreadsheet.
     doit(sheet, id, request)
 
+
 def init_spreadsheet(sheet):
     try:
         with open(stats_filename, 'r') as file:
@@ -164,6 +309,7 @@ def init_spreadsheet(sheet):
 
     return id
 
+
 def resize_sheet(requests, id, start, end):
     requests.append({
       'autoResizeDimensions': {
@@ -176,8 +322,6 @@ def resize_sheet(requests, id, start, end):
       }
     })
 
-def NOW():
-  return int(time.time())
 
 def add_topics_summary_row(requests, conn, rowindex, topic, name):
     c = conn.cursor()
@@ -250,9 +394,9 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
         })
     return effrows
 
+
 def add_topics_summary(requests):
     global lastrow
-    global other_topic_id
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
@@ -278,6 +422,7 @@ def add_topics_summary(requests):
 
     lastrow = rowindex
     conn.close()
+
 
 def add_sheet_header(requests, id, fields):
     """
@@ -322,6 +467,7 @@ def add_sheet_header(requests, id, fields):
         }
     })
 
+
 def create_summary(sheet, id):
     requests = [ ]
 
@@ -346,6 +492,118 @@ def create_summary(sheet, id):
     # and execute
     doit(sheet, id, requests)
 
+
+def update_one_cell(request, sheetId, row, column, data):
+    '''Update data in a a single cell'''
+
+    print("update_one_cell(id=%d row=%d column=%d data=%s type=%s" % (sheetId, row, column, data, type(data)))
+
+    if type(data) is int:
+        fieldtype = 'numberValue'
+    else:
+        fieldtype = 'stringValue'
+
+    request.append({
+        'updateCells': {
+            'rows': {
+                'values': [{
+                    'userEnteredValue': { fieldtype: '%s' % data }
+                }]
+            },
+            'fields': 'userEnteredValue(stringValue)',
+            'range': {
+                'sheetId': sheetId,
+                'startRowIndex': row,
+                'startColumnIndex': column
+                # 'endRowIndex': 1
+                # 'endColumnIndexIndex': column + 1
+            },
+        }
+    })
+
+
+
+def add_topic_stats_column(request, sheetId, column, tag, data):
+    """Add one column of topic statistics to request"""
+
+    row = 0
+    update_one_cell(request, sheetId, row, column, tag)
+
+    data.pop(0) # First entry is topic 0, skip
+    for f in data:
+        row += 1
+        update_one_cell(request, sheetId, row, column, f)
+
+
+def create_topic_stats(sheet, id):
+    """ Create tab with topic statistics. We'll use it later to create a chart."""
+
+    conn = sqlite3.connect(rebasedb)
+    c = conn.cursor()
+
+    topic_stats = get_topic_stats(c)
+    tags = get_tags()
+    sorted_tags = sorted(tags, key=tags.get)
+    topics = get_topics(c)
+    topic_list = list(set(topics.values()))
+
+    request = []
+
+    request.append({
+        'addSheet': {
+            'properties': {
+                # 'sheetId': 1,
+                'title': 'Topic Statistics Data',
+            },
+        }
+    })
+
+    response = doit(sheet, id, request)
+    reply = response.get('replies')
+    sheetId = reply[0]['addSheet']['properties']['sheetId']
+
+    request = []
+
+    # One column per topic
+    header = ''
+    columns = 1
+    for topic in topic_list:
+        header += ', %s' % topic
+        columns += 1
+
+    add_sheet_header(request, sheetId, header)
+
+    rowindex = 1
+    for tag in sorted_tags:
+        # topic = topics[topic_num]
+        # rowdata = topic
+        rowdata = tag
+        for topic in topic_list:
+            rowdata += ';%d' % topic_stats[topic][tag]
+        request.append({
+            'pasteData': {
+                'data': rowdata,
+                'type': 'PASTE_NORMAL',
+                'delimiter': ';',
+                'coordinate': {
+                    'sheetId': sheetId,
+                    'rowIndex': rowindex
+                }
+            }
+        })
+        rowindex = rowindex + 1
+
+    # As final step, resize sheet
+    # [not really necessary; drop if confusing]
+    resize_sheet(request, sheetId, 0, columns)
+
+    # and execute
+    doit(sheet, id, request)
+
+    conn.close()
+
+    return sheetId, rowindex, columns
+
 def move_sheet(sheet, id, sheetid, to):
     ''' Move 'Data' sheet to end of spreadsheet. '''
     request = [ ]
@@ -362,6 +620,7 @@ def move_sheet(sheet, id, sheetid, to):
 
     doit(sheet, id, request)
 
+
 def sourceRange(sheetId, rows, column):
     return {
       "sourceRange": {
@@ -377,8 +636,18 @@ def sourceRange(sheetId, rows, column):
       }
     }
 
+
 def scope(name, sheetId, rows, column):
     return { name: sourceRange(sheetId, rows, column) }
+
+
+def sscope(name, sheetId, rows, start, end):
+    s = [ scope(name, sheetId, rows, start) ]
+    while start < end:
+        start += 1
+        s += [ scope(name, sheetId, rows, start) ]
+    return s
+
 
 def add_backlog_chart(sheet, id):
     global lastrow
@@ -408,14 +677,7 @@ def add_backlog_chart(sheet, id):
                 }
               ],
               "domains": [ scope("domain", 0, lastrow + 1, 0) ],
-              "series": [
-                  scope("series", 0, lastrow + 1, 1),
-                  scope("series", 0, lastrow + 1, 2),
-                  scope("series", 0, lastrow + 1, 3),
-                  scope("series", 0, lastrow + 1, 4),
-                  scope("series", 0, lastrow + 1, 5),
-                  scope("series", 0, lastrow + 1, 6)
-              ]
+              "series": sscope("series", 0, lastrow + 1, 1, 6),
             }
           },
           "position": {
@@ -442,6 +704,7 @@ def add_backlog_chart(sheet, id):
         }
     })
     doit(sheet, id, request)
+
 
 def add_age_chart(sheet, id):
     global lastrow
@@ -496,18 +759,76 @@ def add_age_chart(sheet, id):
     })
     doit(sheet, id, request)
 
+
+def add_stats_chart(sheet, id, sheetId, rows, columns):
+    request = []
+
+    if columns > 25:
+        print("########### Limiting number of columns to 25 from %d" % columns)
+        columns = 25
+
+    request.append({
+      'addChart': {
+        "chart": {
+          "chartId": 3,
+          "spec": {
+            "title": "Topic Statistics (updated %s)" % datetime.datetime.now().strftime("%x"),
+            "basicChart": {
+              "chartType": "AREA",
+              "stackedType": "STACKED",
+              # "legendPosition": "BOTTOM_LEGEND",
+              "axis": [
+                {
+                  "position": "BOTTOM_AXIS",
+                  "title": "Upstream Release Tag"
+                },
+                {
+                  "position": "LEFT_AXIS",
+                  "title": "Patches"
+                }
+              ],
+              "domains": [ scope("domain", sheetId, rows, 0) ],
+              "series": sscope("series", sheetId, rows, 1, columns),
+            }
+          },
+          "position": {
+            "newSheet": True,
+          }
+        }
+      }
+    })
+
+    response = doit(sheet, id, request)
+
+    # Extract sheet Id from response
+    reply = response.get('replies')
+    sheetId = reply[0]['addChart']['chart']['position']['sheetId']
+
+    request = [ ]
+    request.append({
+        'updateSheetProperties': {
+            'properties': {
+                'sheetId': sheetId,
+                'title': 'Topic Statistics',
+             },
+             'fields': "title",
+         }
+    })
+    doit(sheet, id, request)
+
+
 def main():
     sheet = getsheet()
     id = init_spreadsheet(sheet)
 
-    get_other_topic_id()
-
     create_summary(sheet, id)
+    topic_stats_sheet, topic_stats_rows, topic_stats_columns = create_topic_stats(sheet, id)
 
     add_backlog_chart(sheet, id)
     add_age_chart(sheet, id)
+    add_stats_chart(sheet, id, topic_stats_sheet, topic_stats_rows, topic_stats_columns)
 
-    move_sheet(sheet, id, 0, 3)
+    move_sheet(sheet, id, 0, 4)
     hide_sheet(sheet, id, 0, True)
 
 if __name__ == '__main__':
