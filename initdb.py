@@ -44,7 +44,8 @@ def createdb():
 
   # Create table
   c.execute("CREATE TABLE commits (date integer, \
-                                   created timestamp, updated timestamp, authored timestamp, \
+                                   created timestamp, updated timestamp, \
+                                   authored timestamp, committed timestamp, \
                                    sha text, usha text, \
                                    patchid text, \
                                    changeid text, \
@@ -136,12 +137,11 @@ def update_commits():
       spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
       patchid = spid.split(" ", 1)[0]
 
-      sdate = subprocess.check_output(['git', 'show', '--format="%ct"',
+      sdate = subprocess.check_output(['git', 'show', '--format="%at %ct"',
                                        '-s', sha])
-      sdate = sdate.rstrip('\n')
-      sdate = sdate.strip('"')
+      (authored, committed) = sdate.strip('"\n').split(' ')
       # Make sure date is unique and in ascending order.
-      date = int(sdate)
+      date = int(committed)
       if date == prevdate:
         date = mprevdate + 1
       else:
@@ -185,10 +185,6 @@ def update_commits():
           chid = chid.group(1)
           break
 
-      authored = subprocess.check_output(['git', 'show', '--format="%at"', '-s', sha])
-      authored = authored.rstrip('\n')
-      authored = authored.strip('"')
-
       # Initially assume we'll drop everything because it is not listed when
       # running "rebase -i". Before doing that, check if the commit is a
       # stable release commit. If so, mark it accordingly.
@@ -197,8 +193,8 @@ def update_commits():
       if c.fetchone():
         reason = 'stable'
 
-      c.execute("INSERT INTO commits(date, created, updated, authored, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), authored, sha, usha, patchid, chid, subject, "drop", reason,))
+      c.execute("INSERT INTO commits(date, created, updated, authored, committed, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, NOW(), NOW(), authored, committed, sha, usha, patchid, chid, subject, "drop", reason,))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
