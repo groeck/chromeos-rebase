@@ -14,7 +14,7 @@ from config import rebasedb
 from config import upstream_path
 from common import upstreamdb
 from common import nextdb
-from common import is_in_baseline
+from common import is_in_target
 
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -170,10 +170,28 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
   db = sqlite3.connect(db)
   cu = db.cursor()
 
-  c.execute("select sha, subject, disposition from commits")
-  for (sha, desc, disposition) in c.fetchall():
+  c.execute("select sha, patchid, subject, disposition from commits")
+  for (sha, patchid, desc, disposition) in c.fetchall():
     if disposition == "drop":
       continue
+    # First look for matching upstream patch ID
+    cu.execute("SELECT sha, subject from commits where patchid is '%s'" % patchid)
+    fsha = cu.fetchone()
+    if fsha:
+     rsha = fsha[0]
+     subject = fsha[1]
+     c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'" % (rsha, sha))
+     in_target = is_in_target(rsha)
+     if in_target:
+       disposition = 'drop'
+     else:
+       disposition = 'replace'
+     print("Patch ID match for %s ('%s')" % (sha, desc.replace("'", "''")))
+     print("    Matching %s commit %s ('%s'), %s" %
+               (name, rsha, subject.replace("'", "''"), disposition))
+     update_commit(c2, sha, disposition, 'upstream')
+     continue
+
     m = rp.search(desc)
     mf = rpf.search(desc)
     if m:
@@ -188,7 +206,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
       if fsha:
         c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"
                    % (fsha[0], sha))
-        in_baseline = is_in_baseline(fsha[2])
+        in_target = is_in_target(fsha[2])
         if mf:
           print("Regex match for %s '%s'" % (sha, desc.replace("'", "''")))
           print("    Match subject '%s'" % ndesc)
@@ -201,7 +219,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
         # print("    Local subject: %s" % desc)
         # print("    Upstream subject: %s" % ndesc)
         # print("    In v4.9: %d" % fsha[2])
-        if in_baseline:
+        if in_target:
           disposition = 'drop'
         else:
           disposition = 'replace'
@@ -251,7 +269,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
         if fsha:
           c2.execute("UPDATE commits SET dsha=('%s') where sha='%s'"
                      % (fsha[0], sha))
-          in_baseline = is_in_baseline(fsha[2])
+          in_target = is_in_target(fsha[2])
           print("    Upstream candidate %s ('%s')" %
                 (fsha[0], fsha[1].replace("'", "''")))
           if mf:
@@ -298,7 +316,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                        % sha)
             continue
           # We have a match.
-          if in_baseline:
+          if in_target:
             print("    Drop sha '%s' (close match)" % sha)
             disposition='drop'
             reason = '%s/match' % name
