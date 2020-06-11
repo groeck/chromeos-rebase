@@ -78,6 +78,7 @@ topiclist = \
        "drivers/regulator/cros_ec",
        "drivers/i2c/busses/i2c-cros-ec", "include/linux/mfd/cros_ec",
        "include/linux/chromeos",
+       "include/linux/platform_data/cros_ec_commands.h",
        "sound/soc/codecs/cros_ec_codec.c",
        "Documentation/devicetree/bindings/chrome",
        "Documentation/ABI/testing/sysfs-class-chromeos-driver-cros-ec-vbc"
@@ -141,6 +142,7 @@ topiclist = \
      ["wireless",
       ["net/wireless", "drivers/net/wireless",
        "include/uapi/linux/wireless.h",
+       "include/uapi/nl80211-vnd-realtek.h",
        "Documentation/devicetree/bindings/net/wireless"]],
      ["net",
       ["drivers/net/usb", "net", "drivers/net", "include/linux/tcp.h",
@@ -257,4 +259,6 @@ topiclist = \
       ["kernel"]],
      ["drivers",
       ["drivers"]],
+     ["other",
+      ["lib", "scripts", "init"]],
     ]
