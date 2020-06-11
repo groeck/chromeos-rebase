@@ -29,6 +29,7 @@ rebase_filename = "rebase-spreadsheet.id"
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 other_topic_id = 0 # Sheet Id to be used for "other" topic
+have_other_topic = False
 
 red = { 'red': 1, 'green': 0.4, 'blue': 0 }
 yellow = { 'red': 1, 'green': 1, 'blue': 0 }
@@ -41,12 +42,18 @@ def get_other_topic_id():
     """ Calculate other_topic_id """
 
     global other_topic_id
+    global have_other_topic
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
-    c.execute("select topic from topics order by name")
-    for (topic,) in c.fetchall():
+    c.execute("select topic, name from topics order by name")
+    for topic, name in c.fetchall():
+        if name == 'other':
+            other_topic_id = topic
+            have_other_topic = True
+            conn.close()
+            return
         if topic >= other_topic_id:
             other_topic_id = topic + 1
 
@@ -168,7 +175,7 @@ def add_topics_summary(requests):
             # Skip entries associated with a topic if they are fully upstream
             # and are not being replaced.
             if d == 'drop' and r == 'upstream':
-	        continue
+                continue
             rows += 1
             if d == 'pick':
                 effrows += 1
@@ -194,7 +201,8 @@ def add_topics_summary(requests):
         allrows += 1
 
     # Now create an 'other' topic. We'll use it for unnamed topics.
-    requests.append({
+    if not have_other_topic:
+      requests.append({
         'pasteData': {
             'data': '=HYPERLINK("#gid=%d","other");%d;;;;;chromeos-%s-other' %
                              (other_topic_id, allrows - counted_rows, version),
@@ -205,7 +213,7 @@ def add_topics_summary(requests):
                 'rowIndex': rowindex
             }
         }
-    })
+      })
 
     conn.close()
 
@@ -379,7 +387,8 @@ def add_topics_sheets(requests):
         index += 1
 
     # Add 'other' topic at the very end
-    addsheet(requests, index, other_topic_id, 'other')
+    if not have_other_topic:
+        addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
 def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin):
@@ -460,9 +469,9 @@ def add_commits(requests):
     c.execute("select sha, dsha, subject, disposition, reason, topic from commits where topic > 0")
     for (sha, dsha, subject, disposition, reason, topic) in c.fetchall():
         # Skip entries associated with a topic if they are fully upstream
-	# and are not being replaced.
+        # and are not being replaced.
         if disposition == 'drop' and reason == 'upstream':
-	    continue
+            continue
         c2.execute("select topic, name from topics where topic=%d" % topic)
         if c2.fetchone():
             sheet_id = topic
