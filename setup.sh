@@ -9,7 +9,7 @@ chromeos_repo=$(python -c  "from config import chromeos_repo; print chromeos_rep
 stable_path=$(python -c "from config import stable_path; print stable_path;")
 stable_repo=$(python -c  "from config import stable_repo; print stable_repo;")
 
-upstream_path=$(python -c "from config import upstream_path; print upstream_path;")
+upstream_path=$(python -c "from common import upstream_path; print upstream_path;")
 if [[ "$(dirname ${upstream_path})" = "." ]]; then
 	# Needs to be an absolute path name
 	upstream_path="$(pwd)/${upstream_path}"

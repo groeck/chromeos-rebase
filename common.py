@@ -3,13 +3,14 @@ import re
 import sqlite3
 import subprocess
 
-from config import upstream_path, chromeos_path, rebase_baseline_branch, rebase_target
+from config import upstream_dir, chromeos_path, rebase_baseline_branch, rebase_target
 from config import next_repo
 
 workdir = os.getcwd()
 dbdir = workdir + '/database'
 upstreamdb = dbdir + '/upstream.db'
 nextdb = dbdir + '/next.db' if next_repo else None
+upstream_path = workdir + '/' + upstream_dir
 
 try:
     from subprocess import DEVNULL # py3k
@@ -44,13 +45,11 @@ def rebase_target_tag():
   Return most recent label in upstream kernel
   '''
 
-  upstream_dir = workdir+'/'+upstream_path
-
   if rebase_target == 'latest':
     try:
-      tag=subprocess.check_output(['git', '-C', upstream_dir, 'describe'], encoding='utf-8')
+      tag=subprocess.check_output(['git', '-C', upstream_path, 'describe'], encoding='utf-8')
     except TypeError: # py2
-      tag=subprocess.check_output(['git', '-C', upstream_dir, 'describe'])
+      tag=subprocess.check_output(['git', '-C', upstream_path, 'describe'])
     v=version.match(tag)
     if v:
       tag=v.group(0).strip('\n')
@@ -116,10 +115,8 @@ version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+)?)\s*')
 def get_integrated_tag(sha):
     """For a given SHA, find the first tag that includes it."""
 
-    upstream_dir = workdir+'/'+upstream_path
-
     try:
-        cmd = ['git', '-C', upstream_dir, 'describe', '--match', 'v*', '--contains', sha]
+        cmd = ['git', '-C', upstream_path, 'describe', '--match', 'v*', '--contains', sha]
         tag = subprocess.check_output(cmd, stderr=DEVNULL)
         return version.match(tag).group()
     except AttributeError:

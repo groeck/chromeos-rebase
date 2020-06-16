@@ -2,7 +2,7 @@ import os
 import re
 import sqlite3
 import subprocess
-from config import upstream_path
+from common import upstream_path
 from common import rebase_baseline, workdir, upstreamdb, createdb, rebase_target_tag
 from common import get_integrated_tag, DEVNULL
 
@@ -23,7 +23,7 @@ def mktables(c):
 
 def update_integrated_table(c, integrated):
 
-  cmd = ['git', 'log', '-1', '--format=%ct', integrated]
+  cmd = ['git', '-C', upstream_path, 'log', '-1', '--format=%ct', integrated]
   output = subprocess.check_output(cmd, stderr=DEVNULL)
   timestamp = int(output.splitlines()[0])
 
@@ -80,14 +80,17 @@ def handle(c, range):
 
 
 def update_baseline():
+
   conn = sqlite3.connect(upstreamdb)
   c = conn.cursor()
   c.execute('select sha from commits where integrated is NULL')
   for sha, in c.fetchall():
     integrated = get_integrated_tag(sha)
     if integrated:
+      print("Updating sha %s: integrated=%s" % (sha, integrated))
       update_integrated_table(c, integrated)
-      c.execute('UPDATE commits SET integrated="%s" where sha="%s"' % (sha, integrated))
+      cmd='UPDATE commits SET integrated="%s" where sha="%s"' % (integrated, sha)
+      c.execute(cmd)
   conn.commit()
   conn.close()
 
@@ -105,7 +108,8 @@ def init_tags(c):
 def update_patchids(c):
   c.execute('SELECT sha FROM commits WHERE patchid is Null')
   for sha, in c.fetchall():
-    ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
+    ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha],
+                          stdout=subprocess.PIPE)
     spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
     patchid = spid.split(" ", 1)[0]
     print("sha %s patch-id %s" % (sha, patchid))

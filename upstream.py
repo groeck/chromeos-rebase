@@ -11,7 +11,7 @@ import time
 
 from config import chromeos_path
 from config import rebasedb
-from config import upstream_path
+from common import upstream_path
 from common import upstreamdb
 from common import nextdb
 from common import is_in_target

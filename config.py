@@ -19,7 +19,7 @@ stable_repo = kernel_site + "pub/scm/linux/kernel/git/stable/linux-stable"
 chromeos_repo = chromium_site + "chromiumos/third_party/kernel"
 
 chromeos_path = "linux-chrome"
-upstream_path = "linux-upstream"
+upstream_dir = "linux-upstream"
 stable_path = "linux-stable" if stable_repo else None
 android_path = "linux-android" if android_repo else None
 next_path = "linux-next" if next_repo else None
