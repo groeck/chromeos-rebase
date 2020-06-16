@@ -44,14 +44,13 @@ def rebase_target_tag():
   Return most recent label in upstream kernel
   '''
 
+  upstream_dir = workdir+'/'+upstream_path
+
   if rebase_target == 'latest':
-    currdir=os.getcwd()
-    os.chdir(workdir+'/'+upstream_path)
     try:
-      tag=subprocess.check_output(['git', 'describe'], encoding='utf-8')
+      tag=subprocess.check_output(['git', '-C', upstream_dir, 'describe'], encoding='utf-8')
     except TypeError: # py2
-      tag=subprocess.check_output(['git', 'describe'])
-    os.chdir(currdir)
+      tag=subprocess.check_output(['git', '-C', upstream_dir, 'describe'])
     v=version.match(tag)
     if v:
       tag=v.group(0).strip('\n')
@@ -117,8 +116,10 @@ version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+)?)\s*')
 def get_integrated_tag(sha):
     """For a given SHA, find the first tag that includes it."""
 
+    upstream_dir = workdir+'/'+upstream_path
+
     try:
-        cmd = ['git', 'describe', '--match', 'v*', '--contains', sha]
+        cmd = ['git', '-C', upstream_dir, 'describe', '--match', 'v*', '--contains', sha]
         tag = subprocess.check_output(cmd, stderr=DEVNULL)
         return version.match(tag).group()
     except AttributeError:
