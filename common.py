@@ -47,7 +47,10 @@ def rebase_target_tag():
   if rebase_target == 'latest':
     currdir=os.getcwd()
     os.chdir(workdir+'/'+upstream_path)
-    tag=subprocess.check_output(['git', 'describe'])
+    try:
+      tag=subprocess.check_output(['git', 'describe'], encoding='utf-8')
+    except TypeError: # py2
+      tag=subprocess.check_output(['git', 'describe'])
     os.chdir(currdir)
     v=version.match(tag)
     if v:
