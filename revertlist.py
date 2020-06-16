@@ -32,8 +32,8 @@ rp = re.compile('Revert "(.*)"')
 # sha and filename must be in ' '
 
 c.execute("select date, sha, disposition, subject from commits")
-for (date, sha, disposition, desc) in c.fetchall():
-  # If the patch is already dropped, don't bother any further
+for (committed, sha, disposition, desc) in c.fetchall():
+  # If the patch has already been dropped, don't bother any further
   if disposition == "drop":
     continue
   m = rp.search(desc)
@@ -41,28 +41,34 @@ for (date, sha, disposition, desc) in c.fetchall():
     ndesc = m.group(1)
     print("Found revert : '%s' (%s)" % (desc.replace("'", "''"), sha))
     ndesc = ndesc.replace("'", "''")
-    c2.execute("select date, sha from commits where subject is '%s'"
+    c2.execute("select committed, sha from commits where subject is '%s'"
                % ndesc)
-    # Search for matching original commit. Only revert its first occurrance,
-    # and only if its date is older than the revert.
-    fsha = c2.fetchone()
-    if fsha:
-      if date > fsha[0]:
-        # print("    Matching commit : %s" % fsha[1])
-        print("    Marking %s for drop" % fsha[1])
-        c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                   % fsha[1])
-        c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'"
-                   % fsha[1])
-        c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
-      else:
-        print("    Matching commit later than reverse")
+    # Search for commit closest to the revert in the past
+    # (There may be multiple if the revert was repeated)
+    revert_committed = None
+    revert_sha = None
+    for (_committed, _sha,) in c2.fetchall():
+      if _committed < committed:
+        if not revert_sha or revert_committed < _committed:
+          revert_committed = _committed
+          revert_sha = _sha
+
+    if revert_sha:
+      print("    Marking %s for drop" % revert_sha)
+      c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
+                 % revert_sha)
+      c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'"
+                 % revert_sha)
+      c2.execute("UPDATE commits SET dsha='%s' where sha='%s'"
+                 % (sha, revert_sha))
+      c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), revert_sha))
     else:
       print("    No matching commit found")
-    # Hmmm .. the below seems redundant ad drops everything.
     print("    Marking %s for drop" % sha)
     c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
     c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'" % sha)
+    if revert_sha:
+      c2.execute("UPDATE commits SET dsha='%s' where sha='%s'" % (revert_sha, sha))
     c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
 
 conn.commit()
