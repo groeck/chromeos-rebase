@@ -166,8 +166,8 @@ def get_topic_stats(c):
         for tag in tags:
             topic_stats[topic][tag] = 0
 
-    c.execute("SELECT sha, usha, dsha, committed, topic, disposition from commits")
-    for (sha, usha, dsha, committed, topic, disposition,) in c.fetchall():
+    c.execute("SELECT sha, usha, dsha, committed, topic, disposition, reason from commits")
+    for (sha, usha, dsha, committed, topic, disposition, reason,) in c.fetchall():
         if topic in topics:
             topic_name = topics[topic]
         else:
@@ -175,6 +175,20 @@ def get_topic_stats(c):
         if disposition != 'drop':
             do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
             continue
+        # disposition is drop.
+        if reason == 'reverted' and dsha:
+            # This patch reverts dsha, or it was reverted by dsha.
+            # Count only if it was committed after its companion to ensure that
+            # it is counted only once.
+            c.execute("SELECT committed from commits where sha is '%s'" % dsha)
+            revert_committed, = c.fetchone()
+            if revert_committed > committed:
+                do_topic_stats_count(topic_stats, tags, topic_name, committed, revert_committed)
+            continue
+        # This is not a revert, or the revert companion is unknown (which can
+        # happen if we reverted an upstream patch). Check if we have a matching
+        # upstream or replacement SHA. If so, count accordingly. Don't count
+        # if we don't have a matching upstream/replacement SHA.
         if not usha:
             usha = dsha
         if usha:
@@ -183,15 +197,12 @@ def get_topic_stats(c):
             if integrated:
                 integrated = integrated[0] if integrated[0] else None
             if integrated:
-                # print("Counting sha %s topic %d disposition %s from %s to %s" % (sha, topic, disposition, committed, integrated))
                 do_topic_stats_count(topic_stats, tags, topic_name, committed, tags[integrated])
-            else: # Not yet integrated
-                if disposition != 'drop':
-                    # print("Counting sha %s topic %d disposition %s from %s (not integrated)" % (sha, topic, disposition, committed))
-                    do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
-                else:
-                    # print("Counting sha %s topic %d disposition %s from %s to ToT" % (sha, topic, disposition, committed))
-                    do_topic_stats_count(topic_stats, tags, topic_name, committed, tags['ToT'])
+            else:
+                # Not yet integrated.
+                # We know that disposition is 'drop', suggesting that the patch was accepted
+                # upstream after the most recent tag. Therefore, count against ToT.
+                do_topic_stats_count(topic_stats, tags, topic_name, committed, tags['ToT'])
 
     uconn.close()
 
@@ -830,6 +841,9 @@ def main():
 
     move_sheet(sheet, id, 0, 4)
     hide_sheet(sheet, id, 0, True)
+
+    move_sheet(sheet, id, topic_stats_sheet, 5)
+    hide_sheet(sheet, id, topic_stats_sheet, True)
 
 if __name__ == '__main__':
     main()
