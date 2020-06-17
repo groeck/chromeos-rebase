@@ -18,7 +18,7 @@ def stable_baseline():
 
   currdir=os.getcwd()
   os.chdir(workdir+'/'+chromeos_path)
-  tag=subprocess.check_output(['git', 'describe', rebase_baseline_branch])
+  tag=subprocess.check_output(['git', 'describe', rebase_baseline_branch]).decode()
   os.chdir(currdir)
   return tag.split('-')[0]
 

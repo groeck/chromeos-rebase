@@ -152,15 +152,15 @@ def delete_sheets(sheet, id, sheets):
 def init_spreadsheet(sheet):
     try:
         with open(stats_filename, 'r') as file:
-	    id = file.read().strip('\n')
-	request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
-	response = request.execute()
-	sheets = response.get('sheets')
-	delete_sheets(sheet, id, sheets)
+            id = file.read().strip('\n')
+        request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+        response = request.execute()
+        sheets = response.get('sheets')
+        delete_sheets(sheet, id, sheets)
     except:
         id = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' % rebase_baseline().strip('v'))
-	with open(stats_filename, 'w') as file:
-	    file.write(id)
+        with open(stats_filename, 'w') as file:
+            file.write(id)
 
     return id
 
@@ -186,7 +186,7 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
     age = 0
     now = NOW()
     if topic:
-	search="select topic, authored, subject, disposition from commits where topic=%d" % topic
+        search="select topic, authored, subject, disposition from commits where topic=%d" % topic
     else:
         search="select topic, authored, subject, disposition from commits where topic != 0"
     c.execute(search)
@@ -200,11 +200,11 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
     other = 0
     for (t, a, subject, d) in c.fetchall():
         if topic == 0:
-	    c2.execute("select topic from topics where topic is %d" % t)
-	    # If the retrieved topic is in the named topic list, we are only
-	    # interested if we are not looking for 'other' topics.
-	    if c2.fetchall():
-	        continue
+            c2.execute("select topic from topics where topic is %d" % t)
+            # If the retrieved topic is in the named topic list, we are only
+            # interested if we are not looking for 'other' topics.
+            if c2.fetchall():
+                continue
         rows += 1
         if d == 'pick':
             effrows += 1
@@ -212,10 +212,10 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
             m = rp.search(subject)
             if m:
                 what = m.group(1).replace(" ", "")
-		if what == "BACKPORT:":
+                if what == "BACKPORT:":
                     m = rp.search(m.group(2))
-		    if m:
-			what = m.group(1).replace(" ", "")
+                    if m:
+                        what = m.group(1).replace(" ", "")
                 if what == "CHROMIUM:" or what == "CHROMEOS:":
                     chromium += 1
                 elif what == "UPSTREAM:":
@@ -394,7 +394,7 @@ def add_backlog_chart(sheet, id):
             "title": "Upstream Backlog (updated %s)" % datetime.datetime.now().strftime("%x"),
             "basicChart": {
               "chartType": "COLUMN",
-	      "stackedType": "STACKED",
+              "stackedType": "STACKED",
               # "legendPosition": "BOTTOM_LEGEND",
               "axis": [
                 {
@@ -418,7 +418,7 @@ def add_backlog_chart(sheet, id):
             }
           },
           "position": {
-	    "newSheet": True,
+            "newSheet": True,
           }
         }
       }
@@ -433,12 +433,12 @@ def add_backlog_chart(sheet, id):
     request = [ ]
     request.append({
         'updateSheetProperties': {
-	    'properties': {
-		'sheetId': sheetId,
+            'properties': {
+                'sheetId': sheetId,
                 'title': 'Backlog Count',
- 	    },
- 	    'fields': "title",
- 	}
+            },
+            'fields': "title",
+        }
     })
     doit(sheet, id, request)
 
@@ -471,7 +471,7 @@ def add_age_chart(sheet, id):
             }
           },
           "position": {
-	    "newSheet": True,
+            "newSheet": True,
           }
         }
       }
@@ -486,12 +486,12 @@ def add_age_chart(sheet, id):
     request = [ ]
     request.append({
         'updateSheetProperties': {
-	    'properties': {
-		'sheetId': sheetId,
+            'properties': {
+                'sheetId': sheetId,
                 'title': 'Backlog Age',
- 	    },
- 	    'fields': "title",
- 	}
+            },
+            'fields': "title",
+        }
     })
     doit(sheet, id, request)
 

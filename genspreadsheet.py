@@ -125,16 +125,16 @@ def delete_sheets(sheet, id, sheets):
 def init_spreadsheet(sheet):
     try:
         with open(rebase_filename, 'r') as file:
-	    id = file.read()
-	request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
-	response = request.execute()
-	sheets = response.get('sheets')
-	delete_sheets(sheet, id, sheets)
+            id = file.read()
+        request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+        response = request.execute()
+        sheets = response.get('sheets')
+        delete_sheets(sheet, id, sheets)
     except:
         id = create_spreadsheet(sheet, 'Rebase %s -> %s' %
-				(rebase_baseline(), rebase_target_tag()))
-	with open(rebase_filename, 'w') as file:
-	    file.write(id)
+                                (rebase_baseline(), rebase_target_tag()))
+        with open(rebase_filename, 'w') as file:
+            file.write(id)
 
     return id
 
