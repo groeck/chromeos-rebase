@@ -19,7 +19,6 @@ from google.auth.transport.requests import Request
 import sqlite3
 import os
 import re
-import subprocess
 import time
 from config import rebasedb, chromeos_path
 from common import upstreamdb, rebase_baseline, rebase_target_tag, rebase_target_version
