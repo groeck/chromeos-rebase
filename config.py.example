@@ -27,8 +27,8 @@ next_path = "bluez-next" if next_repo else None
 subject_droplist = []
 
 droplist = []
+sha_droplist = []
 
 topiclist = \
-    [["bluetoothd", ["src"]],
-    ["btmon", ["monitor"]]
+    [["all", [""]],
     ]

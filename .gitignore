@@ -7,3 +7,4 @@ credentials.json
 token.pickle
 __pycache__/
 linux-*/
+config.py
