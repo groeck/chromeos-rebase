@@ -14,7 +14,6 @@ from __future__ import print_function
 import sqlite3
 import os
 import re
-import subprocess
 import datetime
 import time
 import pickle
