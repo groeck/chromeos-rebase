@@ -2,6 +2,7 @@ import os
 import re
 import sqlite3
 import subprocess
+import platform
 
 from config import upstream_dir, chromeos_path, rebase_baseline_branch, rebase_target
 from config import next_repo
@@ -19,16 +20,24 @@ except ImportError:
     DEVNULL = open(os.devnull, 'wb')
 
 
+def do_check_output(cmd):
+  '''
+  Python version independent implementation of 'subprocess.check_output'
+  '''
+  if platform.python_version_tuple()[0] == '2':
+    return subprocess.check_output(cmd, stderr=DEVNULL).decode('utf-8')
+  return subprocess.check_output(cmd, encoding='utf-8', stderr=DEVNULL)
+
+
 def stable_baseline():
   '''
   Return most recent label in to-be-rebased branch
   '''
 
-  currdir=os.getcwd()
-  os.chdir(workdir+'/'+chromeos_path)
-  tag=subprocess.check_output(['git', 'describe', rebase_baseline_branch]).decode()
-  os.chdir(currdir)
+  cmd=['git', '-C', workdir+'/'+chromeos_path, 'describe', rebase_baseline_branch]
+  tag=do_check_output(cmd)
   return tag.split('-')[0]
+
 
 def rebase_baseline():
   '''
@@ -38,6 +47,7 @@ def rebase_baseline():
   baseline=stable_baseline()
   return baseline.split('.')[0]+'.'+baseline.split('.')[1]
 
+
 version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+)?)\s*")
 
 def rebase_target_tag():
@@ -46,10 +56,8 @@ def rebase_target_tag():
   '''
 
   if rebase_target == 'latest':
-    try:
-      tag=subprocess.check_output(['git', '-C', upstream_path, 'describe'], encoding='utf-8')
-    except TypeError: # py2
-      tag=subprocess.check_output(['git', '-C', upstream_path, 'describe'])
+    cmd=['git', '-C', upstream_path, 'describe']
+    tag=do_check_output(cmd)
     v=version.match(tag)
     if v:
       tag=v.group(0).strip('\n')
@@ -117,7 +125,7 @@ def get_integrated_tag(sha):
 
     try:
         cmd = ['git', '-C', upstream_path, 'describe', '--match', 'v*', '--contains', sha]
-        tag = subprocess.check_output(cmd, stderr=DEVNULL)
+        tag = do_check_output(cmd)
         return version.match(tag).group()
     except AttributeError:
         return None
