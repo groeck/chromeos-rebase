@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
-#/usr/bin/env python3
+#!/usr/bin/env python3
+#/usr/bin/env python2
 
 # Use information in rebase database to create rebase spreadsheet
 # Required python modules:
@@ -66,7 +66,10 @@ def getsheet():
     # time.
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
+            try: # py2 or token saved with py3
+                creds = pickle.load(token)
+            except UnicodeDecodeError: # py3, token saved with py2
+                creds = pickle.load(token, encoding='latin-1')
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
