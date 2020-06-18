@@ -305,8 +305,8 @@ def delete_sheets(sheet, sheets):
 def init_spreadsheet():
     sheet = getsheet()
     try:
-        with open(stats_filename, 'r') as file:
-            ssid = file.read().strip('\n')
+        with open(stats_filename, 'r') as f:
+            ssid = f.read().strip('\n')
         request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
         response = request.execute()
         sheets = response.get('sheets')
@@ -314,8 +314,8 @@ def init_spreadsheet():
     except:
         ssid = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
                                   rebase_baseline().strip('v'))
-        with open(stats_filename, 'w') as file:
-            file.write(ssid)
+        with open(stats_filename, 'w') as f:
+            f.write(ssid)
 
     return (sheet, ssid)
 
