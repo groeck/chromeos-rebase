@@ -12,22 +12,14 @@
 # pylint: disable=no-absolute-import
 
 from __future__ import print_function
-import pickle
-import os.path
-from googleapiclient import discovery
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 
 import sqlite3
-import os
-import re
-import time
-from config import rebasedb, chromeos_path
+from config import rebasedb
 from common import upstreamdb, rebase_baseline, rebase_target_tag, rebase_target_version
 
-rebase_filename = "rebase-spreadsheet.id"
+import genlib
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+rebase_filename = "rebase-spreadsheet.id"
 
 other_topic_id = 0 # Sheet Id to be used for "other" topic
 have_other_topic = False
@@ -38,6 +30,7 @@ orange = { 'red': 1, 'green': 0.6, 'blue': 0 }
 green = { 'red': 0, 'green': 0.9, 'blue': 0 }
 blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
 white = { 'red': 1, 'green': 1, 'blue': 1 }
+
 
 def get_other_topic_id():
     """ Calculate other_topic_id """
@@ -60,107 +53,6 @@ def get_other_topic_id():
 
     conn.close()
 
-def getsheet():
-    """ Get and return reference to spreadsheet """
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            try: # py2 or token saved with py3
-                creds = pickle.load(token)
-            except UnicodeDecodeError: # py3, token saved with py2
-                creds = pickle.load(token, encoding='latin-1')
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = discovery.build('sheets', 'v4', credentials=creds)
-    # service = discovery.build('sheets', 'v4', developerKey=API_KEY)
-    return service.spreadsheets()
-
-def create_spreadsheet(sheet, title):
-    """ Create a spreadsheet and return reference to it """
-    spreadsheet = {
-        'properties': {
-            'title': title
-        }
-    }
-
-    request = sheet.create(body=spreadsheet, fields='spreadsheetId')
-    response = request.execute()
-    return response.get('spreadsheetId')
-
-def doit(sheet, requests):
-    body = {
-        'requests': requests
-    }
-
-    request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
-    request.execute()
-
-def delete_sheets(sheet, sheets):
-    ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
-    request = [ ]
-    for s in sheets:
-      sheetId = s['properties']['sheetId']
-      if sheetId != 0:
-        request.append({
-          "deleteSheet": {
-            "sheetId": sheetId
-          }
-        })
-      else:
-        request.append({
-          "updateCells": {
-            "range": {
-              "sheetId": sheetId
-            },
-            "fields": "userEnteredValue"
-          }
-        })
-
-    # We are letting this fail if there was nothing to clean. This will
-    # hopefully result in re-creating the spreadsheet.
-    doit(sheet, request)
-
-def init_spreadsheet():
-    sheet = getsheet()
-    try:
-        with open(rebase_filename, 'r') as f:
-            ssid = f.read()
-        request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
-        response = request.execute()
-        sheets = response.get('sheets')
-        delete_sheets((sheet, ssid), sheets)
-    except IOError:
-        ssid = create_spreadsheet(sheet, 'Rebase %s -> %s' %
-                                  (rebase_baseline(), rebase_target_tag()))
-        with open(rebase_filename, 'w') as f:
-            f.write(ssid)
-
-    return (sheet, ssid)
-
-def resize_sheet(requests, sheetId, start, end):
-    requests.append({
-      'autoResizeDimensions': {
-        'dimensions': {
-          'sheetId': sheetId,
-          'dimension': 'COLUMNS',
-          'startIndex': start,
-          'endIndex': end
-        }
-      }
-    })
 
 def add_topics_summary(requests):
     conn = sqlite3.connect(rebasedb)
@@ -222,48 +114,6 @@ def add_topics_summary(requests):
 
     conn.close()
 
-def add_sheet_header(requests, sheetId, fields):
-    """
-    Add provided header line to specified sheet.
-    Make it bold.
-
-    Args:
-        requests: Reference to list of requests to send to API.
-        sheetId: Sheet Id
-        fields: string with comma-separated list of fields
-    """
-    # Generate header row
-    requests.append({
-        'pasteData': {
-                    'data': fields,
-                    'type': 'PASTE_NORMAL',
-                    'delimiter': ',',
-                    'coordinate': {
-                        'sheetId': sheetId,
-                        'rowIndex': 0
-                    }
-                }
-    })
-
-    # Convert header row to bold and centered
-    requests.append({
-        "repeatCell": {
-        "range": {
-          "sheetId": sheetId,
-          "startRowIndex": 0,
-          "endRowIndex": 1
-        },
-        "cell": {
-          "userEnteredFormat": {
-            "horizontalAlignment" : "CENTER",
-            "textFormat": {
-              "bold": True
-            }
-          }
-        },
-        "fields": "userEnteredFormat(textFormat,horizontalAlignment)"
-        }
-    })
 
 def create_summary(requests):
     requests.append({
@@ -276,28 +126,12 @@ def create_summary(requests):
         }
     })
 
-    #requests.append({
-    #    'appendCells': {
-    #        'sheetId': 0,
-    #        'rows': [
-#                { 'values': [
-#                    {"userEnteredValue": {"stringValue": "Topic"}},
-#                    {"userEnteredValue": {"stringValue": "Entries"}},
-#                    {"userEnteredValue": {"stringValue": "Owner"}},
-#                    {"userEnteredValue": {"stringValue": "Reviewer"}},
-#                    {"userEnteredValue": {"stringValue": "Status"}},
-#                    {"userEnteredValue": {"stringValue": "Topic branch"}},
-#                    {"userEnteredValue": {"stringValue": "Comments"}}
-#                ]}
-#            ],
-#            "fields": "*"
-#        }
-#    })
-
-    add_sheet_header(requests, 0, 'Topic, Entries, Effective Entries, Owner, Reviewer, Status, Topic branch, Comments')
+    header = 'Topic, Entries, Effective Entries, Owner, Reviewer, Status, Topic branch, Comments'
+    genlib.add_sheet_header(requests, 0, header)
 
     # Now add all topics
     add_topics_summary(requests)
+
 
 def add_description(requests):
     """ Add describing text to 'Summary' sheet """
@@ -364,6 +198,7 @@ def add_description(requests):
         }
     })
 
+
 def addsheet(requests, index, topic, name):
     print('Adding sheet id=%d index=%d title="%s"' % (topic, index, name))
 
@@ -378,7 +213,8 @@ def addsheet(requests, index, topic, name):
     })
 
     # Generate header row
-    add_sheet_header(requests, topic, 'SHA, Description, Disposition, Comments')
+    genlib.add_sheet_header(requests, topic, 'SHA, Description, Disposition, Comments')
+
 
 def add_topics_sheets(requests):
     conn = sqlite3.connect(rebasedb)
@@ -395,6 +231,7 @@ def add_topics_sheets(requests):
     if not have_other_topic:
         addsheet(requests, index, other_topic_id, 'other')
     conn.close()
+
 
 def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
     comment = ""
@@ -462,6 +299,7 @@ def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
         }
     })
 
+
 def add_commits(requests):
     conn = sqlite3.connect(rebasedb)
     uconn = sqlite3.connect(upstreamdb)
@@ -492,24 +330,27 @@ def add_commits(requests):
         add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin)
 
     for s in sheets:
-        resize_sheet(requests, s, 0, 4)
+        genlib.resize_sheet(requests, s, 0, 4)
+
 
 def main():
-    sheet = init_spreadsheet()
+    sheet = genlib.init_spreadsheet(rebase_filename,
+                                    'Rebase %s -> %s' % (rebase_baseline(), rebase_target_tag()))
     get_other_topic_id()
 
     requests = [ ]
     create_summary(requests)
     add_topics_sheets(requests)
-    doit(sheet, requests)
+    genlib.doit(sheet, requests)
     requests = [ ]
     add_commits(requests)
     # Now auto-resize columns A, B, C, and G in Summary sheet
-    resize_sheet(requests, 0, 0, 3)
-    resize_sheet(requests, 0, 6, 7)
+    genlib.resize_sheet(requests, 0, 0, 3)
+    genlib.resize_sheet(requests, 0, 6, 7)
     # Add description after resizing
     add_description(requests)
-    doit(sheet, requests)
+    genlib.doit(sheet, requests)
+
 
 if __name__ == '__main__':
     main()
