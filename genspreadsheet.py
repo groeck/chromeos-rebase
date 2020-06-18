@@ -134,8 +134,8 @@ def delete_sheets(sheet, sheets):
 def init_spreadsheet():
     sheet = getsheet()
     try:
-        with open(rebase_filename, 'r') as file:
-            ssid = file.read()
+        with open(rebase_filename, 'r') as f:
+            ssid = f.read()
         request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
         response = request.execute()
         sheets = response.get('sheets')
@@ -143,8 +143,8 @@ def init_spreadsheet():
     except:
         ssid = create_spreadsheet(sheet, 'Rebase %s -> %s' %
                                   (rebase_baseline(), rebase_target_tag()))
-        with open(rebase_filename, 'w') as file:
-            file.write(ssid)
+        with open(rebase_filename, 'w') as f:
+            f.write(ssid)
 
     return (sheet, ssid)
 
