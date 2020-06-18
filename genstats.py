@@ -38,8 +38,6 @@ green = { 'red': 0, 'green': 0.9, 'blue': 0 }
 blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
 white = { 'red': 1, 'green': 1, 'blue': 1 }
 
-lastrow = 0
-
 version = rebase_target_version()
 
 def NOW():
@@ -71,7 +69,7 @@ def get_condensed_topic_name(topic_name):
 
 
 def get_condensed_topic(c, topic_name):
-    for [condensed_name, topic_names] in topiclist_condensed:
+    for (_, topic_names) in topiclist_condensed:
         for elem in topic_names:
             if topic_name == elem:
                 c.execute("select topic from topics where name is '%s'" % topic_names[0])
@@ -155,7 +153,6 @@ def get_topic_stats(c):
     uconn = sqlite3.connect(upstreamdb)
     cu = uconn.cursor()
 
-    other_topic_id = get_other_topic_id(c)
     tags = get_tags(cu)
     topics = get_topics(c)
 
@@ -165,8 +162,8 @@ def get_topic_stats(c):
         for tag in tags:
             topic_stats[topic][tag] = 0
 
-    c.execute("SELECT sha, usha, dsha, committed, topic, disposition, reason from commits")
-    for (sha, usha, dsha, committed, topic, disposition, reason,) in c.fetchall():
+    c.execute("SELECT usha, dsha, committed, topic, disposition, reason from commits")
+    for (usha, dsha, committed, topic, disposition, reason,) in c.fetchall():
         if topic in topics:
             topic_name = topics[topic]
         else:
@@ -313,7 +310,8 @@ def init_spreadsheet(sheet):
         sheets = response.get('sheets')
         delete_sheets(sheet, id, sheets)
     except:
-        id = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' % rebase_baseline().strip('v'))
+        id = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
+                                rebase_baseline().strip('v'))
         with open(stats_filename, 'w') as file:
             file.write(id)
 
@@ -393,7 +391,9 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
         age /= (3600 * 24)        # Display age in days
         requests.append({
             'pasteData': {
-                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' % (name, upstream, backport, fromgit, fromlist, chromium, other, effrows, rows, age),
+                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' %
+                    (name, upstream, backport, fromgit, fromlist, chromium,
+                     other, effrows, rows, age),
                 'type': 'PASTE_NORMAL',
                 'delimiter': ';',
                 'coordinate': {
@@ -406,8 +406,6 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
 
 
 def add_topics_summary(requests):
-    global lastrow
-
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
@@ -430,8 +428,9 @@ def add_topics_summary(requests):
     # Finally, do the same for 'other' topics, identified as topic==0.
     added = add_topics_summary_row(requests, conn, rowindex, 0, "other")
 
-    lastrow = rowindex
     conn.close()
+
+    return rowindex
 
 
 def add_sheet_header(requests, id, fields):
@@ -491,10 +490,12 @@ def create_summary(sheet, id):
         }
     })
 
-    add_sheet_header(requests, 0, 'Topic, Upstream, Backport, Fromgit, Fromlist, Chromium, Untagged/Other, Net, Total, Average Age (days)')
+    header = 'Topic, Upstream, Backport, Fromgit, Fromlist, \
+              Chromium, Untagged/Other, Net, Total, Average Age (days)'
+    add_sheet_header(requests, 0, header)
 
     # Now add all topics
-    add_topics_summary(requests)
+    rows = add_topics_summary(requests)
 
     # As final step, resize it
     resize_sheet(requests, 0, 0, 10)
@@ -502,13 +503,16 @@ def create_summary(sheet, id):
     # and execute
     doit(sheet, id, requests)
 
+    return rows
+
 
 def update_one_cell(request, sheetId, row, column, data):
     '''Update data in a a single cell'''
 
-    print("update_one_cell(id=%d row=%d column=%d data=%s type=%s" % (sheetId, row, column, data, type(data)))
+    print("update_one_cell(id=%d row=%d column=%d data=%s type=%s" %
+          (sheetId, row, column, data, type(data)))
 
-    if type(data) is int:
+    if isinstance(data, int):
         fieldtype = 'numberValue'
     else:
         fieldtype = 'stringValue'
@@ -659,9 +663,7 @@ def sscope(name, sheetId, rows, start, end):
     return s
 
 
-def add_backlog_chart(sheet, id):
-    global lastrow
-
+def add_backlog_chart(sheet, id, rows):
     request = [ ]
 
     # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
@@ -686,8 +688,8 @@ def add_backlog_chart(sheet, id):
                   "title": "Backlog"
                 }
               ],
-              "domains": [ scope("domain", 0, lastrow + 1, 0) ],
-              "series": sscope("series", 0, lastrow + 1, 1, 6),
+              "domains": [ scope("domain", 0, rows + 1, 0) ],
+              "series": sscope("series", 0, rows + 1, 1, 6),
             }
           },
           "position": {
@@ -716,9 +718,7 @@ def add_backlog_chart(sheet, id):
     doit(sheet, id, request)
 
 
-def add_age_chart(sheet, id):
-    global lastrow
-
+def add_age_chart(sheet, id, rows):
     request = [ ]
 
     request.append({
@@ -740,8 +740,8 @@ def add_age_chart(sheet, id):
                   "title": "Average Age (days)"
                 }
               ],
-              "domains": [ scope("domain", 0, lastrow + 1, 0) ],
-              "series": [ scope("series", 0, lastrow + 1, 9) ]
+              "domains": [ scope("domain", 0, rows + 1, 0) ],
+              "series": [ scope("series", 0, rows + 1, 9) ]
             }
           },
           "position": {
@@ -831,11 +831,11 @@ def main():
     sheet = getsheet()
     id = init_spreadsheet(sheet)
 
-    create_summary(sheet, id)
+    summary_rows = create_summary(sheet, id)
     topic_stats_sheet, topic_stats_rows, topic_stats_columns = create_topic_stats(sheet, id)
 
-    add_backlog_chart(sheet, id)
-    add_age_chart(sheet, id)
+    add_backlog_chart(sheet, id, summary_rows)
+    add_age_chart(sheet, id, summary_rows)
     add_stats_chart(sheet, id, topic_stats_sheet, topic_stats_rows, topic_stats_columns)
 
     move_sheet(sheet, id, 0, 4)
