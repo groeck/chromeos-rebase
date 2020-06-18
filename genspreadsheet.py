@@ -22,7 +22,6 @@ import genlib
 rebase_filename = "rebase-spreadsheet.id"
 
 other_topic_id = 0 # Sheet Id to be used for "other" topic
-have_other_topic = False
 
 red = { 'red': 1, 'green': 0.4, 'blue': 0 }
 yellow = { 'red': 1, 'green': 1, 'blue': 0 }
@@ -36,7 +35,6 @@ def get_other_topic_id():
     """ Calculate other_topic_id """
 
     global other_topic_id
-    global have_other_topic
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
@@ -45,13 +43,12 @@ def get_other_topic_id():
     for topic, name in c.fetchall():
         if name == 'other':
             other_topic_id = topic
-            have_other_topic = True
-            conn.close()
-            return
+            break
         if topic >= other_topic_id:
             other_topic_id = topic + 1
 
     conn.close()
+    return other_topic_id
 
 
 def add_topics_summary(requests):
@@ -60,10 +57,14 @@ def add_topics_summary(requests):
     c2 = conn.cursor()
     version = rebase_target_version()
     counted_rows = 0
+    counted_effrows = 0
 
     c.execute("select topic, name from topics order by name")
     rowindex = 1
     for (topic, name) in c.fetchall():
+        # Insert 'other' topic last, and don't count it here.
+        if name == 'other':
+            continue
         # Only add summary entry if there are commits touching this topic
         c2.execute("select disposition, reason from commits where topic=%d" % topic)
         rows = 0
@@ -77,6 +78,7 @@ def add_topics_summary(requests):
             if d == 'pick':
                 effrows += 1
         counted_rows += rows
+        counted_effrows += effrows
         requests.append({
             'pasteData': {
                 'data': '=HYPERLINK("#gid=%d","%s");%d;%d;;;;chromeos-%s-%s' %
@@ -93,16 +95,20 @@ def add_topics_summary(requests):
         rowindex += 1
 
     allrows = 0
-    c2.execute("select topic from commits where topic != 0")
-    for r in c2.fetchall():
+    alleff = 0
+    c2.execute("select disposition, reason from commits where topic != 0")
+    for (d, r) in c2.fetchall():
+        if d == 'drop' and r == 'upstream':
+            continue
         allrows += 1
+        if d != 'drop':
+            alleff += 1
 
     # Now create an 'other' topic. We'll use it for unnamed topics.
-    if not have_other_topic:
-      requests.append({
+    requests.append({
         'pasteData': {
-            'data': '=HYPERLINK("#gid=%d","other");%d;;;;;chromeos-%s-other' %
-                             (other_topic_id, allrows - counted_rows, version),
+            'data': '=HYPERLINK("#gid=%d","other");%d;%d;;;;chromeos-%s-other' %
+                             (other_topic_id, allrows - counted_rows, alleff - counted_effrows, version),
             'type': 'PASTE_NORMAL',
             'delimiter': ';',
             'coordinate': {
@@ -110,7 +116,7 @@ def add_topics_summary(requests):
                 'rowIndex': rowindex
             }
         }
-      })
+    })
 
     conn.close()
 
@@ -224,12 +230,13 @@ def add_topics_sheets(requests):
 
     index = 1
     for (topic, name) in c.fetchall():
-        addsheet(requests, index, topic, name)
-        index += 1
+        # Insert 'other' topic at very end
+        if name != 'other':
+            addsheet(requests, index, topic, name)
+            index += 1
 
-    # Add 'other' topic at the very end
-    if not have_other_topic:
-        addsheet(requests, index, other_topic_id, 'other')
+    # Add 'other' topic sheet at the very end
+    addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
 
