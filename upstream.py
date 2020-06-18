@@ -88,8 +88,6 @@ def best_match(s):
     with the same score, return first encountered match with this score.
   """
 
-  global _alldescs
-
   matches = []
   s = re.sub("[^a-zA-Z0-9_/\s]+", " ", s)
   for word in s.split():
@@ -150,7 +148,8 @@ def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
     c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
   else:
     print("Registered disposition for sha %s: %s" % (sha, disp))
-    print("Not updating database for SHA '%s', requested disposition=%s, reason=%s" % (sha, disposition, reason))
+    print("Not updating database for SHA '%s', requested disposition=%s, reason=%s" %
+          (sha, disposition, reason))
 
 
 def doit(db=upstreamdb, path=upstream_path, name='upstream'):
@@ -291,11 +290,11 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                      ((ratio + setratio)/2, sha))
           if ((result <= 90 or smatch < 98) and smatch != 100 and
               (result <= 95 or smatch <= 95)):
-	    # Compare subject strings after ':'.
-	    # If there is a perfect match, look into patch contents after all
-	    rdesc2 = re.sub("[\S]+:\s*", "", rdesc)
-	    mdesc2 = re.sub("[\S]+:\s*", "", mdesc)
-	    if rdesc2 != mdesc2:
+            # Compare subject strings after ':'.
+            # If there is a perfect match, look into patch contents after all
+            rdesc2 = re.sub("[\S]+:\s*", "", rdesc)
+            mdesc2 = re.sub("[\S]+:\s*", "", mdesc)
+            if rdesc2 != mdesc2:
               print("    Subject match %d/%d insufficient" % (result, smatch))
               c2.execute("UPDATE commits SET reason=('revisit') where sha='%s'"
                          % sha)
