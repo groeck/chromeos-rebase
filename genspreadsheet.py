@@ -104,7 +104,7 @@ def doit(sheet, requests):
     }
 
     request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
-    response = request.execute()
+    request.execute()
 
 def delete_sheets(sheet, sheets):
     ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
@@ -140,7 +140,7 @@ def init_spreadsheet():
         response = request.execute()
         sheets = response.get('sheets')
         delete_sheets((sheet, ssid), sheets)
-    except:
+    except IOError:
         ssid = create_spreadsheet(sheet, 'Rebase %s -> %s' %
                                   (rebase_baseline(), rebase_target_tag()))
         with open(rebase_filename, 'w') as f:
