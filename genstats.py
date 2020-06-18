@@ -15,51 +15,22 @@
 from __future__ import print_function
 
 import sqlite3
-import os
 import re
 import datetime
 import time
-import pickle
-
-from googleapiclient import discovery
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 
 from config import rebasedb, topiclist_condensed
-from common import upstreamdb, rebase_baseline, rebase_target_version
+from common import upstreamdb, rebase_baseline
+
+import genlib
 
 stats_filename = "rebase-stats.id"
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
 
-red = { 'red': 1, 'green': 0.4, 'blue': 0 }
-yellow = { 'red': 1, 'green': 1, 'blue': 0 }
-orange = { 'red': 1, 'green': 0.6, 'blue': 0 }
-green = { 'red': 0, 'green': 0.9, 'blue': 0 }
-blue = { 'red': 0.3, 'green': 0.6, 'blue': 1 }
-white = { 'red': 1, 'green': 1, 'blue': 1 }
-
-version = rebase_target_version()
 
 def NOW():
   return int(time.time())
-
-
-def get_other_topic_id(c):
-    """ Calculate other_topic_id """
-
-    other_topic_id = 0
-
-    c.execute("select topic, name from topics order by name")
-    for topic, name in c.fetchall():
-        if name is 'other':
-            return topic
-        if topic >= other_topic_id:
-            other_topic_id = topic + 1
-
-    return other_topic_id
 
 
 def get_condensed_topic_name(topic_name):
@@ -88,15 +59,6 @@ def get_condensed_topic(c, topic_name):
     return 0
 
 
-def get_topic_name(c, topic):
-
-    c.execute("select name from topics where topic is '%s'" % topic)
-    topic = c.fetchone()
-    if topic:
-        return topic[0]
-
-    return None
-
 def get_topics(c):
     topics = {}
     other_topic_id = None
@@ -111,7 +73,7 @@ def get_topics(c):
                 other_topic_id = condensed_topic
 
     if not other_topic_id:
-        topics[get_other_topic_id(c)] = 'other'
+        topics[genlib.get_other_topic_id(c)] = 'other'
 
     return topics
 
@@ -206,137 +168,6 @@ def get_topic_stats(c):
     uconn.close()
 
     return topic_stats
-
-
-def getsheet():
-    """ Get and return reference to spreadsheet """
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            try: # py2 or token saved with py3
-                creds = pickle.load(token)
-            except UnicodeDecodeError: # py3, token saved with py2
-                creds = pickle.load(token, encoding='latin-1')
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = discovery.build('sheets', 'v4', credentials=creds)
-    # service = discovery.build('sheets', 'v4', developerKey=API_KEY)
-    return service.spreadsheets()
-
-
-def doit(sheet, requests):
-    ''' Execute a request '''
-
-    body = {
-        'requests': requests
-    }
-
-    request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
-    response = request.execute()
-    return response
-
-
-def hide_sheet(sheet, sheetid, hide):
-    ''' Move 'Data' sheet to end of spreadsheet. '''
-    request = [ ]
-
-    request.append({
-        'updateSheetProperties': {
-            'properties': {
-                'sheetId': sheetid,
-                'hidden': hide,
-            },
-            'fields': 'hidden'
-        }
-    })
-
-    doit(sheet, request)
-
-
-def create_spreadsheet(sheet, title):
-    """ Create a spreadsheet and return reference to it """
-    spreadsheet = {
-        'properties': {
-            'title': title
-        }
-    }
-
-    request = sheet.create(body=spreadsheet, fields='spreadsheetId')
-    response = request.execute()
-
-    return response.get('spreadsheetId')
-
-
-def delete_sheets(sheet, sheets):
-    ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
-    # Unhide 'Data' sheet. If it is hidden we can't remove the other sheets.
-    hide_sheet(sheet, 0, False)
-    request = [ ]
-    for s in sheets:
-      sheetId = s['properties']['sheetId']
-      if sheetId != 0:
-        request.append({
-          "deleteSheet": {
-            "sheetId": sheetId
-          }
-        })
-      else:
-        request.append({
-          "updateCells": {
-            "range": {
-              "sheetId": sheetId
-            },
-            "fields": "userEnteredValue"
-          }
-        })
-
-    # We are letting this fail if there was nothing to clean. This will
-    # hopefully result in re-creating the spreadsheet.
-    doit(sheet, request)
-
-
-def init_spreadsheet():
-    sheet = getsheet()
-    try:
-        with open(stats_filename, 'r') as f:
-            ssid = f.read().strip('\n')
-        request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
-        response = request.execute()
-        sheets = response.get('sheets')
-        delete_sheets((sheet, ssid), sheets)
-    except IOError:
-        ssid = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
-                                  rebase_baseline().strip('v'))
-        with open(stats_filename, 'w') as f:
-            f.write(ssid)
-
-    return (sheet, ssid)
-
-
-def resize_sheet(requests, sheetid, start, end):
-    requests.append({
-      'autoResizeDimensions': {
-        'dimensions': {
-          'sheetId': sheetid,
-          'dimension': 'COLUMNS',
-          'startIndex': start,
-          'endIndex': end
-        }
-      }
-    })
 
 
 def add_topics_summary_row(requests, conn, rowindex, topic, name):
@@ -441,50 +272,6 @@ def add_topics_summary(requests):
     return rowindex
 
 
-def add_sheet_header(requests, sheetid, fields):
-    """
-    Add provided header line to specified sheet.
-    Make it bold.
-
-    Args:
-        requests: Reference to list of requests to send to API.
-        id: Sheet Id
-        fields: string with comma-separated list of fields
-    """
-    # Generate header row
-    requests.append({
-        'pasteData': {
-                    'data': fields,
-                    'type': 'PASTE_NORMAL',
-                    'delimiter': ',',
-                    'coordinate': {
-                        'sheetId': sheetid,
-                        'rowIndex': 0
-                    }
-                }
-    })
-
-    # Convert header row to bold and centered
-    requests.append({
-        "repeatCell": {
-        "range": {
-          "sheetId": sheetid,
-          "startRowIndex": 0,
-          "endRowIndex": 1
-        },
-        "cell": {
-          "userEnteredFormat": {
-            "horizontalAlignment" : "CENTER",
-            "textFormat": {
-              "bold": True
-            }
-          }
-        },
-        "fields": "userEnteredFormat(textFormat,horizontalAlignment)"
-        }
-    })
-
-
 def create_summary(sheet):
     requests = [ ]
 
@@ -500,16 +287,16 @@ def create_summary(sheet):
 
     header = 'Topic, Upstream, Backport, Fromgit, Fromlist, \
               Chromium, Untagged/Other, Net, Total, Average Age (days)'
-    add_sheet_header(requests, 0, header)
+    genlib.add_sheet_header(requests, 0, header)
 
     # Now add all topics
     rows = add_topics_summary(requests)
 
     # As final step, resize it
-    resize_sheet(requests, 0, 0, 10)
+    genlib.resize_sheet(requests, 0, 0, 10)
 
     # and execute
-    doit(sheet, requests)
+    genlib.doit(sheet, requests)
 
     return rows
 
@@ -580,7 +367,7 @@ def create_topic_stats(sheet):
         }
     })
 
-    response = doit(sheet, request)
+    response = genlib.doit(sheet, request)
     reply = response.get('replies')
     sheetId = reply[0]['addSheet']['properties']['sheetId']
 
@@ -593,7 +380,7 @@ def create_topic_stats(sheet):
         header += ', %s' % topic
         columns += 1
 
-    add_sheet_header(request, sheetId, header)
+    genlib.add_sheet_header(request, sheetId, header)
 
     rowindex = 1
     for tag in sorted_tags:
@@ -617,30 +404,14 @@ def create_topic_stats(sheet):
 
     # As final step, resize sheet
     # [not really necessary; drop if confusing]
-    resize_sheet(request, sheetId, 0, columns)
+    genlib.resize_sheet(request, sheetId, 0, columns)
 
     # and execute
-    doit(sheet, request)
+    genlib.doit(sheet, request)
 
     conn.close()
 
     return sheetId, rowindex, columns
-
-def move_sheet(sheet, sheetid, to):
-    ''' Move 'Data' sheet to end of spreadsheet. '''
-    request = [ ]
-
-    request.append({
-        'updateSheetProperties': {
-            'properties': {
-                'sheetId': sheetid,
-                'index': to,
-            },
-            'fields': 'index'
-        }
-    })
-
-    doit(sheet, request)
 
 
 def sourceRange(sheetId, rows, column):
@@ -707,7 +478,7 @@ def add_backlog_chart(sheet, rows):
       }
     })
 
-    response = doit(sheet, request)
+    response = genlib.doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -723,7 +494,7 @@ def add_backlog_chart(sheet, rows):
             'fields': "title",
         }
     })
-    doit(sheet, request)
+    genlib.doit(sheet, request)
 
 
 def add_age_chart(sheet, rows):
@@ -759,7 +530,7 @@ def add_age_chart(sheet, rows):
       }
     })
 
-    response = doit(sheet, request)
+    response = genlib.doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -775,7 +546,7 @@ def add_age_chart(sheet, rows):
             'fields': "title",
         }
     })
-    doit(sheet, request)
+    genlib.doit(sheet, request)
 
 
 def add_stats_chart(sheet, sheetId, rows, columns):
@@ -816,7 +587,7 @@ def add_stats_chart(sheet, sheetId, rows, columns):
       }
     })
 
-    response = doit(sheet, request)
+    response = genlib.doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -832,11 +603,12 @@ def add_stats_chart(sheet, sheetId, rows, columns):
              'fields': "title",
          }
     })
-    doit(sheet, request)
+    genlib.doit(sheet, request)
 
 
 def main():
-    sheet = init_spreadsheet()
+    sheet = genlib.init_spreadsheet(stats_filename,
+                                    'Backlog Status for chromeos-%s' % rebase_baseline().strip('v'))
 
     summary_rows = create_summary(sheet)
     topic_stats_sheet, topic_stats_rows, topic_stats_columns = create_topic_stats(sheet)
@@ -845,11 +617,12 @@ def main():
     add_age_chart(sheet, summary_rows)
     add_stats_chart(sheet, topic_stats_sheet, topic_stats_rows, topic_stats_columns)
 
-    move_sheet(sheet, 0, 4)
-    hide_sheet(sheet, 0, True)
+    genlib.move_sheet(sheet, 0, 4)
+    genlib.hide_sheet(sheet, 0, True)
 
-    move_sheet(sheet, topic_stats_sheet, 5)
-    hide_sheet(sheet, topic_stats_sheet, True)
+    genlib.move_sheet(sheet, topic_stats_sheet, 5)
+    genlib.hide_sheet(sheet, topic_stats_sheet, True)
+
 
 if __name__ == '__main__':
     main()
