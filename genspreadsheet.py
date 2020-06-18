@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#/usr/bin/env python2
 
 # Use information in rebase database to create rebase spreadsheet
 # Required python modules:
@@ -8,6 +7,9 @@
 # The Google Sheets API needs to be enabled to run this script.
 # Also, you'll need to generate access credentials and store those
 # in credentials.json.
+#
+# Disable pyline noise
+# pylint: disable=no-absolute-import
 
 from __future__ import print_function
 import pickle
