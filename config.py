@@ -263,7 +263,7 @@ topiclist = \
       ["lib", "scripts", "init"]],
     ]
 
-topiclist_condensed = [
+topiclist_consolidated = [
     ["cros_ec",
      ["cros_ec/iio", "cros_ec/wilco", "cros_ec/extcon", "cros_ec"]],
     ["drm/gpu",

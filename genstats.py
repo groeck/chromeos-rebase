@@ -19,7 +19,7 @@ import re
 import datetime
 import time
 
-from config import rebasedb, topiclist_condensed
+from config import rebasedb, topiclist_consolidated
 from common import upstreamdb, rebase_baseline
 
 import genlib
@@ -33,17 +33,17 @@ def NOW():
   return int(time.time())
 
 
-def get_condensed_topic_name(topic_name):
+def get_consolidated_topic_name(topic_name):
 
-    for [condensed_name, topic_names] in topiclist_condensed:
+    for [consolidated_name, topic_names] in topiclist_consolidated:
         for elem in topic_names:
             if topic_name == elem:
-                return condensed_name
+                return consolidated_name
     return topic_name
 
 
-def get_condensed_topic(c, topic_name):
-    for (_, topic_names) in topiclist_condensed:
+def get_consolidated_topic(c, topic_name):
+    for (_, topic_names) in topiclist_consolidated:
         for elem in topic_names:
             if topic_name == elem:
                 c.execute("select topic from topics where name is '%s'" % topic_names[0])
@@ -59,18 +59,18 @@ def get_condensed_topic(c, topic_name):
     return 0
 
 
-def get_topics(c):
+def get_consolidated_topics(c):
     topics = {}
     other_topic_id = None
 
     c.execute("SELECT topic, name FROM topics ORDER BY name")
     for topic, name in c.fetchall():
         if name:
-            condensed_name = get_condensed_topic_name(name)
-            condensed_topic = get_condensed_topic(c, name)
-            topics[topic] = condensed_name
-            if condensed_name is 'other':
-                other_topic_id = condensed_topic
+            consolidated_name = get_consolidated_topic_name(name)
+            consolidated_topic = get_consolidated_topic(c, name)
+            topics[topic] = consolidated_name
+            if consolidated_name is 'other':
+                other_topic_id = consolidated_topic
 
     if not other_topic_id:
         topics[genlib.get_other_topic_id(c)] = 'other'
@@ -119,7 +119,7 @@ def get_topic_stats(c):
     cu = uconn.cursor()
 
     tags = get_tags(cu)
-    topics = get_topics(c)
+    topics = get_consolidated_topics(c)
 
     topic_stats = {}
     for topic in list(set(topics.values())):
@@ -353,7 +353,7 @@ def create_topic_stats(sheet):
     topic_stats = get_topic_stats(c)
     tags = get_tags()
     sorted_tags = sorted(tags, key=tags.get)
-    topics = get_topics(c)
+    topics = get_consolidated_topics(c)
     topic_list = list(set(topics.values()))
 
     request = []
