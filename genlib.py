@@ -155,12 +155,15 @@ def delete_sheets(sheet, sheets):
           }
         })
       else:
+        rows = s['properties']['gridProperties']['rowCount']
         request.append({
-          "updateCells": {
+          "deleteRange": {
             "range": {
-              "sheetId": sheetId
+              "sheetId": sheetId,
+              "startRowIndex": 0,
+              "endRowIndex": rows,
             },
-            "fields": "userEnteredValue"
+            "shiftDimension": 'ROWS',
           }
         })
 
