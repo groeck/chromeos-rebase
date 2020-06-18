@@ -98,15 +98,15 @@ def create_spreadsheet(sheet, title):
     response = request.execute()
     return response.get('spreadsheetId')
 
-def doit(sheet, id, requests):
+def doit(sheet, requests):
     body = {
         'requests': requests
     }
 
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
+    request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
     response = request.execute()
 
-def delete_sheets(sheet, id, sheets):
+def delete_sheets(sheet, sheets):
     ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
     request = [ ]
     for s in sheets:
@@ -129,29 +129,30 @@ def delete_sheets(sheet, id, sheets):
 
     # We are letting this fail if there was nothing to clean. This will
     # hopefully result in re-creating the spreadsheet.
-    doit(sheet, id, request)
+    doit(sheet, request)
 
-def init_spreadsheet(sheet):
+def init_spreadsheet():
+    sheet = getsheet()
     try:
         with open(rebase_filename, 'r') as file:
-            id = file.read()
-        request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+            ssid = file.read()
+        request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
         response = request.execute()
         sheets = response.get('sheets')
-        delete_sheets(sheet, id, sheets)
+        delete_sheets((sheet, ssid), sheets)
     except:
-        id = create_spreadsheet(sheet, 'Rebase %s -> %s' %
-                                (rebase_baseline(), rebase_target_tag()))
+        ssid = create_spreadsheet(sheet, 'Rebase %s -> %s' %
+                                  (rebase_baseline(), rebase_target_tag()))
         with open(rebase_filename, 'w') as file:
-            file.write(id)
+            file.write(ssid)
 
-    return id
+    return (sheet, ssid)
 
-def resize_sheet(requests, id, start, end):
+def resize_sheet(requests, sheetId, start, end):
     requests.append({
       'autoResizeDimensions': {
         'dimensions': {
-          'sheetId': id,
+          'sheetId': sheetId,
           'dimension': 'COLUMNS',
           'startIndex': start,
           'endIndex': end
@@ -219,14 +220,14 @@ def add_topics_summary(requests):
 
     conn.close()
 
-def add_sheet_header(requests, id, fields):
+def add_sheet_header(requests, sheetId, fields):
     """
     Add provided header line to specified sheet.
     Make it bold.
 
     Args:
         requests: Reference to list of requests to send to API.
-        id: Sheet Id
+        sheetId: Sheet Id
         fields: string with comma-separated list of fields
     """
     # Generate header row
@@ -236,7 +237,7 @@ def add_sheet_header(requests, id, fields):
                     'type': 'PASTE_NORMAL',
                     'delimiter': ',',
                     'coordinate': {
-                        'sheetId': id,
+                        'sheetId': sheetId,
                         'rowIndex': 0
                     }
                 }
@@ -246,7 +247,7 @@ def add_sheet_header(requests, id, fields):
     requests.append({
         "repeatCell": {
         "range": {
-          "sheetId": id,
+          "sheetId": sheetId,
           "startRowIndex": 0,
           "endRowIndex": 1
         },
@@ -393,7 +394,7 @@ def add_topics_sheets(requests):
         addsheet(requests, index, other_topic_id, 'other')
     conn.close()
 
-def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin):
+def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
     comment = ""
     color = white
 
@@ -426,11 +427,11 @@ def add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
             else:
                 comment = reason
 
-    print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheet_id))
+    print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheetId))
 
     requests.append({
         'appendCells': {
-            'sheetId': sheet_id,
+            'sheetId': sheetId,
             'rows': [
                 { 'values': [
                     {'userEnteredValue': {'stringValue': sha},
@@ -476,30 +477,29 @@ def add_commits(requests):
             continue
         c2.execute("select topic, name from topics where topic=%d" % topic)
         if c2.fetchone():
-            sheet_id = topic
+            sheetId = topic
         else:
-            sheet_id = other_topic_id
+            sheetId = other_topic_id
 
         cu.execute("select sha from commits where sha='%s'" % dsha)
         if cu.fetchone():
           origin = 'upstream'
         else:
           origin = 'linux-next'
-        sheets.add(sheet_id)
-        add_sha(requests, sheet_id, sha, subject, disposition, reason, dsha, origin)
+        sheets.add(sheetId)
+        add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin)
 
     for s in sheets:
         resize_sheet(requests, s, 0, 4)
 
 def main():
-    sheet = getsheet()
-    id = init_spreadsheet(sheet)
+    sheet = init_spreadsheet()
     get_other_topic_id()
 
     requests = [ ]
     create_summary(requests)
     add_topics_sheets(requests)
-    doit(sheet, id, requests)
+    doit(sheet, requests)
     requests = [ ]
     add_commits(requests)
     # Now auto-resize columns A, B, C, and G in Summary sheet
@@ -507,7 +507,7 @@ def main():
     resize_sheet(requests, 0, 6, 7)
     # Add description after resizing
     add_description(requests)
-    doit(sheet, id, requests)
+    doit(sheet, requests)
 
 if __name__ == '__main__':
     main()
