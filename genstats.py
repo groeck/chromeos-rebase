@@ -231,18 +231,19 @@ def getsheet():
     return service.spreadsheets()
 
 
-def doit(sheet, id, requests):
+def doit(sheet, requests):
     ''' Execute a request '''
+
     body = {
         'requests': requests
     }
 
-    request = sheet.batchUpdate(spreadsheetId=id, body=body)
+    request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
     response = request.execute()
     return response
 
 
-def hide_sheet(sheet, id, sheetid, hide):
+def hide_sheet(sheet, sheetid, hide):
     ''' Move 'Data' sheet to end of spreadsheet. '''
     request = [ ]
 
@@ -256,7 +257,7 @@ def hide_sheet(sheet, id, sheetid, hide):
         }
     })
 
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
 def create_spreadsheet(sheet, title):
@@ -273,10 +274,10 @@ def create_spreadsheet(sheet, title):
     return response.get('spreadsheetId')
 
 
-def delete_sheets(sheet, id, sheets):
+def delete_sheets(sheet, sheets):
     ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
     # Unhide 'Data' sheet. If it is hidden we can't remove the other sheets.
-    hide_sheet(sheet, id, 0, False)
+    hide_sheet(sheet, 0, False)
     request = [ ]
     for s in sheets:
       sheetId = s['properties']['sheetId']
@@ -298,31 +299,32 @@ def delete_sheets(sheet, id, sheets):
 
     # We are letting this fail if there was nothing to clean. This will
     # hopefully result in re-creating the spreadsheet.
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
-def init_spreadsheet(sheet):
+def init_spreadsheet():
+    sheet = getsheet()
     try:
         with open(stats_filename, 'r') as file:
-            id = file.read().strip('\n')
-        request = sheet.get(spreadsheetId=id, ranges = [ ], includeGridData=False)
+            ssid = file.read().strip('\n')
+        request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
         response = request.execute()
         sheets = response.get('sheets')
-        delete_sheets(sheet, id, sheets)
+        delete_sheets((sheet, ssid), sheets)
     except:
-        id = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
-                                rebase_baseline().strip('v'))
+        ssid = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
+                                  rebase_baseline().strip('v'))
         with open(stats_filename, 'w') as file:
-            file.write(id)
+            file.write(ssid)
 
-    return id
+    return (sheet, ssid)
 
 
-def resize_sheet(requests, id, start, end):
+def resize_sheet(requests, sheetid, start, end):
     requests.append({
       'autoResizeDimensions': {
         'dimensions': {
-          'sheetId': id,
+          'sheetId': sheetid,
           'dimension': 'COLUMNS',
           'startIndex': start,
           'endIndex': end
@@ -433,7 +435,7 @@ def add_topics_summary(requests):
     return rowindex
 
 
-def add_sheet_header(requests, id, fields):
+def add_sheet_header(requests, sheetid, fields):
     """
     Add provided header line to specified sheet.
     Make it bold.
@@ -450,7 +452,7 @@ def add_sheet_header(requests, id, fields):
                     'type': 'PASTE_NORMAL',
                     'delimiter': ',',
                     'coordinate': {
-                        'sheetId': id,
+                        'sheetId': sheetid,
                         'rowIndex': 0
                     }
                 }
@@ -460,7 +462,7 @@ def add_sheet_header(requests, id, fields):
     requests.append({
         "repeatCell": {
         "range": {
-          "sheetId": id,
+          "sheetId": sheetid,
           "startRowIndex": 0,
           "endRowIndex": 1
         },
@@ -477,7 +479,7 @@ def add_sheet_header(requests, id, fields):
     })
 
 
-def create_summary(sheet, id):
+def create_summary(sheet):
     requests = [ ]
 
     requests.append({
@@ -501,7 +503,7 @@ def create_summary(sheet, id):
     resize_sheet(requests, 0, 0, 10)
 
     # and execute
-    doit(sheet, id, requests)
+    doit(sheet, requests)
 
     return rows
 
@@ -549,7 +551,7 @@ def add_topic_stats_column(request, sheetId, column, tag, data):
         update_one_cell(request, sheetId, row, column, f)
 
 
-def create_topic_stats(sheet, id):
+def create_topic_stats(sheet):
     """ Create tab with topic statistics. We'll use it later to create a chart."""
 
     conn = sqlite3.connect(rebasedb)
@@ -572,7 +574,7 @@ def create_topic_stats(sheet, id):
         }
     })
 
-    response = doit(sheet, id, request)
+    response = doit(sheet, request)
     reply = response.get('replies')
     sheetId = reply[0]['addSheet']['properties']['sheetId']
 
@@ -612,13 +614,13 @@ def create_topic_stats(sheet, id):
     resize_sheet(request, sheetId, 0, columns)
 
     # and execute
-    doit(sheet, id, request)
+    doit(sheet, request)
 
     conn.close()
 
     return sheetId, rowindex, columns
 
-def move_sheet(sheet, id, sheetid, to):
+def move_sheet(sheet, sheetid, to):
     ''' Move 'Data' sheet to end of spreadsheet. '''
     request = [ ]
 
@@ -632,7 +634,7 @@ def move_sheet(sheet, id, sheetid, to):
         }
     })
 
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
 def sourceRange(sheetId, rows, column):
@@ -663,7 +665,7 @@ def sscope(name, sheetId, rows, start, end):
     return s
 
 
-def add_backlog_chart(sheet, id, rows):
+def add_backlog_chart(sheet, rows):
     request = [ ]
 
     # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
@@ -699,7 +701,7 @@ def add_backlog_chart(sheet, id, rows):
       }
     })
 
-    response = doit(sheet, id, request)
+    response = doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -715,10 +717,10 @@ def add_backlog_chart(sheet, id, rows):
             'fields': "title",
         }
     })
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
-def add_age_chart(sheet, id, rows):
+def add_age_chart(sheet, rows):
     request = [ ]
 
     request.append({
@@ -751,7 +753,7 @@ def add_age_chart(sheet, id, rows):
       }
     })
 
-    response = doit(sheet, id, request)
+    response = doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -767,10 +769,10 @@ def add_age_chart(sheet, id, rows):
             'fields': "title",
         }
     })
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
-def add_stats_chart(sheet, id, sheetId, rows, columns):
+def add_stats_chart(sheet, sheetId, rows, columns):
     request = []
 
     if columns > 25:
@@ -808,7 +810,7 @@ def add_stats_chart(sheet, id, sheetId, rows, columns):
       }
     })
 
-    response = doit(sheet, id, request)
+    response = doit(sheet, request)
 
     # Extract sheet Id from response
     reply = response.get('replies')
@@ -824,25 +826,24 @@ def add_stats_chart(sheet, id, sheetId, rows, columns):
              'fields': "title",
          }
     })
-    doit(sheet, id, request)
+    doit(sheet, request)
 
 
 def main():
-    sheet = getsheet()
-    id = init_spreadsheet(sheet)
+    sheet = init_spreadsheet()
 
-    summary_rows = create_summary(sheet, id)
-    topic_stats_sheet, topic_stats_rows, topic_stats_columns = create_topic_stats(sheet, id)
+    summary_rows = create_summary(sheet)
+    topic_stats_sheet, topic_stats_rows, topic_stats_columns = create_topic_stats(sheet)
 
-    add_backlog_chart(sheet, id, summary_rows)
-    add_age_chart(sheet, id, summary_rows)
-    add_stats_chart(sheet, id, topic_stats_sheet, topic_stats_rows, topic_stats_columns)
+    add_backlog_chart(sheet, summary_rows)
+    add_age_chart(sheet, summary_rows)
+    add_stats_chart(sheet, topic_stats_sheet, topic_stats_rows, topic_stats_columns)
 
-    move_sheet(sheet, id, 0, 4)
-    hide_sheet(sheet, id, 0, True)
+    move_sheet(sheet, 0, 4)
+    hide_sheet(sheet, 0, True)
 
-    move_sheet(sheet, id, topic_stats_sheet, 5)
-    hide_sheet(sheet, id, topic_stats_sheet, True)
+    move_sheet(sheet, topic_stats_sheet, 5)
+    hide_sheet(sheet, topic_stats_sheet, True)
 
 if __name__ == '__main__':
     main()
