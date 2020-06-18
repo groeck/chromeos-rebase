@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 #
 # Use information in rebase database to create rebase spreadsheet
@@ -213,7 +213,10 @@ def getsheet():
     # time.
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
+            try: # py2 or token saved with py3
+                creds = pickle.load(token)
+            except UnicodeDecodeError: # py3, token saved with py2
+                creds = pickle.load(token, encoding='latin-1')
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -311,7 +314,7 @@ def init_spreadsheet():
         response = request.execute()
         sheets = response.get('sheets')
         delete_sheets((sheet, ssid), sheets)
-    except:
+    except IOError:
         ssid = create_spreadsheet(sheet, 'Backlog Status for chromeos-%s' %
                                   rebase_baseline().strip('v'))
         with open(stats_filename, 'w') as f:
