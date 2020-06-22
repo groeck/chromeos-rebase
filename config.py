@@ -241,6 +241,8 @@ topiclist = \
       ["drivers/devfreq"]],
      ["iommu",
       ["drivers/iommu"]],
+     ["soundwire",
+      ["drivers/soundwire", "include/linux/soundwire"]],
      ["remoteproc",
       ["drivers/remoteproc", "drivers/rpmsg", "include/linux/rpmsg" ]],
      ["mfd",
@@ -287,4 +289,6 @@ topiclist_consolidated = [
      ["arch/x86", "arch/arm64", "arch/arm"]],
     ["fs",
      ["fs/pstore", "fs/ecryptfs", "fs/other"]],
+    ["net",
+     ["wireless", "net"]],
     ]
