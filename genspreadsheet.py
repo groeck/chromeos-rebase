@@ -251,6 +251,7 @@ def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
             comment += " (revisit: imperfect match)"
             color = orange
     elif disposition == "drop":
+        color = yellow
         if reason == "revisit":
             color = red
             if dsha:
@@ -258,20 +259,19 @@ def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
             else:
                 comment = "revisit (imperfect match)"
         elif reason == "upstream/fixup":
-            color = yellow
             comment = "fixup of upstream patch %s" % dsha
         elif reason == "upstream/match":
-            color = yellow
             comment = "%s commit %s" % (origin, dsha)
         elif reason == "revisit/fixup":
-            color = yellow
             comment = "fixup of %s commit %s" % (origin, dsha)
-        else:
-            color = yellow
+        elif reason == "reverted":
+            comment = reason
             if dsha:
-                comment = "%s (%s commit %s)" % (reason, origin, dsha)
-            else:
-                comment = reason
+                comment += " (commit %s)" % (dsha)
+        else:
+            comment = reason
+            if dsha:
+                comment += " (%s commit %s)" % (origin, dsha)
 
     print("Adding sha %s (%s) to sheet ID %d" % (sha, subject, sheetId))
 
