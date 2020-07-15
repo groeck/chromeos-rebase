@@ -129,9 +129,13 @@ def get_topic_stats(c):
 
     c.execute("SELECT usha, dsha, committed, topic, disposition, reason from commits")
     for (usha, dsha, committed, topic, disposition, reason,) in c.fetchall():
+        # Skip entries with topic 0 immediately.
+        if topic == 0:
+            continue
         if topic in topics:
             topic_name = topics[topic]
         else:
+            # manually generated topic, with no entry in topics list
             topic_name = 'other'
         if disposition != 'drop':
             do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
@@ -191,10 +195,11 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
     other = 0
     for (t, a, subject, d) in c.fetchall():
         if topic == 0:
-            c2.execute("select topic from topics where topic is %d" % t)
-            # If the retrieved topic is in the named topic list, we are only
-            # interested if we are not looking for 'other' topics.
-            if c2.fetchall():
+            # We are interested if the topic name is 'other',
+            # or if the topic is not in the named topic list.
+            c2.execute("select name from topics where topic is %d" % t)
+            topics = c2.fetchone()
+            if topics and topics[0] != 'other':
                 continue
         rows += 1
         if d == 'pick':
@@ -258,7 +263,7 @@ def add_topics_summary(requests):
     c.execute("select topic, name from topics order by name")
     rowindex = 2
     for (topic, name) in c.fetchall():
-        if name != 'chromeos':
+        if name != 'chromeos' and name != 'other':
             added = add_topics_summary_row(requests, conn, rowindex,
                                            topic, name)
             if added:
