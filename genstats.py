@@ -69,7 +69,7 @@ def get_consolidated_topics(c):
             consolidated_name = get_consolidated_topic_name(name)
             consolidated_topic = get_consolidated_topic(c, name)
             topics[topic] = consolidated_name
-            if consolidated_name is 'other':
+            if consolidated_name == 'other':
                 other_topic_id = consolidated_topic
 
     if not other_topic_id:
