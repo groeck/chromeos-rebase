@@ -461,6 +461,7 @@ def add_backlog_chart(sheet, rows):
             "basicChart": {
               "chartType": "COLUMN",
               "stackedType": "STACKED",
+              "headerCount": 1,
               # "legendPosition": "BOTTOM_LEGEND",
               "axis": [
                 {
@@ -513,6 +514,7 @@ def add_age_chart(sheet, rows):
             "title": "Upstream Backlog Age (updated %s)" % datetime.datetime.now().strftime("%x"),
             "basicChart": {
               "chartType": "COLUMN",
+              "headerCount": 1,
               # "legendPosition": "BOTTOM_LEGEND",
               "axis": [
                 {
@@ -570,6 +572,7 @@ def add_stats_chart(sheet, sheetId, rows, columns):
             "basicChart": {
               "chartType": "AREA",
               "stackedType": "STACKED",
+              "headerCount": 1,
               # "legendPosition": "BOTTOM_LEGEND",
               "axis": [
                 {
