@@ -164,10 +164,10 @@ fi
 echo "Updating rebase database with upstream commits"
 python update.py
 
-echo "Calculating initial drop list"
-python drop.py
 echo "Calculating initial revert list"
 python revertlist.py
+echo "Calculating initial drop list"
+python drop.py
 echo "Calculating replace list"
 python upstream.py
 echo "Calculating topics"
