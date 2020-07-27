@@ -28,6 +28,15 @@ stats_filename = "rebase-stats.id"
 
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
 
+stats_colors = [
+    {'blue': 1},
+    {'red': 0.25882354, 'green': 0.52156866, 'blue': 0.95686275},
+    {'red': 0.9843137, 'green': 0.7372549, 'blue': 0.015686275},
+    {'red': 1, 'green': 0.6},
+    {'red': 0.91764706, 'green': 0.2627451, 'blue': 0.20784314},
+    {'red': 0.27450982, 'green': 0.7411765, 'blue': 0.7764706}
+]
+
 
 def NOW():
   return int(time.time())
@@ -419,31 +428,16 @@ def create_topic_stats(sheet):
     return sheetId, rowindex, columns
 
 
-def sourceRange(sheetId, rows, column):
-    return {
-      "sourceRange": {
-        "sources": [
-            {
-                "sheetId": sheetId,
-                "startRowIndex": 0,
-                "endRowIndex": rows,
-                "startColumnIndex": column,
-                "endColumnIndex": column + 1
-            }
-        ]
-      }
-    }
+def colored_scope(name, sheetId, rows, column):
+    return { name: genlib.sourceRange(sheetId, rows, column),
+             'targetAxis': 'LEFT_AXIS', 'color': stats_colors[column - 1] }
 
 
-def scope(name, sheetId, rows, column):
-    return { name: sourceRange(sheetId, rows, column) }
-
-
-def sscope(name, sheetId, rows, start, end):
-    s = [ scope(name, sheetId, rows, start) ]
+def colored_sscope(name, sheetId, rows, start, end):
+    s = [ colored_scope(name, sheetId, rows, start) ]
     while start < end:
         start += 1
-        s += [ scope(name, sheetId, rows, start) ]
+        s += [ colored_scope(name, sheetId, rows, start) ]
     return s
 
 
@@ -473,8 +467,8 @@ def add_backlog_chart(sheet, rows):
                   "title": "Backlog"
                 }
               ],
-              "domains": [ scope("domain", 0, rows + 1, 0) ],
-              "series": sscope("series", 0, rows + 1, 1, 6),
+              "domains": [ genlib.scope("domain", 0, rows + 1, 0) ],
+              "series": colored_sscope("series", 0, rows + 1, 1, 6),
             }
           },
           "position": {
@@ -526,8 +520,8 @@ def add_age_chart(sheet, rows):
                   "title": "Average Age (days)"
                 }
               ],
-              "domains": [ scope("domain", 0, rows + 1, 0) ],
-              "series": [ scope("series", 0, rows + 1, 9) ]
+              "domains": [ genlib.scope("domain", 0, rows + 1, 0) ],
+              "series": [ genlib.scope("series", 0, rows + 1, 9) ]
             }
           },
           "position": {
@@ -584,8 +578,8 @@ def add_stats_chart(sheet, sheetId, rows, columns):
                   "title": "Patches"
                 }
               ],
-              "domains": [ scope("domain", sheetId, rows, 0) ],
-              "series": sscope("series", sheetId, rows, 1, columns),
+              "domains": [ genlib.scope("domain", sheetId, rows, 0) ],
+              "series": genlib.sscope("series", sheetId, rows, 1, columns),
             }
           },
           "position": {
