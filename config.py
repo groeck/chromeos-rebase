@@ -37,6 +37,8 @@ sha_droplist = [
 	[ "64096771a56d", "upstream", "b9b05664ebf6" ],
 	[ "eff9d0917462", "upstream", "93fe48a58590" ],
 	[ "b716d03da4f7", "upstream", "f567ff6c76f7" ],
+	[ "3e462e6b05e8", "queued for v5.9", "b56bdff78e0b" ],
+	[ "f8f2b91749a2", "queued for v5.9", "bbcf90c0646a" ],
 	]
 
 droplist = [('drivers/net/wireless/iwl7000', 'Intel'),
