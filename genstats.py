@@ -20,7 +20,7 @@ import datetime
 import time
 
 from config import rebasedb, topiclist_consolidated
-from common import upstreamdb, rebase_baseline
+from common import nextdb, upstreamdb, rebase_baseline
 
 import genlib
 
@@ -29,9 +29,10 @@ stats_filename = "rebase-stats.id"
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
 
 stats_colors = [
+    {'red': 0.5764706, 'green': 0.76862746, 'blue': 0.49019608},  # Queued: green
     {'blue': 1},                                                  # Upstream: blue
     {'red': 0.25882354, 'green': 0.52156866, 'blue': 0.95686275}, # Backport: light blue
-    {'red': 0.5764706, 'green': 0.76862746, 'blue': 0.49019608},  # Fromgit: green
+    {'red': 0.9, 'green': 0.9},                                   # Fromgit: green -> yellowish
     {'red': 1, 'green': 0.6},                                     # Fromlist: orange
     {'red': 0.91764706, 'green': 0.2627451, 'blue': 0.20784314},  # Chromium: red
     {'red': 0.8, 'green': 0.8, 'blue': 0.8}                       # Other: gray
@@ -183,26 +184,28 @@ def get_topic_stats(c):
     return topic_stats
 
 
-def add_topics_summary_row(requests, conn, rowindex, topic, name):
+def add_topics_summary_row(requests, conn, nconn, rowindex, topic, name):
     c = conn.cursor()
     c2 = conn.cursor()
+    cn = nconn.cursor()
 
     age = 0
     now = NOW()
     if topic:
-        search="select topic, authored, subject, disposition from commits where topic=%d" % topic
+        search="select topic, patchid, usha, authored, subject, disposition from commits where topic=%d" % topic
     else:
-        search="select topic, authored, subject, disposition from commits where topic != 0"
+        search="select topic, patchid, usha, authored, subject, disposition from commits where topic != 0"
     c.execute(search)
     rows = 0
     effrows = 0
+    queued = 0
     upstream = 0
     fromlist =  0
     fromgit = 0
     chromium = 0
     backport = 0
     other = 0
-    for (t, a, subject, d) in c.fetchall():
+    for (t, patchid, usha, a, subject, d) in c.fetchall():
         if topic == 0:
             # We are interested if the topic name is 'other',
             # or if the topic is not in the named topic list.
@@ -210,31 +213,42 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
             topics = c2.fetchone()
             if topics and topics[0] != 'other':
                 continue
+
+
         rows += 1
         if d == 'pick':
             effrows += 1
             age += (now - a)
-            m = rp.search(subject)
-            if m:
-                what = m.group(1).replace(" ", "")
-                if what == "BACKPORT:":
-                    m = rp.search(m.group(2))
-                    if m:
-                        what = m.group(1).replace(" ", "")
-                if what == "CHROMIUM:" or what == "CHROMEOS:":
-                    chromium += 1
-                elif what == "UPSTREAM:":
-                    upstream += 1
-                elif what == "FROMLIST:":
-                    fromlist += 1
-                elif what == "FROMGIT:":
-                    fromgit += 1
-                elif what == "BACKPORT:":
-                    backport += 1
+            # Search for the patch ID in the next database.
+            # If it is found there, count it as "Queued".
+            cmd = 'SELECT sha FROM commits WHERE patchid IS "%s"' % patchid
+            if usha:
+                cmd += ' OR sha IS "%s"' % usha
+            cn.execute(cmd)
+            if cn.fetchone():
+                queued += 1
+            else:
+                m = rp.search(subject)
+                if m:
+                    what = m.group(1).replace(" ", "")
+                    if what == "BACKPORT:":
+                        m = rp.search(m.group(2))
+                        if m:
+                            what = m.group(1).replace(" ", "")
+                    if what == "CHROMIUM:" or what == "CHROMEOS:":
+                        chromium += 1
+                    elif what == "UPSTREAM:":
+                        upstream += 1
+                    elif what == "FROMLIST:":
+                        fromlist += 1
+                    elif what == "FROMGIT:":
+                        fromgit += 1
+                    elif what == "BACKPORT:":
+                        backport += 1
+                    else:
+                        other += 1
                 else:
                     other += 1
-            else:
-                other += 1
 
     # Only add summary entry if there are active commits associated with this topic.
     # Since the summary entry is used to generate statistics, do not add rows
@@ -244,8 +258,8 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
         age /= (3600 * 24)        # Display age in days
         requests.append({
             'pasteData': {
-                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d' %
-                    (name, upstream, backport, fromgit, fromlist, chromium,
+                'data': '%s;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d' %
+                    (name, queued, upstream, backport, fromgit, fromlist, chromium,
                      other, effrows, rows, age),
                 'type': 'PASTE_NORMAL',
                 'delimiter': ';',
@@ -260,6 +274,7 @@ def add_topics_summary_row(requests, conn, rowindex, topic, name):
 
 def add_topics_summary(requests):
     conn = sqlite3.connect(rebasedb)
+    nconn = sqlite3.connect(nextdb)
     c = conn.cursor()
 
     # Handle 'chromeos' first and separately so we can exclude it from the
@@ -267,19 +282,19 @@ def add_topics_summary(requests):
     c.execute("select topic from topics where name is 'chromeos'")
     topic = c.fetchone()
     if topic:
-        add_topics_summary_row(requests, conn, 1, topic[0], 'chromeos')
+        add_topics_summary_row(requests, conn, nconn, 1, topic[0], 'chromeos')
 
     c.execute("select topic, name from topics order by name")
     rowindex = 2
     for (topic, name) in c.fetchall():
         if name != 'chromeos' and name != 'other':
-            added = add_topics_summary_row(requests, conn, rowindex,
+            added = add_topics_summary_row(requests, conn, nconn, rowindex,
                                            topic, name)
             if added:
                 rowindex += 1
 
     # Finally, do the same for 'other' topics, identified as topic==0.
-    added = add_topics_summary_row(requests, conn, rowindex, 0, "other")
+    added = add_topics_summary_row(requests, conn, nconn, rowindex, 0, "other")
 
     conn.close()
 
@@ -299,7 +314,7 @@ def create_summary(sheet):
         }
     })
 
-    header = 'Topic, Upstream, Backport, Fromgit, Fromlist, \
+    header = 'Topic, Queued, Upstream, Backport, Fromgit, Fromlist, \
               Chromium, Untagged/Other, Net, Total, Average Age (days)'
     genlib.add_sheet_header(requests, 0, header)
 
@@ -307,7 +322,7 @@ def create_summary(sheet):
     rows = add_topics_summary(requests)
 
     # As final step, resize it
-    genlib.resize_sheet(requests, 0, 0, 10)
+    genlib.resize_sheet(requests, 0, 0, 11)
 
     # and execute
     genlib.doit(sheet, requests)
@@ -468,7 +483,7 @@ def add_backlog_chart(sheet, rows):
                 }
               ],
               "domains": [ genlib.scope("domain", 0, rows + 1, 0) ],
-              "series": colored_sscope("series", 0, rows + 1, 1, 6),
+              "series": colored_sscope("series", 0, rows + 1, 1, 7),
             }
           },
           "position": {
@@ -521,7 +536,7 @@ def add_age_chart(sheet, rows):
                 }
               ],
               "domains": [ genlib.scope("domain", 0, rows + 1, 0) ],
-              "series": [ genlib.scope("series", 0, rows + 1, 9) ]
+              "series": [ genlib.scope("series", 0, rows + 1, 10) ]
             }
           },
           "position": {
