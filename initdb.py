@@ -50,6 +50,8 @@ def createdb():
                                    patchid text, \
                                    changeid text, \
                                    subject text, topic integer, \
+                                   contact text, \
+                                   email text, \
                                    disposition text, reason text, \
                                    sscore integer, pscore integer, dsha text)")
   c.execute("CREATE UNIQUE INDEX commit_date ON commits (date)")
@@ -110,6 +112,33 @@ def update_stable(path, list, origin):
   conn.commit()
   conn.close()
 
+
+def get_contact(sha):
+    '''
+    Return first commit signer, tester, or submitter with a Google e-mail address.
+    If there is none, pick the last reviewer.
+    If there is none, return None, None.
+    '''
+    contact = None
+    email = None
+
+    cmd = ['git', 'log', '--format=%B', '-n', '1', sha]
+    commit_message = subprocess.check_output(cmd)
+    tags = 'Signed-off-by|Commit-Queue|Tested-by'
+    domains = 'chromium.org|google.com|collabora.com'
+    m = '^(?:%s): (.*) <(.*@(?:%s))>$' % (tags, domains)
+    emails = re.findall(m, commit_message, re.M)
+    if emails:
+        contact, email = emails[0]
+    else:
+        tags="Reviewed-by"
+        m = '^(?:%s): (.*) <(.*@(?:%s))>$' % (tags, domains)
+        emails = re.findall(m, commit_message, re.M)
+        if emails:
+            contact, email = emails[-1]
+    return contact, email
+
+
 def update_commits():
   '''
   Get complete list of commits from rebase baseline.
@@ -120,16 +149,33 @@ def update_commits():
   c = conn.cursor()
 
   os.chdir(chromeos_path)
-  commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--oneline',
-                                     '--reverse', rebase_baseline() + '..'])
+  commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--reverse',
+                                     '--format=%at%x01%ct%x01%h%x01%an%x01%ae%x01%s',
+                                     rebase_baseline() + '..'])
 
   prevdate = 0
   mprevdate = 0
   for commit in commits.splitlines():
     if commit != "":
-      elem = commit.split(" ", 1)
-      sha = elem[0]
-      subject = elem[1].rstrip('\n')
+      elem = commit.split("\001", 5)
+      authored=elem[0]
+      committed=elem[1]
+      sha = elem[2]
+      contact = elem[3]
+      email = elem[4]
+
+      if '@google.com' not in email and '@chromium.org' not in email and '@collabora.com' not in email:
+          ncontact, nemail = get_contact(sha)
+          if ncontact:
+              contact = ncontact
+              email = nemail
+
+      contact = contact.decode('latin-1') \
+                  if isinstance(contact, str) else contact
+      email = email.decode('latin-1') \
+                  if isinstance(email, str) else email
+
+      subject = elem[5].rstrip('\n')
       subject = subject.decode('latin-1') \
                   if isinstance(subject, str) else subject
 
@@ -137,9 +183,6 @@ def update_commits():
       spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
       patchid = spid.split(" ", 1)[0]
 
-      sdate = subprocess.check_output(['git', 'show', '--format="%at %ct"',
-                                       '-s', sha])
-      (authored, committed) = sdate.strip('"\n').split(' ')
       # Make sure date is unique and in ascending order.
       date = int(committed)
       if date == prevdate:
@@ -193,8 +236,8 @@ def update_commits():
       if c.fetchone():
         reason = 'stable'
 
-      c.execute("INSERT INTO commits(date, created, updated, authored, committed, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (date, NOW(), NOW(), authored, committed, sha, usha, patchid, chid, subject, "drop", reason,))
+      c.execute("INSERT INTO commits(date, created, updated, authored, committed, contact, email, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, NOW(), NOW(), authored, committed, contact, email, sha, usha, patchid, chid, subject, "drop", reason,))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
                                            '--format=', sha])
       for fn in filenames.splitlines():
