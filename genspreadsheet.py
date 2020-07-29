@@ -219,7 +219,7 @@ def addsheet(requests, index, topic, name):
     })
 
     # Generate header row
-    genlib.add_sheet_header(requests, topic, 'SHA, Description, Disposition, Comments')
+    genlib.add_sheet_header(requests, topic, 'SHA, Description, Disposition, Contact, Comments')
 
 
 def add_topics_sheets(requests):
@@ -240,9 +240,14 @@ def add_topics_sheets(requests):
     conn.close()
 
 
-def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
+def add_sha(requests, sheetId, sha, contact, email, subject, disposition, reason, dsha, origin):
     comment = ""
     color = white
+
+    contact_format = 'stringValue'
+    if '@google.com' in email or '@chromium.org' in email or '@collabora.com' in email:
+        contact='=HYPERLINK("mailto:%s","%s")' % (email, contact)
+        contact_format = 'formulaValue'
 
     if disposition == "replace" and dsha:
         comment = "with %s commit %s" % (origin, dsha)
@@ -295,6 +300,11 @@ def add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin):
                             'backgroundColor': color
                       }
                     },
+                    {'userEnteredValue': {contact_format: contact},
+                      'userEnteredFormat': {
+                            'backgroundColor': color
+                      }
+                    },
                     {'userEnteredValue': {'stringValue': comment},
                       'userEnteredFormat': {
                             'backgroundColor': color
@@ -316,8 +326,8 @@ def add_commits(requests):
 
     sheets = set([ ])
 
-    c.execute("select sha, dsha, subject, disposition, reason, topic from commits where topic > 0")
-    for (sha, dsha, subject, disposition, reason, topic) in c.fetchall():
+    c.execute("select sha, dsha, contact, email, subject, disposition, reason, topic from commits where topic > 0")
+    for (sha, dsha, contact, email, subject, disposition, reason, topic) in c.fetchall():
         # Skip entries associated with a topic if they are fully upstream
         # and are not being replaced.
         if disposition == 'drop' and reason == 'upstream':
@@ -334,10 +344,10 @@ def add_commits(requests):
         else:
           origin = 'linux-next'
         sheets.add(sheetId)
-        add_sha(requests, sheetId, sha, subject, disposition, reason, dsha, origin)
+        add_sha(requests, sheetId, sha, contact, email, subject, disposition, reason, dsha, origin)
 
     for s in sheets:
-        genlib.resize_sheet(requests, s, 0, 4)
+        genlib.resize_sheet(requests, s, 0, 5)
 
 
 def main():
