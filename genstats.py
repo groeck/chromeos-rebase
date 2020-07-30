@@ -29,7 +29,7 @@ stats_filename = "rebase-stats.id"
 rp = re.compile("(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)")
 
 stats_colors = [
-    {'red': 0.5, 'green': 0.8, 'blue': 0.5}, # Queued: green
+    {'red': 0, 'green': 0.8, 'blue': 0},     # Queued: green
     {'blue': 1},                             # Upstream: blue
     {'red': 0.5, 'green': 0.5, 'blue': 1},   # Backport: light blue
     {'red': 0.9, 'green': 0.9},              # yellow
