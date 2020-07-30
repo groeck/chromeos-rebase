@@ -31,7 +31,7 @@ rp = re.compile('Revert "(.*)"')
 # c.execute("INSERT INTO files VALUES (sha,filename)")
 # sha and filename must be in ' '
 
-c.execute("select date, sha, disposition, subject from commits")
+c.execute("select committed, sha, disposition, subject from commits")
 for (committed, sha, disposition, desc) in c.fetchall():
   # If the patch has already been dropped, don't bother any further
   if disposition == "drop":
