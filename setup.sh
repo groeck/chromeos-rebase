@@ -158,7 +158,7 @@ python initdb-upstream.py
 
 if [[ "${next_repo}" != "None" ]]; then
     echo "Initializing next database"
-    python initdb-next.py
+    ./initdb-next.py
 fi
 
 echo "Updating rebase database with upstream commits"
