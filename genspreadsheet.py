@@ -272,7 +272,9 @@ def add_sha(requests, sheetId, sha, contact, email, subject, disposition, reason
         elif reason == "reverted":
             comment = reason
             if dsha:
-                comment += " (commit %s)" % (dsha)
+                comment += " (commit %s)" % dsha
+        elif reason == "fixup/reverted":
+            comment = "fixup of reverted commit %s" % dsha
         else:
             comment = reason
             if dsha:
