@@ -151,6 +151,17 @@ def get_topic_stats(c):
             do_topic_stats_count(topic_stats, tags, topic_name, committed, NOW())
             continue
         # disposition is drop.
+        if reason == 'fixup/reverted':
+            # This patch is a fixup of a reverted and dropped patch, identified
+            # by dsha. Count from its commit time up to the revert time.
+            # First find the companion (dsha)
+            c.execute("SELECT dsha from commits where sha is '%s'" % dsha)
+            reverted_dsha, = c.fetchone()
+            # Now get the revert time, and count for time in between
+            c.execute("SELECT committed from commits where sha is '%s'" % reverted_dsha)
+            revert_committed, = c.fetchone()
+            do_topic_stats_count(topic_stats, tags, topic_name, committed, revert_committed)
+            continue
         if reason == 'reverted' and dsha:
             # This patch reverts dsha, or it was reverted by dsha.
             # Count only if it was committed after its companion to ensure that
