@@ -55,21 +55,14 @@ for (committed, sha, disposition, desc) in c.fetchall():
 
     if revert_sha:
       print("    Marking %s for drop" % revert_sha)
-      c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'"
-                 % revert_sha)
-      c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'"
-                 % revert_sha)
-      c2.execute("UPDATE commits SET dsha='%s' where sha='%s'"
-                 % (sha, revert_sha))
-      c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), revert_sha))
+      c2.execute("UPDATE commits SET disposition='drop', reason='reverted', dsha='%s', updated='%d' where sha='%s'"
+                 % (sha, NOW(), revert_sha))
     else:
       print("    No matching commit found")
     print("    Marking %s for drop" % sha)
-    c2.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-    c2.execute("UPDATE commits SET reason=('reverted') where sha='%s'" % sha)
+    c2.execute("UPDATE commits SET disposition='drop', reason='reverted', updated='%d' where sha='%s'" % (NOW(), sha))
     if revert_sha:
       c2.execute("UPDATE commits SET dsha='%s' where sha='%s'" % (revert_sha, sha))
-    c2.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
 
 conn.commit()
 
