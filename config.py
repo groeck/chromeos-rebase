@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase-latest.db'
+rebasedb = 'rebase-510.db'
 
 rebase_baseline_branch = 'chromeos-5.4'
-android_baseline_branch = 'android-5.4'
+android_baseline_branch = 'android12-5.4'
 
-rebase_target = 'latest'
+rebase_target = 'v5.10-rc1'
 
 android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
@@ -25,8 +25,8 @@ android_path = "linux-android" if android_repo else None
 next_path = "linux-next" if next_repo else None
 
 # Clear subject_droplist as follows to keep andoid patches
-# subject_droplist = []
-subject_droplist = ["ANDROID:", "Android:", "android:"]
+subject_droplist = []
+# subject_droplist = ["ANDROID:", "Android:", "android:"]
 
 # List of SHAs to be dropped manually, for example because they are
 # upstream but not auto-detected by the tool.
@@ -153,10 +153,6 @@ topiclist = \
        "include/uapi/linux/sockios.h"]],
      ["sound/intel",
       ["sound/soc/intel", "sound/soc/sof/intel"]],
-     ["sound/mediatek",
-      ["sound/soc/mediatek"]],
-     ["sound/rockchip",
-      ["sound/soc/rockchip"]],
      ["sound/other",
       ["sound", "Documentation/devicetree/bindings/sound", "include/sound",
        "include/uapi/sound"]],
@@ -168,11 +164,6 @@ topiclist = \
       ["android", "Documentation/android", "drivers/android",
        "drivers/staging/android",
        "include/linux/android", "include/uapi/linux/android"]],
-     ["fs/pstore",
-      ["fs/pstore", "include/linux/pstore",
-       "Documentation/devicetree/bindings/reserved-memory/ramoops.txt",
-       "Documentation/devicetree/bindings/misc/ramoops.txt",
-       "Documentation/ramoops.txt"]],
      ["fs/ecryptfs",
       ["fs/ecryptfs"]],
      ["fs/esdfs",
@@ -216,31 +207,14 @@ topiclist = \
        "Documentation/devicetree/bindings/soc/mediatek",
        "Documentation/devicetree/bindings/arm/mediatek"
       ]],
-     ["dts/rk3399",
-      ["arch/arm64/boot/dts/rockchip"]],
-     ["dts/arm",
-      ["arch/arm/boot/dts"]],
      ["acpi",
       ["drivers/acpi"]],
      ["container",
       ["arch/arm64/configs/chromiumos-container-vm-arm64_defconfig",
        "arch/x86/configs/chromiumos-container-vm-x86_64_defconfig",
        "arch/x86/configs/x86_64_arcvm_defconfig"]],
-     ["drivers/mediatek",
-      ["drivers/clk/mediatek",
-       "drivers/pinctrl/mediatek",
-       "drivers/soc/mediatek"
-      ]],
-     ["drivers/rockchip",
-      ["drivers/clk/rockchip",
-       "drivers/soc/rockchip",
-       "drivers/crypto/rockchip",
-       "drivers/clk/rockchip"
-      ]],
      ["cpufreq",
       ["drivers/cpufreq"]],
-     ["devfreq",
-      ["drivers/devfreq"]],
      ["iommu",
       ["drivers/iommu"]],
      ["soundwire",
