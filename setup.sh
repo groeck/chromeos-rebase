@@ -48,7 +48,7 @@ while getopts fv opt
 do
     case ${opt} in
     f)	use_force=1;;
-    f)	verbose=1;;
+    v)	verbose=1;;
     *)	usage;;
     esac
 done
