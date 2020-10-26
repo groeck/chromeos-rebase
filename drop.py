@@ -63,6 +63,7 @@ for (_sha,) in c.fetchall():
 conn.commit()
 
 # Try again. This time drop duplicates.
+# TODO: Needs work. This identifies revert/reapply wrongly as duplicates.
 
 dsha = []
 
