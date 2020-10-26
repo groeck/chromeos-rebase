@@ -140,7 +140,7 @@ def update_upstreamdb():
 
   os.chdir(upstream_path)
 
-  print("Starting with SHA %s" % sha)
+  print("Starting with SHA %s" % start)
 
   range = start + '..'
 
