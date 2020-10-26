@@ -8,10 +8,10 @@ from config import upstream_dir, chromeos_path, rebase_baseline_branch, rebase_t
 from config import next_repo
 
 workdir = os.getcwd()
-dbdir = workdir + '/database'
-upstreamdb = dbdir + '/upstream.db'
-nextdb = dbdir + '/next.db' if next_repo else None
-upstream_path = workdir + '/' + upstream_dir
+dbdir = os.path.join(workdir, 'database')
+upstreamdb = os.path.join(dbdir, 'upstream.db')
+nextdb = os.path.join(dbdir, 'next.db') if next_repo else None
+upstream_path = os.path.join(workdir, upstream_dir)
 
 try:
     from subprocess import DEVNULL # py3k
@@ -34,7 +34,12 @@ def stable_baseline():
   Return most recent label in to-be-rebased branch
   '''
 
-  cmd=['git', '-C', workdir+'/'+chromeos_path, 'describe', rebase_baseline_branch]
+  path = os.path.join(workdir, chromeos_path)
+
+  if not os.path.exists(path):
+    return None
+
+  cmd = ['git', '-C', path, 'describe', rebase_baseline_branch]
   tag=do_check_output(cmd)
   return tag.split('-')[0]
 
@@ -45,7 +50,9 @@ def rebase_baseline():
   '''
 
   baseline=stable_baseline()
-  return baseline.split('.')[0]+'.'+baseline.split('.')[1]
+  if baseline:
+      return baseline.split('.')[0]+'.'+baseline.split('.')[1]
+  return None
 
 
 version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+)?)\s*")
@@ -54,6 +61,9 @@ def rebase_target_tag():
   '''
   Return most recent label in upstream kernel
   '''
+
+  if not os.path.exists(upstream_path):
+    return 'HEAD'
 
   if rebase_target == 'latest':
     cmd=['git', '-C', upstream_path, 'describe']
@@ -68,8 +78,10 @@ def rebase_target_tag():
 
   return tag
 
+
 def rebase_target_version():
-  return rebase_target_tag().strip('v')
+    return rebase_target_tag().strip('v')
+
 
 def chromeosdb(version):
   return dbdir + "/chromeos-" + version + '.db'
@@ -166,8 +178,8 @@ def version_compare(v1, v2):
 # Return true if 1st version is included in the current baseline.
 # If no baseline is provided, use default.
 def is_in_baseline(version, baseline=rebase_baseline()):
-    if version:
-      return version_compare(version, baseline)
+    if version and baseline:
+        return version_compare(version, baseline)
 
     # If there is no version tag, it can not be included in any baseline.
     return False
@@ -176,7 +188,7 @@ def is_in_baseline(version, baseline=rebase_baseline()):
 # Return true if 1st version is included in the current baseline.
 # If no baseline is provided, use default.
 def is_in_target(version, target=rebase_target_tag()):
-    if version:
+    if version and target:
       return version_compare(version, target)
 
     # If there is no version tag, it can not be included in any target.
