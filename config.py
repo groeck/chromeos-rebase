@@ -24,9 +24,9 @@ stable_path = "linux-stable" if stable_repo else None
 android_path = "linux-android" if android_repo else None
 next_path = "linux-next" if next_repo else None
 
-# Clear subject_droplist as follows to keep andoid patches
-subject_droplist = []
-# subject_droplist = ["ANDROID:", "Android:", "android:"]
+# Clear subject_droplist as follows to keep Android patches
+# subject_droplist = []
+subject_droplist = ["ANDROID:", "Android:", "android:"]
 
 # List of SHAs to be dropped manually, for example because they are
 # upstream but not auto-detected by the tool.
@@ -117,10 +117,21 @@ topiclist = \
      ["gpu/other",
       ["drm", "drivers/gpu", "include/drm", "Documentation/devicetree/bindings/drm",
        "include/uapi/drm"]],
-     ["media",
+     ["media/qcom",
+      ["drivers/media/platform/qcom",
+       "Documentation/devicetree/bindings/media/qcom,sc7180-venus.yaml",
+       "Documentation/devicetree/bindings/media/qcom,sdm845-venus.yaml",
+       "Documentation/devicetree/bindings/media/qcom,msm8916-venus.yaml",
+       "Documentation/devicetree/bindings/media/qcom,msm8996-venus.yaml",
+       "Documentation/devicetree/bindings/media/qcom,sdm845-venus-v2.yaml",
+       "Documentation/devicetree/bindings/media/qcom,venus.txt" ]],
+     ["media/virtio",
+      ["drivers/media/virtio" ]],
+     ["media/other",
       ["drivers/media", "drivers/staging/media",
        "include/media", "include/uapi/linux/videodev2.h",
-       "include/uapi/linux/v4l2-controls.h", "Documentation/media" ]],
+       "include/uapi/linux/v4l2-controls.h", "Documentation/media",
+       "Documentation/devicetree/bindings/media" ]],
      ["video",
       ["drivers/video"]],
      ["input",
@@ -177,9 +188,6 @@ topiclist = \
      ["thermal",
       ["drivers/thermal", "include/linux/thermal",
        "Documentation/devicetree/bindings/thermal"]],
-     ["regulator",
-      ["Documentation/devicetree/bindings/regulator", "drivers/regulator",
-      "include/linux/regulator"]],
      ["scsi",
       ["drivers/scsi"]],
      ["virtio",
@@ -209,10 +217,11 @@ topiclist = \
       ]],
      ["acpi",
       ["drivers/acpi"]],
-     ["container",
+     ["arcvm/container",
       ["arch/arm64/configs/chromiumos-container-vm-arm64_defconfig",
        "arch/x86/configs/chromiumos-container-vm-x86_64_defconfig",
-       "arch/x86/configs/x86_64_arcvm_defconfig"]],
+       "arch/x86/configs/x86_64_arcvm_defconfig",
+       "arch/arm64/configs/arm64_arcvm_defconfig"]],
      ["cpufreq",
       ["drivers/cpufreq"]],
      ["iommu",
@@ -223,6 +232,8 @@ topiclist = \
       ["drivers/remoteproc", "drivers/rpmsg", "include/linux/rpmsg" ]],
      ["mfd",
       ["drivers/mfd"]],
+     ["drivers/soc",
+      ["drivers/soc", "include/linux/soc"]],
      ["arch/arm64",
       ["arch/arm64"]],
      ["arch/arm",
