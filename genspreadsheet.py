@@ -249,7 +249,10 @@ def add_sha(requests, sheetId, sha, contact, email, subject, disposition, reason
         contact='=HYPERLINK("mailto:%s","%s")' % (email, contact)
         contact_format = 'formulaValue'
 
-    if disposition == "replace" and dsha:
+    if disposition == "pick" and reason == "revisit":
+        comment = "revisit (revert of upstream patch)"
+        color = red
+    elif disposition == "replace" and dsha:
         comment = "with %s commit %s" % (origin, dsha)
         color = yellow
         if reason == "revisit":

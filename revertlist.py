@@ -19,14 +19,14 @@ c2 = conn.cursor()
 
 rp = re.compile('Revert "(.*)"')
 
-def mark_drop(db, sha, reason, revert_sha):
-    '''Mark sha for drop. If available, add revert_sha into dsha.'''
+def mark_disposition(db, sha, disposition, reason, revert_sha):
+    '''Mark sha for given disposition. If available, add revert_sha into dsha.'''
 
     c = db.cursor()
 
-    print("    Marking %s for drop (%s)" % (sha, reason))
+    print("    Marking %s for %s (%s)" % (sha, disposition, reason))
 
-    cmd='UPDATE commits SET disposition="drop", reason="%s", updated="%d"' % (reason, NOW())
+    cmd='UPDATE commits SET disposition="%s", reason="%s", updated="%d"' % (disposition, reason, NOW())
     if revert_sha:
         cmd += ', dsha="%s"' % revert_sha
     cmd += ' where sha="%s"' % sha
@@ -72,19 +72,18 @@ for (committed, sha, disposition, desc) in c.fetchall():
 
     # <sha> is the revert of <revert_sha>. Mark both as reverted.
     if revert_sha:
-      mark_drop(conn, revert_sha, 'reverted', sha)
+      mark_disposition(conn, revert_sha, 'drop', 'reverted', sha)
+      mark_disposition(conn, sha, 'drop', 'reverted', revert_sha)
       # Now check if we can find a FIXUP: of <revert_sha>. It must
       # have been committed between <revert_sha> and <sha>.
       fdesc = "FIXUP: %s" % ndesc
       c2.execute("select committed, sha from commits where subject is '%s'" % fdesc)
       for (_committed, _sha,) in c2.fetchall():
           if _committed <= committed and _committed >= revert_committed:
-              mark_drop(conn, _sha, "fixup/reverted", revert_sha)
-
+              mark_disposition(conn, _sha, 'drop', "fixup/reverted", revert_sha)
     else:
+      mark_disposition(conn, sha, 'pick', 'revisit', None)
       print("    No matching commit found")
-
-    mark_drop(conn, sha, 'reverted', revert_sha)
 
 conn.commit()
 
