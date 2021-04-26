@@ -182,13 +182,15 @@ def get_topic_stats(c):
             integrated = cu.fetchone()
             if integrated:
                 integrated = integrated[0] if integrated[0] else None
-            if integrated:
+            if integrated and integrated in tags:
                 do_topic_stats_count(topic_stats, tags, topic_name, committed, tags[integrated])
-            else:
+            elif not integrated:
                 # Not yet integrated.
                 # We know that disposition is 'drop', suggesting that the patch was accepted
                 # upstream after the most recent tag. Therefore, count against ToT.
                 do_topic_stats_count(topic_stats, tags, topic_name, committed, tags['ToT'])
+            else:
+                print('sha %s: integrated tag %s not in database' % (usha, integrated))
 
     uconn.close()
 
