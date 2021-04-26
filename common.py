@@ -55,7 +55,7 @@ def rebase_baseline():
   return None
 
 
-version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+)?)\s*")
+version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+(-dontuse)?)?)\s*")
 
 def rebase_target_tag():
   '''
@@ -130,7 +130,7 @@ def createdb(db, op):
 
 
 # match "vX.Y[.Z][.rcN]"
-version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+)?)\s*')
+version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+(-dontuse)?)?)\s*')
 
 def get_integrated_tag(sha):
     """For a given SHA, find the first tag that includes it."""
