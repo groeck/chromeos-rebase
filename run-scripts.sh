@@ -1,7 +1,9 @@
 #!/bin/bash
 
+baseline="$(python -c 'from config import rebase_baseline_branch; print rebase_baseline_branch;')"
+
 progdir="$(dirname $0)"
-logfile="/tmp/run-scripts.$(date +%F).log"
+logfile="/tmp/run-scripts.${baseline}.$(date +%F).log"
 
 # IT loves uninstalling stuff, so just force a reinstall
 pip3 install google_auth_oauthlib >/dev/null 2>&1
