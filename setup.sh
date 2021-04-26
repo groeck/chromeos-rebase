@@ -70,10 +70,10 @@ clone_simple()
 	git checkout master
 	if [[ -n "${force}" ]]; then
 	    # This is needed if the origin may have been rebased
-	    git fetch origin
+	    git fetch -p origin
 	    git reset --hard origin/master
 	else
-	    git pull
+	    git pull -p
 	fi
 	popd >/dev/null
     else
