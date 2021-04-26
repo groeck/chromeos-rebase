@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase-510.db'
+rebasedb = 'rebase-latest.db'
 
-rebase_baseline_branch = 'chromeos-5.4'
-android_baseline_branch = 'android12-5.4'
+rebase_baseline_branch = 'chromeos-5.10'
+android_baseline_branch = 'android13-5.10'
 
-rebase_target = 'v5.10-rc1'
+rebase_target = 'latest'
 
 android_site = "https://android.googlesource.com/"
 kernel_site = "https://git.kernel.org/"
@@ -220,6 +220,7 @@ topiclist = \
      ["arcvm/container",
       ["arch/arm64/configs/chromiumos-container-vm-arm64_defconfig",
        "arch/x86/configs/chromiumos-container-vm-x86_64_defconfig",
+       "arch/x86/configs/chromiumos-jail-vm-x86_64_defconfig",
        "arch/x86/configs/x86_64_arcvm_defconfig",
        "arch/arm64/configs/arm64_arcvm_defconfig"]],
      ["cpufreq",
