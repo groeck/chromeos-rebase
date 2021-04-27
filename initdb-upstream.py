@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import re
 import sqlite3
@@ -24,7 +26,7 @@ def mktables(c):
 def update_integrated_table(c, integrated):
 
   cmd = ['git', '-C', upstream_path, 'log', '-1', '--format=%ct', integrated]
-  output = subprocess.check_output(cmd, stderr=DEVNULL)
+  output = subprocess.check_output(cmd, stderr=DEVNULL, encoding='utf-8', errors='ignore')
   timestamp = int(output.splitlines()[0])
 
   try:
@@ -35,7 +37,8 @@ def update_integrated_table(c, integrated):
 
 
 def handle(c, range):
-  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--format=%ct %h %s', '--reverse', range])
+  commits = subprocess.check_output(['git', 'log', '--abbrev=12', '--format=%ct %h %s', '--reverse', range],
+                                    encoding='utf-8', errors='ignore')
   last = None
   for commit in commits.splitlines():
     if commit != "":
@@ -46,19 +49,18 @@ def handle(c, range):
 
       # Check if commit is a merge. If so, nothing else to do.
       l = subprocess.check_output(['git', 'rev-list', '--parents', '-n', '1', sha],
-                                  stderr=DEVNULL)
+                                  stderr=DEVNULL, encoding='utf-8', errors='ignore')
       if len(l.split(' ')) > 2:
-	continue
+        continue
 
       subject = elem[2].rstrip('\n')
-      subject = subject.decode('latin-1') if isinstance(subject, str) else subject
       integrated = get_integrated_tag(sha)
 
       if integrated:
           update_integrated_table(c, integrated)
 
       ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-      spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
+      spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout, encoding='utf-8', errors='ignore')
       patchid = spid.split(" ", 1)[0]
 
       print("%s %s %s %s" % (timestamp, sha, patchid, integrated))
@@ -66,13 +68,13 @@ def handle(c, range):
       try:
         c.execute("INSERT INTO commits(committed, sha, patchid, subject, integrated) VALUES (?, ?, ?, ?, ?)",
                   (timestamp, sha, patchid, subject, integrated))
-        filenames = subprocess.check_output(['git', 'show', '--name-only', '--format=', sha])
+        filenames = subprocess.check_output(['git', 'show', '--name-only', '--format=', sha], encoding='utf-8', errors='ignore')
         for fn in filenames.splitlines():
           if fn != "":
             c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha, fn))
       except error as e:
         # The commit may already be in the database. If so, just keep going.
-	print(e)
+        print(e)
         pass
 
   if last:
@@ -110,7 +112,7 @@ def update_patchids(c):
   for sha, in c.fetchall():
     ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha],
                           stdout=subprocess.PIPE)
-    spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
+    spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout, encoding='utf-8', errors='ignore')
     patchid = spid.split(" ", 1)[0]
     print("sha %s patch-id %s" % (sha, patchid))
     c.execute("UPDATE commits SET patchid=('%s') where sha='%s'" % (patchid, sha))
