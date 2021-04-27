@@ -6,19 +6,26 @@ import os
 import time
 from config import rebasedb, subject_droplist, sha_droplist, droplist
 
+
 def NOW():
-  return int(time.time())
+    return int(time.time())
+
 
 def do_drop(c, sha, reason, usha=None):
-  c.execute("select disposition from commits where sha is '%s'" % sha)
-  found = c.fetchone()
-  if found[0] != "drop":
-    print("Dropping SHA %s: %s" % (sha, reason))
-    c.execute("UPDATE commits SET disposition=('drop') where sha='%s'" % sha)
-    c.execute("UPDATE commits SET reason=('%s') where sha='%s'" % (reason, sha))
-    c.execute("UPDATE commits SET updated=('%d') where sha='%s'" % (NOW(), sha))
-    if usha:
-      c.execute("UPDATE commits SET usha=('%s') where sha='%s'" % (usha, sha))
+    c.execute("select disposition from commits where sha is '%s'" % sha)
+    found = c.fetchone()
+    if found[0] != 'drop':
+        print('Dropping SHA %s: %s' % (sha, reason))
+        c.execute("UPDATE commits SET disposition=('drop') where sha='%s'" %
+                  sha)
+        c.execute("UPDATE commits SET reason=('%s') where sha='%s'" %
+                  (reason, sha))
+        c.execute("UPDATE commits SET updated=('%d') where sha='%s'" %
+                  (NOW(), sha))
+        if usha:
+            c.execute("UPDATE commits SET usha=('%s') where sha='%s'" %
+                      (usha, sha))
+
 
 workdir = os.getcwd()
 
@@ -38,28 +45,28 @@ for sha, reason, usha in sha_droplist:
 
 # Drop all Android patches. We'll pick them up from the most recent version.
 
-c.execute("select sha, subject from commits")
+c.execute('select sha, subject from commits')
 for (sha, desc) in c.fetchall():
-  for prefix in subject_droplist:
-    if desc.startswith(prefix):
-      do_drop(c2, sha, "android")
+    for prefix in subject_droplist:
+        if desc.startswith(prefix):
+            do_drop(c2, sha, 'android')
 
 conn.commit()
 
 # Now drop commits touching directories/files specified in droplist.
 
-c.execute("select sha from commits")
+c.execute('select sha from commits')
 for (_sha,) in c.fetchall():
-  c.execute("select filename from files where sha is '%s'" % _sha)
-  for (filename,) in c.fetchall():
-    dropped = 0
-    for (_dir, _reason) in droplist:
-      if filename.startswith(_dir):
-        do_drop(c2, _sha, _reason)
-        dropped = 1
-        break
-    if dropped:
-      break
+    c.execute("select filename from files where sha is '%s'" % _sha)
+    for (filename,) in c.fetchall():
+        dropped = 0
+        for (_dir, _reason) in droplist:
+            if filename.startswith(_dir):
+                do_drop(c2, _sha, _reason)
+                dropped = 1
+                break
+        if dropped:
+            break
 
 conn.commit()
 
@@ -68,19 +75,23 @@ conn.commit()
 
 dsha = []
 
-c.execute("select sha,patchid,disposition from commits")
-for (_sha,_patchid,_disposition,) in c.fetchall():
-  if _disposition is 'drop':
-    continue
-  if _sha in dsha:
-    continue
-  c2.execute("select sha from commits where patchid is '%s'" % _patchid)
-  for (__sha,) in c2.fetchall():
-    if __sha in dsha:
-      continue
-    if _sha != __sha:
-      do_drop(c2, __sha, "duplicate")
-      dsha.append(__sha)
+c.execute('select sha,patchid,disposition from commits')
+for (
+        _sha,
+        _patchid,
+        _disposition,
+) in c.fetchall():
+    if _disposition is 'drop':
+        continue
+    if _sha in dsha:
+        continue
+    c2.execute("select sha from commits where patchid is '%s'" % _patchid)
+    for (__sha,) in c2.fetchall():
+        if __sha in dsha:
+            continue
+        if _sha != __sha:
+            do_drop(c2, __sha, 'duplicate')
+            dsha.append(__sha)
 
 conn.commit()
 
