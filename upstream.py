@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 from __future__ import print_function
 
@@ -34,7 +35,8 @@ def NOW():
 def get_patch(path, psha):
   workdir = os.getcwd()
   os.chdir(path)
-  patch = subprocess.check_output(["git", "show", "--format='%b'", "-U1", psha])
+  patch = subprocess.check_output(["git", "show", "--format='%b'", "-U1", psha],
+                                  encoding='utf-8', errors='ignore')
   os.chdir(workdir)
   i = re.search("^diff", patch, flags=re.MULTILINE).group()
   if i:
@@ -118,8 +120,7 @@ def getallsubjects(db=upstreamdb):
   db = sqlite3.connect(db)
   cu = db.cursor()
   cu.execute("select subject from commits")
-  for desc in cu.fetchall():
-    subject = desc[0].encode(encoding)
+  for subject, in cu.fetchall():
     wlist = re.sub("[^a-zA-Z0-9_\s]+", " ", subject)
     words = wlist.split()
     for word in words:
@@ -196,7 +197,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
     if m:
       # print("Regex match for '%s'" % desc.replace("'", "''"))
       ndesc = m.group(2).replace("'", "''")
-      rdesc = m.group(2).encode(encoding)
+      rdesc = m.group(2)
       # print("    Match subject '%s'" % ndesc)
       cu.execute("select sha, subject, integrated from commits "
                  "where subject='%s'"
