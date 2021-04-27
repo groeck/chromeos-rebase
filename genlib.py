@@ -22,6 +22,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # Spreadsheet functions
 
+
 def getsheet():
     """ Get and return reference to spreadsheet """
     creds = None
@@ -30,9 +31,9 @@ def getsheet():
     # time.
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
-            try: # py2 or token saved with py3
+            try:  # py2 or token saved with py3
                 creds = pickle.load(token)
-            except UnicodeDecodeError: # py3, token saved with py2
+            except UnicodeDecodeError:  # py3, token saved with py2
                 creds = pickle.load(token, encoding='latin-1')
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -56,7 +57,8 @@ def init_spreadsheet(filename, title):
     try:
         with open(filename, 'r') as f:
             ssid = f.read().strip('\n')
-        request = sheet.get(spreadsheetId=ssid, ranges = [ ], includeGridData=False)
+        request = sheet.get(
+            spreadsheetId=ssid, ranges=[], includeGridData=False)
         response = request.execute()
         sheets = response.get('sheets')
         delete_sheets((sheet, ssid), sheets)
@@ -70,12 +72,13 @@ def init_spreadsheet(filename, title):
 
 # Generic topic functions
 
+
 def get_other_topic_id(c):
     """ Calculate and return other_topic_id """
 
     other_topic_id = 0
 
-    c.execute("select topic, name from topics order by name")
+    c.execute('select topic, name from topics order by name')
     for topic, name in c.fetchall():
         if name == 'other':
             return topic
@@ -98,12 +101,11 @@ def get_topic_name(c, topic):
 
 # Spreadsheet manipulation functions
 
-def doit(sheet, requests):
-    ''' Execute a request '''
 
-    body = {
-        'requests': requests
-    }
+def doit(sheet, requests):
+    """ Execute a request """
+
+    body = {'requests': requests}
 
     request = sheet[0].batchUpdate(spreadsheetId=sheet[1], body=body)
     response = request.execute()
@@ -111,8 +113,8 @@ def doit(sheet, requests):
 
 
 def hide_sheet(sheet, sheetId, hide):
-    ''' Move 'Data' sheet to end of spreadsheet. '''
-    request = [ ]
+    """ Move 'Data' sheet to end of spreadsheet. """
+    request = []
 
     request.append({
         'updateSheetProperties': {
@@ -129,11 +131,7 @@ def hide_sheet(sheet, sheetId, hide):
 
 def create_spreadsheet(sheet, title):
     """ Create a spreadsheet and return reference to it """
-    spreadsheet = {
-        'properties': {
-            'title': title
-        }
-    }
+    spreadsheet = {'properties': {'title': title}}
 
     request = sheet.create(body=spreadsheet, fields='spreadsheetId')
     response = request.execute()
@@ -142,30 +140,26 @@ def create_spreadsheet(sheet, title):
 
 
 def delete_sheets(sheet, sheets):
-    ''' Delete all sheets except sheet 0. In sheet 0, delete all values. '''
+    """ Delete all sheets except sheet 0. In sheet 0, delete all values. """
     # Unhide 'Data' sheet. If it is hidden we can't remove the other sheets.
     hide_sheet(sheet, 0, False)
-    request = [ ]
+    request = []
     for s in sheets:
-      sheetId = s['properties']['sheetId']
-      if sheetId != 0:
-        request.append({
-          "deleteSheet": {
-            "sheetId": sheetId
-          }
-        })
-      else:
-        rows = s['properties']['gridProperties']['rowCount']
-        request.append({
-          "deleteRange": {
-            "range": {
-              "sheetId": sheetId,
-              "startRowIndex": 0,
-              "endRowIndex": rows,
-            },
-            "shiftDimension": 'ROWS',
-          }
-        })
+        sheetId = s['properties']['sheetId']
+        if sheetId != 0:
+            request.append({'deleteSheet': {'sheetId': sheetId}})
+        else:
+            rows = s['properties']['gridProperties']['rowCount']
+            request.append({
+                'deleteRange': {
+                    'range': {
+                        'sheetId': sheetId,
+                        'startRowIndex': 0,
+                        'endRowIndex': rows,
+                    },
+                    'shiftDimension': 'ROWS',
+                }
+            })
 
     # We are letting this fail if there was nothing to clean. This will
     # hopefully result in re-creating the spreadsheet.
@@ -174,22 +168,21 @@ def delete_sheets(sheet, sheets):
 
 def resize_sheet(requests, sheetId, start, end):
     requests.append({
-      'autoResizeDimensions': {
-        'dimensions': {
-          'sheetId': sheetId,
-          'dimension': 'COLUMNS',
-          'startIndex': start,
-          'endIndex': end
+        'autoResizeDimensions': {
+            'dimensions': {
+                'sheetId': sheetId,
+                'dimension': 'COLUMNS',
+                'startIndex': start,
+                'endIndex': end
+            }
         }
-      }
     })
 
 
 def add_sheet_header(requests, sheetId, fields):
-    """
-    Add provided header line to specified sheet.
-    Make it bold.
+    """Add provided header line to specified sheet.
 
+    Make it bold.
     Args:
         requests: Reference to list of requests to send to API.
         sheetId: Sheet Id
@@ -198,40 +191,40 @@ def add_sheet_header(requests, sheetId, fields):
     # Generate header row
     requests.append({
         'pasteData': {
-                    'data': fields,
-                    'type': 'PASTE_NORMAL',
-                    'delimiter': ',',
-                    'coordinate': {
-                        'sheetId': sheetId,
-                        'rowIndex': 0
-                    }
-                }
+            'data': fields,
+            'type': 'PASTE_NORMAL',
+            'delimiter': ',',
+            'coordinate': {
+                'sheetId': sheetId,
+                'rowIndex': 0
+            }
+        }
     })
 
     # Convert header row to bold and centered
     requests.append({
-        "repeatCell": {
-        "range": {
-          "sheetId": sheetId,
-          "startRowIndex": 0,
-          "endRowIndex": 1
-        },
-        "cell": {
-          "userEnteredFormat": {
-            "horizontalAlignment" : "CENTER",
-            "textFormat": {
-              "bold": True
-            }
-          }
-        },
-        "fields": "userEnteredFormat(textFormat,horizontalAlignment)"
+        'repeatCell': {
+            'range': {
+                'sheetId': sheetId,
+                'startRowIndex': 0,
+                'endRowIndex': 1
+            },
+            'cell': {
+                'userEnteredFormat': {
+                    'horizontalAlignment': 'CENTER',
+                    'textFormat': {
+                        'bold': True
+                    }
+                }
+            },
+            'fields': 'userEnteredFormat(textFormat,horizontalAlignment)'
         }
     })
 
 
 def move_sheet(sheet, sheetId, to):
-    ''' Move 'Data' sheet to end of spreadsheet. '''
-    request = [ ]
+    """ Move 'Data' sheet to end of spreadsheet. """
+    request = []
 
     request.append({
         'updateSheetProperties': {
@@ -248,27 +241,25 @@ def move_sheet(sheet, sheetId, to):
 
 def sourceRange(sheetId, rows, column):
     return {
-      "sourceRange": {
-        "sources": [
-            {
-                "sheetId": sheetId,
-                "startRowIndex": 0,
-                "endRowIndex": rows,
-                "startColumnIndex": column,
-                "endColumnIndex": column + 1
-            }
-        ]
-      }
+        'sourceRange': {
+            'sources': [{
+                'sheetId': sheetId,
+                'startRowIndex': 0,
+                'endRowIndex': rows,
+                'startColumnIndex': column,
+                'endColumnIndex': column + 1
+            }]
+        }
     }
 
 
 def scope(name, sheetId, rows, column):
-    return { name: sourceRange(sheetId, rows, column) }
+    return {name: sourceRange(sheetId, rows, column)}
 
 
 def sscope(name, sheetId, rows, start, end):
-    s = [ scope(name, sheetId, rows, start) ]
+    s = [scope(name, sheetId, rows, start)]
     while start < end:
         start += 1
-        s += [ scope(name, sheetId, rows, start) ]
+        s += [scope(name, sheetId, rows, start)]
     return s
