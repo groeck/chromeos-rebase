@@ -3,37 +3,41 @@
 # Note: Collabora repository with pending patches
 # https://git.collabora.com/cgit/linux.git/log/?h=topic/chromeos/waiting-for-upstream
 
-chromeos_path=$(python -c "from config import chromeos_path; print chromeos_path;")
-chromeos_repo=$(python -c  "from config import chromeos_repo; print chromeos_repo;")
+chromeos_path=$(python3 -c "from config import chromeos_path; print(chromeos_path)")
+chromeos_repo=$(python3 -c  "from config import chromeos_repo; print(chromeos_repo)")
 
-stable_path=$(python -c "from config import stable_path; print stable_path;")
-stable_repo=$(python -c  "from config import stable_repo; print stable_repo;")
+stable_path=$(python3 -c "from config import stable_path; print(stable_path)")
+stable_repo=$(python3 -c  "from config import stable_repo; print(stable_repo)")
 
-upstream_path=$(python -c "from common import upstream_path; print upstream_path;")
+upstream_path=$(python3 -c "from common import upstream_path; print(upstream_path)")
 if [[ "$(dirname ${upstream_path})" = "." ]]; then
 	# Needs to be an absolute path name
 	upstream_path="$(pwd)/${upstream_path}"
 fi
-upstream_repo=$(python -c  "from config import upstream_repo; print upstream_repo;")
+upstream_repo=$(python3 -c  "from config import upstream_repo; print(upstream_repo)")
 
-next_path=$(python -c "from config import next_path; print next_path;")
+next_path=$(python3 -c "from config import next_path; print(next_path)")
 if [[ "$(dirname ${next_path})" = "." ]]; then
 	# Needs to be an absolute path name
 	next_path="$(pwd)/${next_path}"
 fi
-next_repo=$(python -c  "from config import next_repo; print next_repo;")
+next_repo=$(python3 -c  "from config import next_repo; print(next_repo)")
 
-rebase_baseline_branch=$(python -c "from config import rebase_baseline_branch; print rebase_baseline_branch;")
+rebase_baseline_branch=$(python3 -c "from config import rebase_baseline_branch; print(rebase_baseline_branch)")
 
-android_repo=$(python -c  "from config import android_repo; print android_repo;")
+android_repo=$(python3 -c  "from config import android_repo; print(android_repo)")
 if [[ "${android_repo}" != "None" ]]; then
-    android_baseline_branch=$(python -c "from config import android_baseline_branch; print android_baseline_branch;")
-    android_path=$(python -c "from config import android_path; print android_path;")
+    android_baseline_branch=$(python3 -c "from config import android_baseline_branch; print(android_baseline_branch)")
+    android_path=$(python3 -c "from config import android_path; print(android_path)")
 fi
 
-upstreamdb=$(python -c "from common import upstreamdb; print upstreamdb;")
-nextdb=$(python -c "from common import nextdb; print nextdb;")
-rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
+upstreamdb=$(python3 -c "from common import upstreamdb; print(upstreamdb)")
+nextdb=$(python3 -c "from common import nextdb; print(nextdb)")
+rebasedb=$(python3 -c "from config import rebasedb; print(rebasedb)")
+
+progdir="$(dirname $0)"
+
+cd "${progdir}"
 
 usage()
 {
@@ -151,10 +155,10 @@ fi
 rm -f "${rebasedb}" "${nextdb}"
 
 echo "Initializing database"
-python initdb.py
+./initdb.py
 
 echo "Initializing upstream database"
-python initdb-upstream.py
+./initdb-upstream.py
 
 if [[ "${next_repo}" != "None" ]]; then
     echo "Initializing next database"
@@ -162,13 +166,13 @@ if [[ "${next_repo}" != "None" ]]; then
 fi
 
 echo "Updating rebase database with upstream commits"
-python update.py
+./update.py
 
 echo "Calculating initial revert list"
-python revertlist.py
+./revertlist.py
 echo "Calculating initial drop list"
-python drop.py
+./drop.py
 echo "Calculating replace list"
-python upstream.py
+./upstream.py
 echo "Calculating topics"
-python topics.py
+./topics.py
