@@ -14,69 +14,70 @@ nextdb = os.path.join(dbdir, 'next.db') if next_repo else None
 upstream_path = os.path.join(workdir, upstream_dir)
 
 try:
-    from subprocess import DEVNULL # py3k
+    from subprocess import DEVNULL  # py3k
 except ImportError:
     import os
     DEVNULL = open(os.devnull, 'wb')
 
 
 def do_check_output(cmd):
-  '''
-  Python version independent implementation of 'subprocess.check_output'
-  '''
-  if platform.python_version_tuple()[0] == '2':
-    return subprocess.check_output(cmd, stderr=DEVNULL).decode('utf-8')
-  return subprocess.check_output(cmd, encoding='utf-8', stderr=DEVNULL)
+    """
+    Python version independent implementation of 'subprocess.check_output'
+    """
+    if platform.python_version_tuple()[0] == '2':
+        return subprocess.check_output(cmd, stderr=DEVNULL).decode('utf-8')
+    return subprocess.check_output(cmd, encoding='utf-8', stderr=DEVNULL)
 
 
 def stable_baseline():
-  '''
-  Return most recent label in to-be-rebased branch
-  '''
+    """
+    Return most recent label in to-be-rebased branch
+    """
 
-  path = os.path.join(workdir, chromeos_path)
+    path = os.path.join(workdir, chromeos_path)
 
-  if not os.path.exists(path):
-    return None
+    if not os.path.exists(path):
+        return None
 
-  cmd = ['git', '-C', path, 'describe', rebase_baseline_branch]
-  tag=do_check_output(cmd)
-  return tag.split('-')[0]
+    cmd = ['git', '-C', path, 'describe', rebase_baseline_branch]
+    tag = do_check_output(cmd)
+    return tag.split('-')[0]
 
 
 def rebase_baseline():
-  '''
-  Return most recent tag in to-be-rebased branch
-  '''
+    """
+    Return most recent tag in to-be-rebased branch
+    """
 
-  baseline=stable_baseline()
-  if baseline:
-      return baseline.split('.')[0]+'.'+baseline.split('.')[1]
-  return None
+    baseline = stable_baseline()
+    if baseline:
+        return baseline.split('.')[0] + '.' + baseline.split('.')[1]
+    return None
 
 
-version=re.compile("(v[0-9]+(\.[0-9]+)(-rc[0-9]+(-dontuse)?)?)\s*")
+version = re.compile('(v[0-9]+(\.[0-9]+)(-rc[0-9]+(-dontuse)?)?)\s*')
+
 
 def rebase_target_tag():
-  '''
-  Return most recent label in upstream kernel
-  '''
+    """
+    Return most recent label in upstream kernel
+    """
 
-  if not os.path.exists(upstream_path):
-    return 'HEAD'
+    if not os.path.exists(upstream_path):
+        return 'HEAD'
 
-  if rebase_target == 'latest':
-    cmd=['git', '-C', upstream_path, 'describe']
-    tag=do_check_output(cmd)
-    v=version.match(tag)
-    if v:
-      tag=v.group(0).strip('\n')
+    if rebase_target == 'latest':
+        cmd = ['git', '-C', upstream_path, 'describe']
+        tag = do_check_output(cmd)
+        v = version.match(tag)
+        if v:
+            tag = v.group(0).strip('\n')
+        else:
+            tag = 'HEAD'
     else:
-      tag="HEAD"
-  else:
-    tag=rebase_target
+        tag = rebase_target
 
-  return tag
+    return tag
 
 
 def rebase_target_version():
@@ -84,59 +85,66 @@ def rebase_target_version():
 
 
 def chromeosdb(version):
-  return dbdir + "/chromeos-" + version + '.db'
+    return dbdir + '/chromeos-' + version + '.db'
+
 
 def stable_branch(version):
-    return "linux-%s.y" % version
+    return 'linux-%s.y' % version
+
 
 def chromeos_branch(version):
-    return "chromeos-%s" % version
+    return 'chromeos-%s' % version
+
 
 def doremove(file):
-  '''
-  remove file if it exists
-  '''
+    """
+    remove file if it exists
+    """
 
-  try:
-    os.remove(file)
-  except OSError:
-    pass
+    try:
+        os.remove(file)
+    except OSError:
+        pass
+
 
 def createdb(db, op):
-  '''
-  remove and recreate database
-  '''
+    """
+    remove and recreate database
+    """
 
-  dbdir = os.path.dirname(db)
-  if not os.path.exists(dbdir):
-    os.mkdir(dbdir)
+    dbdir = os.path.dirname(db)
+    if not os.path.exists(dbdir):
+        os.mkdir(dbdir)
 
-  doremove(db)
+    doremove(db)
 
-  conn = sqlite3.connect(db)
-  c = conn.cursor()
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
 
-  op(c)
+    op(c)
 
-  # Convention: table 'tip' ref 1 contains the most recently processed SHA.
-  # Use this to avoid re-processing SHAs already in the database.
-  c.execute("CREATE TABLE tip (ref integer, sha text)")
-  c.execute("INSERT INTO tip (ref, sha) VALUES (?, ?)",
-                  (1, ""))
+    # Convention: table 'tip' ref 1 contains the most recently processed SHA.
+    # Use this to avoid re-processing SHAs already in the database.
+    c.execute('CREATE TABLE tip (ref integer, sha text)')
+    c.execute('INSERT INTO tip (ref, sha) VALUES (?, ?)', (1, ''))
 
-  # Save (commit) the changes
-  conn.commit()
-  conn.close()
+    # Save (commit) the changes
+    conn.commit()
+    conn.close()
 
 
 # match "vX.Y[.Z][.rcN]"
 version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+(-dontuse)?)?)\s*')
 
+
 def get_integrated_tag(sha):
     """For a given SHA, find the first tag that includes it."""
 
     try:
-        cmd = ['git', '-C', upstream_path, 'describe', '--match', 'v*', '--contains', sha]
+        cmd = [
+            'git', '-C', upstream_path, 'describe', '--match', 'v*',
+            '--contains', sha
+        ]
         tag = do_check_output(cmd)
         return version.match(tag).group()
     except AttributeError:
@@ -147,7 +155,9 @@ def get_integrated_tag(sha):
 
 # extract_numerics matches numeric parts of a Linux version as separate elements
 # For example, "v5.4" matches "5" and "4", and "v5.4.12" matches "5", "4", and "12"
-extract_numerics = re.compile(r'(?:v)?([0-9]+)\.([0-9]+)(?:\.([0-9]+))?(?:-rc([0-9]+))?\s*')
+extract_numerics = re.compile(
+    r'(?:v)?([0-9]+)\.([0-9]+)(?:\.([0-9]+))?(?:-rc([0-9]+))?\s*')
+
 
 def version_to_number(version):
     """Convert Linux version to numeric value usable for comparisons.
@@ -175,9 +185,12 @@ def version_compare(v1, v2):
     return version_to_number(v2) >= version_to_number(v1)
 
 
-# Return true if 1st version is included in the current baseline.
-# If no baseline is provided, use default.
 def is_in_baseline(version, baseline=rebase_baseline()):
+    """Return true if 1st version is included in the current baseline.
+
+    If no baseline is provided, use default.
+    """
+
     if version and baseline:
         return version_compare(version, baseline)
 
@@ -185,11 +198,14 @@ def is_in_baseline(version, baseline=rebase_baseline()):
     return False
 
 
-# Return true if 1st version is included in the current baseline.
-# If no baseline is provided, use default.
 def is_in_target(version, target=rebase_target_tag()):
+    """Return true if 1st version is included in the current baseline.
+
+    If no baseline is provided, use default.
+    """
+
     if version and target:
-      return version_compare(version, target)
+        return version_compare(version, target)
 
     # If there is no version tag, it can not be included in any target.
     return False
