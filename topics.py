@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-"
 import sqlite3
 import os
 from config import rebasedb, topiclist
@@ -27,36 +29,36 @@ def update_sha(sha, topic, file="", base=""):
         # Generate topic even if disposition is drop. We'll need it for statistics.
         # Do not look into stable release and android patches since those will always be dropped.
         if disposition == 'drop' and (reason == 'stable' or reason == 'android' or reason == 'Intel'):
-            print "Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason)
+            print("Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason))
             return count
 
         #if (disposition == 'drop' and reason != 'revisit' and reason != 'revisit/fixup'
         #                       and reason != 'upstream/fixup' and reason != 'reverted'):
-        #    print "Disposition for '%s' is '%s' ('%s'), skipping" % (sha, disposition, reason)
+        #    print("Disposition for '%s' is '%s' ('%s'), skipping" % (sha, #    disposition, reason))
         #    return count
         if t != 0:
             if t != topic:
                 if file != "":
-                    print "topic already set to %d for sha '%s' [%s], skipping" % (t, sha, file)
+                    print("topic already set to %d for sha '%s' [%s], skipping" % (t, sha, file))
                 else:
-                    print "topic already set to %d for sha '%s' [none], skipping" % (t, sha)
+                    print("topic already set to %d for sha '%s' [none], skipping" % (t, sha))
             return count
     else:
-        print "No entry for sha '%s' found in database" % sha
+        print("No entry for sha '%s' found in database" % sha)
         return count
-    print "  Adding sha '%s' to topic %d [%s]" % (sha, topic, file)
+    print("  Adding sha '%s' to topic %d [%s]" % (sha, topic, file))
     c.execute("UPDATE commits SET topic=%d where sha='%s'" % (topic, sha))
     count += 1
-    # print "Attached SHA '%s' to topic %d" % (sha, topic)
+    # print("Attached SHA '%s' to topic %d" % (sha, topic))
     # Attach all SHAs touching the same set of files to the same topic.
     c.execute("select filename from files where sha is '%s'" % (sha))
     for (filename,) in c.fetchall():
         c.execute("select sha from files where filename is '%s'" % (filename))
         for (fsha,) in c.fetchall():
-            # print "Expect to attach sha '%s' to topic %d, file='%s'" % (fsha, topic, filename)
+            # print("Expect to attach sha '%s' to topic %d, file='%s'" % (fsha, topic, filename))
             if fsha != sha and not filename.endswith('Makefile') and not filename.endswith('Kconfig'):
                 if base != "" and not filename.startswith(base) and get_topic(filename) != topic:
-                    print "  Skipping '%s': base '%s' mismatch [%d-%d]" % (filename, base, topic, get_topic(filename))
+                    print("  Skipping '%s': base '%s' mismatch [%d-%d]" % (filename, base, topic, get_topic(filename)))
                     continue
                 filelist.append([fsha, topic, filename, base])
   return count
@@ -65,14 +67,14 @@ def handle_topic(topic, subdir, name):
     count = 0
     c.execute("select topic from topics where topic is %d" % topic)
     if not c.fetchone():
-        print "Adding topic %d (%s), subdirectory/file '%s' to database" % (topic, name, subdir)
+        print("Adding topic %d (%s), subdirectory/file '%s' to database" % (topic, name, subdir))
         c.execute("INSERT INTO topics(topic, name) VALUES (?, ?)", (topic, name,))
-    print "Handling topic %d (%s), subdirectory/file '%s'" % (topic, name, subdir)
+    print("Handling topic %d (%s), subdirectory/file '%s'" % (topic, name, subdir))
     c.execute("select sha, filename from files where filename like '%s%%'" % subdir)
     for (sha, filename,) in c.fetchall():
         if filename.startswith(subdir):
             count += update_sha(sha, topic, filename, subdir)
-    print "Topic %d (%s): %d entries" % (topic, name, count)
+    print("Topic %d (%s): %d entries" % (topic, name, count))
 
 c.execute("select sha from commits order by date")
 for (sha,) in c.fetchall():
@@ -95,7 +97,7 @@ topic = topic + 1
 # to create additional topics for those.
 
 while True:
-    print "Topic %d" % topic
+    print("Topic %d" % topic)
     c.execute("select sha from commits where topic=0 and disposition <> 'drop' order by date")
     # c.execute("select sha from commits where topic=0 order by date")
     sha = c.fetchone()
@@ -118,10 +120,10 @@ while True:
         # Based on a sha, we found a file and subdirectory. Use it to attach
         # any matching SHAs to this subdirectory if the match is in a source
         # directory.
-        print "Topic %d [%s, subdir %s]" % (topic, file, subdir)
+        print("Topic %d [%s, subdir %s]" % (topic, file, subdir))
         if subdir.startswith('include') or subdir.startswith('Documentation') or subdir=="":
             count = update_sha(sha[0], topic, file, subdir)
-            print "Topic %d [%s]: %d entries" % (topic, file, count)
+            print("Topic %d [%s]: %d entries" % (topic, file, count))
         else:
             t = get_topic(None, subdir)
             if t:
