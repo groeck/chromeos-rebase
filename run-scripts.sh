@@ -6,7 +6,7 @@ progdir="$(dirname $0)"
 logfile="/tmp/run-scripts.${baseline}.$(date +%F).log"
 
 # IT loves uninstalling stuff, so just force a reinstall
-pip3 install google_auth_oauthlib >/dev/null 2>&1
+pip3 install google_auth_oauthlib python-Levenshtein fuzzywuzzy >/dev/null 2>&1
 
 cd "${progdir}"
 ./setup.sh > "${logfile}" 2>&1
