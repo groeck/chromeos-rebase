@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 import sqlite3
 import os
@@ -19,15 +20,15 @@ def findsha(uconn, sha, patchid, desc):
     c.execute("select sha from commits where sha is '%s'" % sha)
     usha = c.fetchone()
     if usha:
-      # print "  Found SHA %s in upstream database" % usha
+      # print("  Found SHA %s in upstream database" % usha)
       return usha[0]
 
   # Now look for patch id if provided
   if patchid is not None:
-    c.execute("select sha from commits where patchid is '%s'" % patchid.decode())
+    c.execute("select sha from commits where patchid is '%s'" % patchid)
     usha = c.fetchone()
     if usha:
-      # print "  Found SHA %s in upstream database based on patch ID" % usha
+      # print("  Found SHA %s in upstream database based on patch ID" % usha)
       return usha[0]
 
   # The SHA is not upstream, or not known at all.
@@ -38,7 +39,7 @@ def findsha(uconn, sha, patchid, desc):
     c.execute("select sha from commits where subject is '%s'" % sdesc)
     usha = c.fetchone()
     if usha:
-      # print "  Found upstream SHA '%s' based on subject line" % usha
+      # print("  Found upstream SHA '%s' based on subject line" % usha)
       return usha[0]
 
   return None
@@ -66,7 +67,7 @@ def update_commits():
     if not uusha:
       uusha = ""
     if usha != uusha:
-      print "SHA '%s': Updating usha '%s' with '%s'" % (sha, usha, uusha)
+      print("SHA '%s': Updating usha '%s' with '%s'" % (sha, usha, uusha))
       c.execute("UPDATE commits set usha='%s' where sha='%s'" % (uusha, sha))
 
   conn.commit()
