@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 import sqlite3
 import os
@@ -96,12 +97,12 @@ def update_stable(path, list, origin):
 
   os.chdir(path)
   commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--oneline',
-                                     '--reverse', list])
+                                     '--reverse', list], encoding='utf-8', errors='ignore')
   os.chdir(workdir)
 
   for commit in commits.splitlines():
-    if commit != "":
-      elem = commit.split(" ")[:1]
+    if commit != '':
+      elem = commit.split(' ')[:1]
       sha = elem[0]
       c.execute("select sha from stable where sha is '%s'" % sha)
       found = c.fetchall()
@@ -123,7 +124,7 @@ def get_contact(sha):
     email = None
 
     cmd = ['git', 'log', '--format=%B', '-n', '1', sha]
-    commit_message = subprocess.check_output(cmd)
+    commit_message = subprocess.check_output(cmd, encoding='utf-8', errors='ignore')
     tags = 'Signed-off-by|Commit-Queue|Tested-by'
     domains = 'chromium.org|google.com|collabora.com'
     m = '^(?:%s): (.*) <(.*@(?:%s))>$' % (tags, domains)
@@ -151,7 +152,8 @@ def update_commits():
   os.chdir(chromeos_path)
   commits = subprocess.check_output(['git', 'log', '--no-merges', '--abbrev=12', '--reverse',
                                      '--format=%at%x01%ct%x01%h%x01%an%x01%ae%x01%s',
-                                     rebase_baseline() + '..'])
+                                     rebase_baseline() + '..'],
+                                     encoding='utf-8', errors='ignore')
 
   prevdate = 0
   mprevdate = 0
@@ -170,17 +172,10 @@ def update_commits():
               contact = ncontact
               email = nemail
 
-      contact = contact.decode('latin-1') \
-                  if isinstance(contact, str) else contact
-      email = email.decode('latin-1') \
-                  if isinstance(email, str) else email
-
       subject = elem[5].rstrip('\n')
-      subject = subject.decode('latin-1') \
-                  if isinstance(subject, str) else subject
 
       ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-      spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout)
+      spid = subprocess.check_output(['git', 'patch-id'], stdin=ps.stdout, encoding='utf-8', errors='ignore')
       patchid = spid.split(" ", 1)[0]
 
       # Make sure date is unique and in ascending order.
@@ -204,7 +199,7 @@ def update_commits():
       usha=""
       if not chromium.match(subject):
         u = upstream.match(subject)
-        desc = subprocess.check_output(['git', 'show', '-s', sha])
+        desc = subprocess.check_output(['git', 'show', '-s', sha], encoding='utf-8', errors='ignore')
         for d in desc.splitlines():
           m=None
           if u:
@@ -221,8 +216,8 @@ def update_commits():
 
       # Search for embedded Change-Id string.
       # If found, add it to database.
-      desc = subprocess.check_output(['git', 'show', '-s', sha])
-      for d in desc.decode('latin-1').splitlines():
+      desc = subprocess.check_output(['git', 'show', '-s', sha], encoding='utf-8', errors='ignore')
+      for d in desc.splitlines():
         chid = changeid.match(d)
         if chid:
           chid = chid.group(1)
@@ -239,7 +234,7 @@ def update_commits():
       c.execute("INSERT INTO commits(date, created, updated, authored, committed, contact, email, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (date, NOW(), NOW(), authored, committed, contact, email, sha, usha, patchid, chid, subject, "drop", reason,))
       filenames = subprocess.check_output(['git', 'show', '--name-only',
-                                           '--format=', sha])
+                                           '--format=', sha], encoding='utf-8', errors='ignore')
       for fn in filenames.splitlines():
         if fn != "":
           c.execute("INSERT INTO files(sha, filename) VALUES (?, ?)", (sha, fn,))
@@ -248,11 +243,11 @@ def update_commits():
 
   # "git cherry -v <target>" on branch rebase_baseline gives us a list
   # of patches to apply.
-  patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target_tag()])
+  patches = subprocess.check_output(['git', 'cherry', '-v', rebase_target_tag()], encoding='utf-8', errors='ignore')
   for patch in patches.splitlines():
     elem = patch.split(" ", 2)
-    # print "patch: " + patch
-    # print "elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2])
+    # print("patch: " + patch)
+    # print("elem[0]: '%s' elem[1]: '%s' elem[2]: '%s'" % (elem[0], elem[1], elem[2]))
     if elem[0] == "+":
       # patch not found upstream
       sha = elem[1][:12]
