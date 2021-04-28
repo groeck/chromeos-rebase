@@ -303,8 +303,11 @@ def add_sha(requests, sheetId, sha, contact, email, subject, disposition,
         contact_format = 'formulaValue'
 
     if disposition == 'pick' and reason == 'revisit':
-        comment = 'revisit (revert of upstream patch)'
-        color = red
+        if dsha:
+            comment = 'revisit (similarities with %s commit %s)' % (origin, dsha)
+        else:
+            comment = 'revisit (imperfect match)'
+        color = orange
     elif disposition == 'replace' and dsha:
         comment = 'with %s commit %s' % (origin, dsha)
         color = yellow
@@ -316,8 +319,7 @@ def add_sha(requests, sheetId, sha, contact, email, subject, disposition,
         if reason == 'revisit':
             color = red
             if dsha:
-                comment = 'revisit (imperfect match with %s commit %s)' % (
-                    origin, dsha)
+                comment = 'revisit (imperfect match with %s commit %s)' % (origin, dsha)
             else:
                 comment = 'revisit (imperfect match)'
         elif reason == 'upstream/fixup':
