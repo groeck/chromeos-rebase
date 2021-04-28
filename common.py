@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-"
+
+"""Common functions and variables used by rebase scripts"""
+
 import os
 import sys
 import re
 import sqlite3
 import subprocess
-import platform
 
 from config import datadir, rebasedb_name
 from config import rebase_baseline_branch, rebase_target
@@ -28,27 +32,15 @@ rebasedb = os.path.join(dbdir, rebasedb_name)
 upstreamdb = os.path.join(dbdir, 'upstream.db')
 nextdb = os.path.join(dbdir, 'next.db') if next_repo else None
 
-try:
-    from subprocess import DEVNULL  # py3k
-except ImportError:
-    import os
-    DEVNULL = open(os.devnull, 'wb')
-
-
 def do_check_output(cmd):
-    """
-    Python version independent implementation of 'subprocess.check_output'
-    """
-    if platform.python_version_tuple()[0] == '2':
-        return subprocess.check_output(cmd, stderr=DEVNULL).decode('utf-8')
-    return subprocess.check_output(cmd, encoding='utf-8', stderr=DEVNULL)
+    """Python version independent implementation of 'subprocess.check_output'"""
+
+    return subprocess.check_output(cmd, stderr=subprocess.DEVNULL, # pylint: disable=no-member
+                                   encoding='utf-8', errors='ignore')
 
 
 def stable_baseline():
-    """
-    Return most recent label in to-be-rebased branch
-    """
-
+    """Return most recent label in to-be-rebased branch"""
 
     cmd = ['git', '-C', chromeos_path, 'describe', rebase_baseline_branch]
     tag = do_check_output(cmd)
@@ -56,9 +48,7 @@ def stable_baseline():
 
 
 def rebase_baseline():
-    """
-    Return most recent tag in to-be-rebased branch
-    """
+    """Return most recent tag in to-be-rebased branch"""
 
     baseline = stable_baseline()
     if baseline:
@@ -66,13 +56,11 @@ def rebase_baseline():
     return None
 
 
-version = re.compile('(v[0-9]+(\.[0-9]+)(-rc[0-9]+(-dontuse)?)?)\s*')
+version_re = re.compile(r'(v[0-9]+(\.[0-9]+)(-rc[0-9]+(-dontuse)?)?)\s*')
 
 
 def rebase_target_tag():
-    """
-    Return most recent label in upstream kernel
-    """
+    """Return most recent label in upstream kernel"""
 
     if not os.path.exists(upstream_path):
         return 'HEAD'
@@ -80,7 +68,7 @@ def rebase_target_tag():
     if rebase_target == 'latest':
         cmd = ['git', '-C', upstream_path, 'describe']
         tag = do_check_output(cmd)
-        v = version.match(tag)
+        v = version_re.match(tag)
         if v:
             tag = v.group(0).strip('\n')
         else:
@@ -92,40 +80,35 @@ def rebase_target_tag():
 
 
 def rebase_target_version():
+    """Return target version for rebase"""
     return rebase_target_tag().strip('v')
 
 
-def chromeosdb(version):
-    return dbdir + '/chromeos-' + version + '.db'
-
-
 def stable_branch(version):
+    """Return stable branch name in upstream stable kernel"""
     return 'linux-%s.y' % version
 
 
 def chromeos_branch(version):
+    """Return chromeos branch name"""
     return 'chromeos-%s' % version
 
 
-def doremove(file):
-    """
-    remove file if it exists
-    """
+def doremove(filename):
+    """remove file if it exists"""
 
     try:
-        os.remove(file)
+        os.remove(filename)
     except OSError:
         pass
 
 
 def createdb(db, op):
-    """
-    remove and recreate database
-    """
+    """remove and recreate database"""
 
-    dbdir = os.path.dirname(db)
-    if not os.path.exists(dbdir):
-        os.mkdir(dbdir)
+    dbdirname = os.path.dirname(db)
+    if not os.path.exists(dbdirname):
+        os.mkdir(dbdirname)
 
     doremove(db)
 
@@ -145,7 +128,7 @@ def createdb(db, op):
 
 
 # match "vX.Y[.Z][.rcN]"
-version = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+(-dontuse)?)?)\s*')
+_version_re = re.compile(r'(v[0-9]+(?:\.[0-9]+)+(?:-rc[0-9]+(-dontuse)?)?)\s*')
 
 
 def get_integrated_tag(sha):
@@ -157,7 +140,7 @@ def get_integrated_tag(sha):
             '--contains', sha
         ]
         tag = do_check_output(cmd)
-        return version.match(tag).group()
+        return _version_re.match(tag).group()
     except AttributeError:
         return None
     except subprocess.CalledProcessError:
@@ -193,6 +176,7 @@ def version_to_number(version):
 
 
 def version_compare(v1, v2):
+    """Convert linux version into numberic string for comparison"""
     return version_to_number(v2) >= version_to_number(v1)
 
 
