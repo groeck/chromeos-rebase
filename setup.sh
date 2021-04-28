@@ -23,33 +23,11 @@ if [[ "${android_repo}" != "None" ]]; then
     android_path=$(python3 -c "from common import android_path; print(android_path)")
 fi
 
-upstreamdb=$(python3 -c "from common import upstreamdb; print(upstreamdb)")
 nextdb=$(python3 -c "from common import nextdb; print(nextdb)")
 rebasedb=$(python3 -c "from common import rebasedb; print(rebasedb)")
 
-progdir="$(dirname $0)"
-
-cd "${progdir}"
-
-usage()
-{
-    echo "Usage: $0 [-f]"
-    exit 1
-}
-
-use_force=0
-verbose=0
-
-while getopts fv opt
-do
-    case ${opt} in
-    f)	use_force=1;;
-    v)	verbose=1;;
-    *)	usage;;
-    esac
-done
-
-shift $((OPTIND - 1))
+progdir=$(dirname "$0")
+cd "${progdir}" || exit 1
 
 # Simple clone:
 # Clone repository, do not add 'upstream' remote
@@ -62,18 +40,18 @@ clone_simple()
     echo "Cloning ${repository} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
-	pushd "${destdir}" >/dev/null
-	git checkout master
-	if [[ -n "${force}" ]]; then
-	    # This is needed if the origin may have been rebased
-	    git fetch -p origin
-	    git reset --hard origin/master
-	else
-	    git pull -p
-	fi
-	popd >/dev/null
+        pushd "${destdir}" >/dev/null || return 1
+        git checkout master
+        if [[ -n "${force}" ]]; then
+            # This is needed if the origin may have been rebased
+            git fetch -p origin
+            git reset --hard origin/master
+        else
+            git pull -p
+        fi
+        popd >/dev/null || return 1
     else
-	git clone "${repository}" "${destdir}"
+        git clone "${repository}" "${destdir}"
     fi
 }
 
@@ -95,41 +73,41 @@ clone_complex()
     echo "Cloning ${repository}:${branch} into ${destdir}"
 
     if [[ -d "${destdir}" ]]; then
-	pushd "${destdir}" >/dev/null
-	git reset --hard HEAD
-	git fetch origin
-	if git rev-parse --verify "${branch}" >/dev/null 2>&1; then
-		git checkout "${branch}"
-		if ! git pull; then
-		    # git pull may fail if the remote repository was rebased.
-		    # Pull it the hard way.
-		    git reset --hard "origin/${branch}"
-		fi
-	else
-		git checkout -b "${branch}" "origin/${branch}"
-	fi
-	git remote -v | grep upstream || {
-		git remote add upstream "${upstream_path}"
-	}
-	git fetch upstream
-	if [[ "${next_repo}" != "None" ]]; then
-	    git remote -v | grep next || {
-		git remote add next "${next_path}"
-	    }
-	    git fetch next
-	fi
-	popd >/dev/null
+        pushd "${destdir}" >/dev/null || return 1
+        git reset --hard HEAD
+        git fetch origin
+        if git rev-parse --verify "${branch}" >/dev/null 2>&1; then
+            git checkout "${branch}"
+            if ! git pull; then
+                # git pull may fail if the remote repository was rebased.
+                # Pull it the hard way.
+                git reset --hard "origin/${branch}"
+            fi
+        else
+            git checkout -b "${branch}" "origin/${branch}"
+        fi
+        git remote -v | grep upstream || {
+           git remote add upstream "${upstream_path}"
+        }
+        git fetch upstream
+        if [[ "${next_repo}" != "None" ]]; then
+            git remote -v | grep next || {
+                git remote add next "${next_path}"
+            }
+            git fetch next
+        fi
+        popd >/dev/null || return 1
     else
-	git clone "${repository}" "${destdir}"
-	pushd "${destdir}" >/dev/null
-	git checkout -b "${branch}" "origin/${branch}"
-	git remote add upstream "${upstream_path}"
-	git fetch upstream
-	if [[ "${next_repo}" != "None" ]]; then
-	    git remote add next "${next_path}"
-	    git fetch next
-	fi
-	popd >/dev/null
+        git clone "${repository}" "${destdir}"
+        pushd "${destdir}" >/dev/null || return 1
+        git checkout -b "${branch}" "origin/${branch}"
+        git remote add upstream "${upstream_path}"
+        git fetch upstream
+        if [[ "${next_repo}" != "None" ]]; then
+            git remote add next "${next_path}"
+            git fetch next
+        fi
+        popd >/dev/null || return 1
     fi
 }
 
