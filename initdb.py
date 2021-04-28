@@ -5,9 +5,9 @@ import os
 import re
 import subprocess
 import time
-from config import rebasedb, \
-        stable_path, android_path, chromeos_path
-from common import workdir, stable_baseline, rebase_baseline, rebase_target_tag
+from common import rebasedb
+from common import stable_path, android_path, chromeos_path
+from common import stable_baseline, rebase_baseline, rebase_target_tag
 
 stable_commits = rebase_baseline() + '..' + stable_baseline()
 baseline_commits = rebase_baseline() + '..'
@@ -100,14 +100,9 @@ def update_stable(path, list, origin):
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
-    os.chdir(path)
     commits = subprocess.check_output([
-        'git', 'log', '--no-merges', '--abbrev=12', '--oneline', '--reverse',
-        list
-    ],
-                                      encoding='utf-8',
-                                      errors='ignore')
-    os.chdir(workdir)
+        'git', '-C', path, 'log', '--no-merges', '--abbrev=12', '--oneline', '--reverse',
+        list ], encoding='utf-8', errors='ignore')
 
     for commit in commits.splitlines():
         if commit != '':
@@ -125,7 +120,7 @@ def update_stable(path, list, origin):
     conn.close()
 
 
-def get_contact(sha):
+def get_contact(path, sha):
     """Return first commit signer, tester, or submitter with a Google e-mail address. If there is none, pick the last reviewer.
 
     If there is none, return None, None.
@@ -133,7 +128,7 @@ def get_contact(sha):
     contact = None
     email = None
 
-    cmd = ['git', 'log', '--format=%B', '-n', '1', sha]
+    cmd = ['git', '-C', path, 'log', '--format=%B', '-n', '1', sha]
     commit_message = subprocess.check_output(
         cmd, encoding='utf-8', errors='ignore')
     tags = 'Signed-off-by|Commit-Queue|Tested-by'
@@ -160,14 +155,11 @@ def update_commits():
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
-    os.chdir(chromeos_path)
     commits = subprocess.check_output([
-        'git', 'log', '--no-merges', '--abbrev=12', '--reverse',
+        'git', '-C', chromeos_path, 'log', '--no-merges', '--abbrev=12', '--reverse',
         '--format=%at%x01%ct%x01%h%x01%an%x01%ae%x01%s',
-        rebase_baseline() + '..'
-    ],
-                                      encoding='utf-8',
-                                      errors='ignore')
+        rebase_baseline() + '..' ],
+        encoding='utf-8', errors='ignore')
 
     prevdate = 0
     mprevdate = 0
@@ -181,18 +173,16 @@ def update_commits():
             email = elem[4]
 
             if '@google.com' not in email and '@chromium.org' not in email and '@collabora.com' not in email:
-                ncontact, nemail = get_contact(sha)
+                ncontact, nemail = get_contact(chromeos_path, sha)
                 if ncontact:
                     contact = ncontact
                     email = nemail
 
             subject = elem[5].rstrip('\n')
 
-            ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-            spid = subprocess.check_output(['git', 'patch-id'],
-                                           stdin=ps.stdout,
-                                           encoding='utf-8',
-                                           errors='ignore')
+            ps = subprocess.Popen(['git', '-C', chromeos_path, 'show', sha], stdout=subprocess.PIPE)
+            spid = subprocess.check_output(['git', '-C', chromeos_path, 'patch-id'],
+                                           stdin=ps.stdout, encoding='utf-8', errors='ignore')
             patchid = spid.split(' ', 1)[0]
 
             # Make sure date is unique and in ascending order.
@@ -216,9 +206,8 @@ def update_commits():
             usha = ''
             if not chromium.match(subject):
                 u = upstream.match(subject)
-                desc = subprocess.check_output(['git', 'show', '-s', sha],
-                                               encoding='utf-8',
-                                               errors='ignore')
+                desc = subprocess.check_output(['git', '-C', chromeos_path, 'show', '-s', sha],
+                                               encoding='utf-8', errors='ignore')
                 for d in desc.splitlines():
                     m = None
                     if u:
@@ -235,9 +224,8 @@ def update_commits():
 
             # Search for embedded Change-Id string.
             # If found, add it to database.
-            desc = subprocess.check_output(['git', 'show', '-s', sha],
-                                           encoding='utf-8',
-                                           errors='ignore')
+            desc = subprocess.check_output(['git', '-C', chromeos_path, 'show', '-s', sha],
+                                           encoding='utf-8', errors='ignore')
             for d in desc.splitlines():
                 chid = changeid.match(d)
                 if chid:
@@ -271,7 +259,7 @@ def update_commits():
                     reason,
                 ))
             filenames = subprocess.check_output(
-                ['git', 'show', '--name-only', '--format=', sha],
+                ['git', '-C', chromeos_path, 'show', '--name-only', '--format=', sha],
                 encoding='utf-8',
                 errors='ignore')
             for fn in filenames.splitlines():
@@ -287,9 +275,8 @@ def update_commits():
     # "git cherry -v <target>" on branch rebase_baseline gives us a list
     # of patches to apply.
     patches = subprocess.check_output(
-        ['git', 'cherry', '-v', rebase_target_tag()],
-        encoding='utf-8',
-        errors='ignore')
+        ['git', '-C', chromeos_path, 'cherry', '-v', rebase_target_tag()],
+        encoding='utf-8', errors='ignore')
     for patch in patches.splitlines():
         elem = patch.split(' ', 2)
         # print("patch: " + patch)
@@ -326,7 +313,6 @@ def update_commits():
                         "UPDATE commits SET updated=('%d') where sha='%s'" %
                         (NOW(), sha))
 
-    os.chdir(workdir)
     conn.commit()
     conn.close()
 

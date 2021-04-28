@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-"
 from __future__ import print_function
 import sqlite3
-import os
 import time
-from config import rebasedb, subject_droplist, sha_droplist, droplist
+from common import rebasedb
+from config import subject_droplist, sha_droplist, droplist
 
 
 def NOW():
@@ -26,8 +26,6 @@ def do_drop(c, sha, reason, usha=None):
             c.execute("UPDATE commits SET usha=('%s') where sha='%s'" %
                       (usha, sha))
 
-
-workdir = os.getcwd()
 
 conn = sqlite3.connect(rebasedb)
 # conn.text_factory = str

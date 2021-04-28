@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 import sqlite3
-import os
 import re
-from config import rebasedb
-from common import upstreamdb, nextdb
+from common import rebasedb, upstreamdb, nextdb
 
 subject = re.compile(
     '(ANDROID: *|CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)*(.*)'

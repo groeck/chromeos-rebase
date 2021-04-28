@@ -3,24 +3,16 @@
 # Note: Collabora repository with pending patches
 # https://git.collabora.com/cgit/linux.git/log/?h=topic/chromeos/waiting-for-upstream
 
-chromeos_path=$(python3 -c "from config import chromeos_path; print(chromeos_path)")
+chromeos_path=$(python3 -c "from common import chromeos_path; print(chromeos_path)")
 chromeos_repo=$(python3 -c  "from config import chromeos_repo; print(chromeos_repo)")
 
-stable_path=$(python3 -c "from config import stable_path; print(stable_path)")
+stable_path=$(python3 -c "from common import stable_path; print(stable_path)")
 stable_repo=$(python3 -c  "from config import stable_repo; print(stable_repo)")
 
 upstream_path=$(python3 -c "from common import upstream_path; print(upstream_path)")
-if [[ "$(dirname ${upstream_path})" = "." ]]; then
-	# Needs to be an absolute path name
-	upstream_path="$(pwd)/${upstream_path}"
-fi
 upstream_repo=$(python3 -c  "from config import upstream_repo; print(upstream_repo)")
 
-next_path=$(python3 -c "from config import next_path; print(next_path)")
-if [[ "$(dirname ${next_path})" = "." ]]; then
-	# Needs to be an absolute path name
-	next_path="$(pwd)/${next_path}"
-fi
+next_path=$(python3 -c "from common import next_path; print(next_path)")
 next_repo=$(python3 -c  "from config import next_repo; print(next_repo)")
 
 rebase_baseline_branch=$(python3 -c "from config import rebase_baseline_branch; print(rebase_baseline_branch)")
@@ -28,12 +20,12 @@ rebase_baseline_branch=$(python3 -c "from config import rebase_baseline_branch; 
 android_repo=$(python3 -c  "from config import android_repo; print(android_repo)")
 if [[ "${android_repo}" != "None" ]]; then
     android_baseline_branch=$(python3 -c "from config import android_baseline_branch; print(android_baseline_branch)")
-    android_path=$(python3 -c "from config import android_path; print(android_path)")
+    android_path=$(python3 -c "from common import android_path; print(android_path)")
 fi
 
 upstreamdb=$(python3 -c "from common import upstreamdb; print(upstreamdb)")
 nextdb=$(python3 -c "from common import nextdb; print(nextdb)")
-rebasedb=$(python3 -c "from config import rebasedb; print(rebasedb)")
+rebasedb=$(python3 -c "from common import rebasedb; print(rebasedb)")
 
 progdir="$(dirname $0)"
 

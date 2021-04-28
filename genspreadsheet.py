@@ -14,8 +14,8 @@
 from __future__ import print_function
 
 import sqlite3
-from config import rebasedb
-from common import upstreamdb, rebase_baseline, rebase_target_tag, rebase_target_version
+from common import rebasedb, upstreamdb
+from common import rebase_baseline, rebase_target_tag, rebase_target_version
 
 import genlib
 

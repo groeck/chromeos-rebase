@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import os
 import re
 import sqlite3
 import subprocess
 from common import upstream_path
-from common import rebase_baseline, workdir, upstreamdb, createdb, rebase_target_tag
+from common import rebase_baseline, upstreamdb, createdb, rebase_target_tag
 from common import get_integrated_tag, DEVNULL
 
 
@@ -42,7 +41,7 @@ def update_integrated_table(c, integrated):
 
 def handle(c, range):
     commits = subprocess.check_output(
-        ['git', 'log', '--abbrev=12', '--format=%ct %h %s', '--reverse', range],
+        ['git', '-C', upstream_path, 'log', '--abbrev=12', '--format=%ct %h %s', '--reverse', range],
         encoding='utf-8',
         errors='ignore')
     last = None
@@ -55,7 +54,7 @@ def handle(c, range):
 
             # Check if commit is a merge. If so, nothing else to do.
             l = subprocess.check_output(
-                ['git', 'rev-list', '--parents', '-n', '1', sha],
+                ['git', '-C', upstream_path, 'rev-list', '--parents', '-n', '1', sha],
                 stderr=DEVNULL,
                 encoding='utf-8',
                 errors='ignore')
@@ -68,8 +67,8 @@ def handle(c, range):
             if integrated:
                 update_integrated_table(c, integrated)
 
-            ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-            spid = subprocess.check_output(['git', 'patch-id'],
+            ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha], stdout=subprocess.PIPE)
+            spid = subprocess.check_output(['git', '-C', upstream_path, 'patch-id'],
                                            stdin=ps.stdout,
                                            encoding='utf-8',
                                            errors='ignore')
@@ -82,7 +81,7 @@ def handle(c, range):
                     'INSERT INTO commits(committed, sha, patchid, subject, integrated) VALUES (?, ?, ?, ?, ?)',
                     (timestamp, sha, patchid, subject, integrated))
                 filenames = subprocess.check_output(
-                    ['git', 'show', '--name-only', '--format=', sha],
+                    ['git', '-C', upstream_path, 'show', '--name-only', '--format=', sha],
                     encoding='utf-8',
                     errors='ignore')
                 for fn in filenames.splitlines():
@@ -131,7 +130,7 @@ def update_patchids(c):
     for sha, in c.fetchall():
         ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha],
                               stdout=subprocess.PIPE)
-        spid = subprocess.check_output(['git', 'patch-id'],
+        spid = subprocess.check_output(['git', '-C', upstream_path, 'patch-id'],
                                        stdin=ps.stdout,
                                        encoding='utf-8',
                                        errors='ignore')
@@ -163,8 +162,6 @@ def update_upstreamdb():
     except:
         createdb(upstreamdb, mktables)
 
-    os.chdir(upstream_path)
-
     print('Starting with SHA %s' % start)
 
     range = start + '..'
@@ -182,8 +179,6 @@ def update_upstreamdb():
 
     conn.commit()
     conn.close()
-
-    os.chdir(workdir)
 
 
 if __name__ == '__main__':

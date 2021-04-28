@@ -5,13 +5,12 @@ from __future__ import print_function
 from collections import defaultdict
 # requires "pip install fuzzywuzzy"
 import operator
-import os
 import re
 import subprocess
 import time
 
-from config import chromeos_path
-from config import rebasedb
+from common import chromeos_path
+from common import rebasedb
 from common import upstream_path
 from common import upstreamdb
 from common import nextdb
@@ -33,13 +32,9 @@ def NOW():
 
 
 def get_patch(path, psha):
-    workdir = os.getcwd()
-    os.chdir(path)
     patch = subprocess.check_output(
-        ['git', 'show', "--format='%b'", '-U1', psha],
-        encoding='utf-8',
-        errors='ignore')
-    os.chdir(workdir)
+        ['git', '-C', path, 'show', "--format='%b'", '-U1', psha],
+        encoding='utf-8', errors='ignore')
     i = re.search('^diff', patch, flags=re.MULTILINE).group()
     if i:
         ind = patch.index(i)

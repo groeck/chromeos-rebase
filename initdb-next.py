@@ -4,10 +4,9 @@
 
 from __future__ import print_function
 import sqlite3
-import os
 import subprocess
-from config import next_path
-from common import workdir, nextdb, createdb, rebase_target_tag
+from common import next_path
+from common import nextdb, createdb, rebase_target_tag
 
 
 def mktables(c):
@@ -27,7 +26,7 @@ def handle(c):
     next_pick = rebase_target_tag() + '..'
 
     cmd = [
-        'git', 'log', '--abbrev=12', '--format=%ct %h %s', '--no-merges',
+        'git', '-C', next_path, 'log', '--abbrev=12', '--format=%ct %h %s', '--no-merges',
         '--reverse', next_pick
     ]
     commits = subprocess.check_output(cmd, encoding='utf-8', errors='ignore')
@@ -38,8 +37,8 @@ def handle(c):
             sha = elem[1]
             subject = elem[2].rstrip()
 
-            ps = subprocess.Popen(['git', 'show', sha], stdout=subprocess.PIPE)
-            spid = subprocess.check_output(['git', 'patch-id'],
+            ps = subprocess.Popen(['git', '-C', next_path, 'show', sha], stdout=subprocess.PIPE)
+            spid = subprocess.check_output(['git', '-C', next_path, 'patch-id'],
                                            stdin=ps.stdout,
                                            encoding='utf-8',
                                            errors='ignore')
@@ -49,7 +48,7 @@ def handle(c):
                 'INSERT INTO commits(committed, sha, patchid, subject) VALUES (?, ?, ?, ?)',
                 (timestamp, sha, patchid, subject))
             filenames = subprocess.check_output(
-                ['git', 'show', '--name-only', '--format=', sha])
+                ['git', '-C', next_path, 'show', '--name-only', '--format=', sha])
             for fn in filenames.splitlines():
                 if fn != '':
                     c.execute('INSERT INTO files(sha, filename) VALUES (?, ?)',
@@ -60,13 +59,11 @@ def initdb_next():
     # Always re-create the 'next' database.
     # Its SHAs are unstable and thus can not be relied on.
     createdb(nextdb, mktables)
-    os.chdir(next_path)
     conn = sqlite3.connect(nextdb)
     c = conn.cursor()
     handle(c)
     conn.commit()
     conn.close()
-    os.chdir(workdir)
 
 
 if __name__ == '__main__':

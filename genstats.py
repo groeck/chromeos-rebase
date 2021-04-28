@@ -19,8 +19,8 @@ import re
 import datetime
 import time
 
-from config import rebasedb, topiclist_consolidated
-from common import nextdb, upstreamdb, rebase_baseline
+from config import topiclist_consolidated
+from common import rebasedb, nextdb, upstreamdb, rebase_baseline
 
 import genlib
 

@@ -6,4 +6,4 @@ rebase-stats.id
 credentials.json
 token.pickle
 __pycache__/
-linux-*/
+data/

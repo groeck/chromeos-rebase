@@ -2,17 +2,14 @@
 # -*- coding: utf-8 -*-"
 from __future__ import print_function
 import sqlite3
-import os
 import re
 import time
-from config import rebasedb
+from common import rebasedb
 
 
 def NOW():
     return int(time.time())
 
-
-workdir = os.getcwd()
 
 conn = sqlite3.connect(rebasedb)
 # conn.text_factory = str

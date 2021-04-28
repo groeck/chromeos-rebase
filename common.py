@@ -1,17 +1,32 @@
 import os
+import sys
 import re
 import sqlite3
 import subprocess
 import platform
 
-from config import upstream_dir, chromeos_path, rebase_baseline_branch, rebase_target
-from config import next_repo
+from config import datadir, rebasedb_name
+from config import rebase_baseline_branch, rebase_target
+from config import next_repo, stable_repo, android_repo
 
-workdir = os.getcwd()
-dbdir = os.path.join(workdir, 'database')
+if datadir is None:
+    datadir = os.path.join(sys.path[0], 'data')
+
+if rebasedb_name is None:
+    rebasedb_name = 'rebase-%s.db' % rebase_target
+
+repodir = 'repositories'
+
+chromeos_path = os.path.join(datadir, repodir, 'linux-chrome')
+upstream_path = os.path.join(datadir, repodir, 'linux-upstream')
+stable_path = os.path.join(datadir, repodir, 'linux-stable') if stable_repo else None
+android_path = os.path.join(datadir, repodir, 'linux-android') if android_repo else None
+next_path = os.path.join(datadir, repodir, 'linux-next') if next_repo else None
+
+dbdir = os.path.join(datadir, 'database')
+rebasedb = os.path.join(dbdir, rebasedb_name)
 upstreamdb = os.path.join(dbdir, 'upstream.db')
 nextdb = os.path.join(dbdir, 'next.db') if next_repo else None
-upstream_path = os.path.join(workdir, upstream_dir)
 
 try:
     from subprocess import DEVNULL  # py3k
@@ -34,12 +49,8 @@ def stable_baseline():
     Return most recent label in to-be-rebased branch
     """
 
-    path = os.path.join(workdir, chromeos_path)
 
-    if not os.path.exists(path):
-        return None
-
-    cmd = ['git', '-C', path, 'describe', rebase_baseline_branch]
+    cmd = ['git', '-C', chromeos_path, 'describe', rebase_baseline_branch]
     tag = do_check_output(cmd)
     return tag.split('-')[0]
 

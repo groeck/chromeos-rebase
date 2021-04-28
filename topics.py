@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-"
 import sqlite3
 import os
-from config import rebasedb, topiclist
+from config import topiclist
+from common import rebasedb
 
 
 def get_topic(file, n=None):

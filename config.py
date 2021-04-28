@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-"
 
-rebasedb = 'rebase-latest.db'
-
 rebase_baseline_branch = 'chromeos-5.10'
 android_baseline_branch = 'android13-5.10'
 
+# Set rebase_target to desired target.
+# Select target tag, or 'latest' to rebase to ToT.
 rebase_target = 'latest'
+
+# Set rebasedb_name to None to use default.
+# Otherwise pick desired file name.
+rebasedb_name = None
+
+# Set datadir to None to use default.
+# Otherwise provide absolute path name.
+datadir = None
 
 android_site = 'https://android.googlesource.com/'
 kernel_site = 'https://git.kernel.org/'
@@ -18,12 +26,6 @@ upstream_repo = kernel_site + 'pub/scm/linux/kernel/git/torvalds/linux'
 stable_repo = kernel_site + 'pub/scm/linux/kernel/git/stable/linux-stable'
 chromeos_repo = chromium_site + 'chromiumos/third_party/kernel'
 
-chromeos_path = 'linux-chrome'
-upstream_dir = 'linux-upstream'
-stable_path = 'linux-stable' if stable_repo else None
-android_path = 'linux-android' if android_repo else None
-next_path = 'linux-next' if next_repo else None
-
 # Clear subject_droplist as follows to keep Android patches
 # subject_droplist = []
 subject_droplist = ['ANDROID:', 'Android:', 'android:']
@@ -31,14 +33,6 @@ subject_droplist = ['ANDROID:', 'Android:', 'android:']
 # List of SHAs to be dropped manually, for example because they are
 # upstream but not auto-detected by the tool.
 sha_droplist = [
-    ['9ab7893e57cd', 'upstream', '44758bafa536'],
-    ['5482ed86293b', 'upstream', 'd30f370d3a49'],
-    ['80269d1d18e8', 'upstream', '145d59baff59'],
-    ['64096771a56d', 'upstream', 'b9b05664ebf6'],
-    ['eff9d0917462', 'upstream', '93fe48a58590'],
-    ['b716d03da4f7', 'upstream', 'f567ff6c76f7'],
-    ['3e462e6b05e8', 'queued for v5.9', 'b56bdff78e0b'],
-    ['f8f2b91749a2', 'queued for v5.9', 'bbcf90c0646a'],
 ]
 
 droplist = [

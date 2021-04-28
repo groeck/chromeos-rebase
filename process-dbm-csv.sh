@@ -5,7 +5,7 @@ then
 	t1=1
 fi
 
-rebasedb=$(python -c "from config import rebasedb; print rebasedb;")
+rebasedb=$(python3 -c "from common import rebasedb; print(rebasedb)")
 
 sql="select disposition,sha,dsha,subject from commits where topic=${t1}"
 
