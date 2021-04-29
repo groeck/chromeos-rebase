@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-"
 
-import re
+"""Initialize and update upstream database"""
+
+from __future__ import print_function
+
 import sqlite3
 import subprocess
 from common import upstream_path
-from common import rebase_baseline, upstreamdb, createdb, rebase_target_tag
-from common import get_integrated_tag, DEVNULL
+from common import rebase_baseline, upstreamdb, createdb
+from common import get_integrated_tag
 
 
 def mktables(c):
     """ Create tables """
-    c.execute(
-        'CREATE TABLE commits (committed timestamp, sha text, patchid text, subject text, integrated text)'
-    )
+
+    q = """
+    CREATE TABLE commits
+        (committed timestamp, sha text, patchid text, subject text, integrated text)
+    """
+    c.execute(q)
+
     c.execute('CREATE UNIQUE INDEX commit_sha ON commits (sha)')
     c.execute('CREATE INDEX patchid ON commits (patchid)')
 
@@ -25,25 +33,27 @@ def mktables(c):
 
 
 def update_integrated_table(c, integrated):
+    """Update integrated status"""
 
     cmd = ['git', '-C', upstream_path, 'log', '-1', '--format=%ct', integrated]
-    output = subprocess.check_output(
-        cmd, stderr=DEVNULL, encoding='utf-8', errors='ignore')
+    output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, # pylint: disable=no-member
+                                     encoding='utf-8', errors='ignore')
     timestamp = int(output.splitlines()[0])
 
     try:
         c.execute('INSERT INTO tags(tag, timestamp) VALUES (?, ?)',
                   (integrated, timestamp))
-    except:
+    except sqlite3.Error:
         # Assume this is a duplicate and ignore errors
         pass
 
 
-def handle(c, range):
-    commits = subprocess.check_output(
-        ['git', '-C', upstream_path, 'log', '--abbrev=12', '--format=%ct %h %s', '--reverse', range],
-        encoding='utf-8',
-        errors='ignore')
+def handle(c, sha_range):
+    """Handle provided SHA range"""
+
+    cmd = ['git', '-C', upstream_path, 'log', '--abbrev=12', '--format=%ct %h %s',
+           '--reverse', sha_range]
+    commits = subprocess.check_output(cmd, encoding='utf-8', errors='ignore')
     last = None
     for commit in commits.splitlines():
         if commit != '':
@@ -53,11 +63,9 @@ def handle(c, range):
             last = sha
 
             # Check if commit is a merge. If so, nothing else to do.
-            l = subprocess.check_output(
-                ['git', '-C', upstream_path, 'rev-list', '--parents', '-n', '1', sha],
-                stderr=DEVNULL,
-                encoding='utf-8',
-                errors='ignore')
+            cmd = ['git', '-C', upstream_path, 'rev-list', '--parents', '-n', '1', sha]
+            l = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, # pylint: disable=no-member
+                                        encoding='utf-8', errors='ignore')
             if len(l.split(' ')) > 2:
                 continue
 
@@ -69,36 +77,35 @@ def handle(c, range):
 
             ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha], stdout=subprocess.PIPE)
             spid = subprocess.check_output(['git', '-C', upstream_path, 'patch-id'],
-                                           stdin=ps.stdout,
-                                           encoding='utf-8',
-                                           errors='ignore')
+                                           stdin=ps.stdout, encoding='utf-8', errors='ignore')
             patchid = spid.split(' ', 1)[0]
 
             print('%s %s %s %s' % (timestamp, sha, patchid, integrated))
 
             try:
-                c.execute(
-                    'INSERT INTO commits(committed, sha, patchid, subject, integrated) VALUES (?, ?, ?, ?, ?)',
-                    (timestamp, sha, patchid, subject, integrated))
+                q = """
+                INSERT INTO commits(committed, sha, patchid, subject, integrated)
+                       VALUES (?, ?, ?, ?, ?)
+                """
+                c.execute(q, (timestamp, sha, patchid, subject, integrated))
                 filenames = subprocess.check_output(
                     ['git', '-C', upstream_path, 'show', '--name-only', '--format=', sha],
-                    encoding='utf-8',
-                    errors='ignore')
+                    encoding='utf-8', errors='ignore')
                 for fn in filenames.splitlines():
                     if fn != '':
                         c.execute(
                             'INSERT INTO files(sha, filename) VALUES (?, ?)',
                             (sha, fn))
-            except error as e:
+            except sqlite3.Error as e:
                 # The commit may already be in the database. If so, just keep going.
                 print(e)
-                pass
 
     if last:
         c.execute("UPDATE tip set sha='%s' where ref=1" % last)
 
 
 def update_baseline():
+    """Update database baseline"""
 
     conn = sqlite3.connect(upstreamdb)
     c = conn.cursor()
@@ -117,6 +124,8 @@ def update_baseline():
 
 # Should not be needed anymore. Keep around just in case.
 def init_tags(c):
+    """Initialize tags in database"""
+
     c.execute('SELECT integrated FROM commits WHERE integrated IS NOT Null')
     all_integrated = []
     for integrated, in c.fetchall():
@@ -126,14 +135,15 @@ def init_tags(c):
 
 
 def update_patchids(c):
+    """Update patch IDs in database"""
+
     c.execute('SELECT sha FROM commits WHERE patchid is Null')
     for sha, in c.fetchall():
         ps = subprocess.Popen(['git', '-C', upstream_path, 'show', sha],
                               stdout=subprocess.PIPE)
         spid = subprocess.check_output(['git', '-C', upstream_path, 'patch-id'],
                                        stdin=ps.stdout,
-                                       encoding='utf-8',
-                                       errors='ignore')
+                                       encoding='utf-8', errors='ignore')
         patchid = spid.split(' ', 1)[0]
         print('sha %s patch-id %s' % (sha, patchid))
         c.execute("UPDATE commits SET patchid=('%s') where sha='%s'" %
@@ -141,6 +151,8 @@ def update_patchids(c):
 
 
 def update_upstreamdb():
+    """Update upstream database"""
+
     start = rebase_baseline()
 
     try:
@@ -158,13 +170,13 @@ def update_upstreamdb():
             # Update database accordingly.
             update_baseline()
         else:
-            fail
-    except:
+            raise sqlite3.OperationalError('Last handled SHA missing in database')
+    except sqlite3.OperationalError:
         createdb(upstreamdb, mktables)
 
     print('Starting with SHA %s' % start)
 
-    range = start + '..'
+    sha_range = start + '..'
 
     conn = sqlite3.connect(upstreamdb)
     c = conn.cursor()
@@ -175,7 +187,7 @@ def update_upstreamdb():
     update_patchids(c)
     conn.commit()
 
-    handle(c, range)
+    handle(c, sha_range)
 
     conn.commit()
     conn.close()
