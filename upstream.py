@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 # pylint: disable=global-statement
 # -*- coding: utf-8 -*-"
+
+"""Search upstream commits in rebase database amd mark accordingly"""
+
 from __future__ import print_function
 
 from collections import defaultdict
@@ -8,17 +11,17 @@ import operator
 import re
 import subprocess
 import time
+import sqlite3
 
 from common import chromeos_path
 from common import rebasedb
 from common import upstream_path
 from common import upstreamdb
-from common import nextdb
+# from common import nextdb
 from common import is_in_target
 
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
-import sqlite3
+from fuzzywuzzy import fuzz    # pylint: disable=import-error
+from fuzzywuzzy import process # pylint: disable=import-error
 
 encoding = 'utf-8'
 
@@ -28,10 +31,13 @@ _alldescs = defaultdict(list)
 
 
 def NOW():
+    """"Return current time"""
     return int(time.time())
 
 
 def get_patch(path, psha):
+    """Return patch associated with psha from repository, or None if not found"""
+
     patch = subprocess.check_output(
         ['git', '-C', path, 'show', "--format='%b'", '-U1', psha],
         encoding='utf-8', errors='ignore')
@@ -89,7 +95,7 @@ def best_match(s):
   """
 
     matches = []
-    s = re.sub('[^a-zA-Z0-9_/\s]+', ' ', s)
+    s = re.sub(r'[^a-zA-Z0-9_/\s]+', ' ', s)
     for word in s.split():
         match = process.extractOne(
             s, _alldescs[word], scorer=fuzz.token_sort_ratio, score_cutoff=65)
@@ -112,14 +118,14 @@ def getallsubjects(db=upstreamdb):
     _alldescs[] is populated.
   """
 
-    global _alldescs
+    global _alldescs # pylint: disable=global-statement
 
     _alldescs = defaultdict(list)
     db = sqlite3.connect(db)
     cu = db.cursor()
     cu.execute('select subject from commits')
     for subject, in cu.fetchall():
-        wlist = re.sub('[^a-zA-Z0-9_\s]+', ' ', subject)
+        wlist = re.sub(r'[^a-zA-Z0-9_\s]+', ' ', subject)
         words = wlist.split()
         for word in words:
             _alldescs[word].append(subject)
@@ -173,7 +179,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
     cu = db.cursor()
 
     c.execute('select sha, patchid, subject, disposition from commits')
-    for (sha, patchid, desc, disposition) in c.fetchall():
+    for (sha, patchid, desc, disposition) in c.fetchall(): # pylint: disable=too-many-nested-blocks
         if disposition == 'drop':
             continue
         # First look for matching upstream patch ID
@@ -289,9 +295,7 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                             fsha[0])
                         dsha = c2.fetchone()
                         if dsha:
-                            print(
-                                '    FIXUP: Found patch in %s as replacement. dropping'
-                            )
+                            print('    FIXUP: Found patch in %s as replacement. dropping')
                             update_commit(c2, sha, 'drop', 'revisit/fixup', 100)
                         else:
                             print('    FIXUP: No replacement target. Revisit.')
@@ -306,8 +310,8 @@ def doit(db=upstreamdb, path=upstream_path, name='upstream'):
                         (result <= 95 or smatch <= 95)):
                         # Compare subject strings after ':'.
                         # If there is a perfect match, look into patch contents after all
-                        rdesc2 = re.sub('[\S]+:\s*', '', rdesc)
-                        mdesc2 = re.sub('[\S]+:\s*', '', mdesc)
+                        rdesc2 = re.sub(r'[\S]+:\s*', '', rdesc)
+                        mdesc2 = re.sub(r'[\S]+:\s*', '', mdesc)
                         if rdesc2 != mdesc2:
                             print('    Subject match %d/%d insufficient' %
                                   (result, smatch))
