@@ -68,7 +68,7 @@ do
         continue
     fi
     # echo "cherry-picking ${f2}"
-    f4=$(echo "${f4}" | sed -e 's/"/""/g')
+    f4="${f4//\"/\"\"}"
     if [ "${fromupstream}" -ne 0 ]
     then
         echo "${f2_old},\"${f4}\",replace,with ${f2}"
