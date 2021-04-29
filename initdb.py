@@ -149,10 +149,10 @@ def get_contact(path, sha):
 
 
 def update_commits():
+    """Get complete list of commits from rebase baseline.
+
+    Assume that the baseline branch exists and has been checked out.
     """
-  Get complete list of commits from rebase baseline.
-  Assume that the baseline branch exists and has been checked out.
-  """
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
