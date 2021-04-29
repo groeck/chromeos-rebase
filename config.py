@@ -43,8 +43,7 @@ droplist = [
     #           ('drivers/gpu/drm/amd', 'AMD')
 ]
 
-topiclist = \
-    [['chromeos',
+topiclist = [['chromeos',
       ['chromeos', 'COMMIT-QUEUE.ini', 'PRESUBMIT.cfg']],
      ['cros_ec/iio',
       ['drivers/iio/common/cros_ec_sensors',
