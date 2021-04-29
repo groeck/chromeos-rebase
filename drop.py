@@ -83,7 +83,7 @@ def handle_drops():
 
     c.execute('select sha,patchid,disposition from commits')
     for (_sha, _patchid, _disposition,) in c.fetchall():
-        if _disposition is 'drop':
+        if _disposition == 'drop':
             continue
         if _sha in dsha:
             continue
