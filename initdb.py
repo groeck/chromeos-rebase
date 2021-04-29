@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
+
+"""Initialize rebase database"""
+
 import sqlite3
 import os
 import re
@@ -13,22 +16,22 @@ stable_commits = rebase_baseline() + '..' + stable_baseline()
 baseline_commits = rebase_baseline() + '..'
 
 # "commit" is sometimes seen multiple times, such as with commit 6093aabdd0ee
-cherrypick = re.compile('cherry picked from (commit )+([a-z0-9]+)')
-stable = re.compile('(commit )+([a-z0-9]+) upstream')
-stable2 = re.compile('Upstream (commit )+([a-z0-9]+)')
-upstream = re.compile('(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)')
-chromium = re.compile('(CHROMIUM: *|FROMLIST: *)+(.*)')
-changeid = re.compile('\s*Change-Id:\s+(I[a-z0-9]+)')
+cherrypick = re.compile(r'cherry picked from (commit )+([a-z0-9]+)')
+stable = re.compile(r'(commit )+([a-z0-9]+) upstream')
+stable2 = re.compile(r'Upstream (commit )+([a-z0-9]+)')
+upstream = re.compile(r'(ANDROID: *|UPSTREAM: *|FROMGIT: *|BACKPORT: *)+(.*)')
+chromium = re.compile(r'(CHROMIUM: *|FROMLIST: *)+(.*)')
+changeid = re.compile(r'\s*Change-Id:\s+(I[a-z0-9]+)')
 
 
 def NOW():
+    """Return current time"""
+
     return int(time.time())
 
 
 def removedb():
-    """
-  remove database if it exists
-  """
+    """remove database if it exists"""
 
     try:
         os.remove(rebasedb)
@@ -37,11 +40,9 @@ def removedb():
 
 
 def createdb():
-    """
-  remove and recreate database
-  """
+    """remove and recreate database"""
 
-    removedb
+    removedb()
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
@@ -91,18 +92,18 @@ def createdb():
 # sha and filename must be in ' '
 
 
-def update_stable(path, list, origin):
+def update_stable(path, sha_list, origin):
+    """Create list of SHAs from provided path and commit list.
+
+    Skip if entry (sha) is already in database.
     """
-  Create list of SHAs from provided path and commit list.
-  Skip if entry (sha) is already in database.
-  """
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
-    commits = subprocess.check_output([
-        'git', '-C', path, 'log', '--no-merges', '--abbrev=12', '--oneline', '--reverse',
-        list ], encoding='utf-8', errors='ignore')
+    cmd = ['git', '-C', path, 'log', '--no-merges', '--abbrev=12', '--oneline',
+           '--reverse', sha_list]
+    commits = subprocess.check_output(cmd, encoding='utf-8', errors='ignore')
 
     for commit in commits.splitlines():
         if commit != '':
@@ -121,8 +122,9 @@ def update_stable(path, list, origin):
 
 
 def get_contact(path, sha):
-    """Return first commit signer, tester, or submitter with a Google e-mail address. If there is none, pick the last reviewer.
+    """Return first commit signer, tester, or submitter with a Google e-mail address.
 
+    If there is none, pick the last reviewer.
     If there is none, return None, None.
     """
     contact = None
@@ -155,15 +157,14 @@ def update_commits():
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
-    commits = subprocess.check_output([
-        'git', '-C', chromeos_path, 'log', '--no-merges', '--abbrev=12', '--reverse',
-        '--format=%at%x01%ct%x01%h%x01%an%x01%ae%x01%s',
-        rebase_baseline() + '..' ],
-        encoding='utf-8', errors='ignore')
+    cmd = ['git', '-C', chromeos_path, 'log', '--no-merges', '--abbrev=12',
+           '--reverse', '--format=%at%x01%ct%x01%h%x01%an%x01%ae%x01%s',
+           rebase_baseline() + '..']
+    commits = subprocess.check_output(cmd, encoding='utf-8', errors='ignore')
 
     prevdate = 0
     mprevdate = 0
-    for commit in commits.splitlines():
+    for commit in commits.splitlines(): # pylint: disable=too-many-nested-blocks
         if commit != '':
             elem = commit.split('\001', 5)
             authored = elem[0]
@@ -172,7 +173,8 @@ def update_commits():
             contact = elem[3]
             email = elem[4]
 
-            if '@google.com' not in email and '@chromium.org' not in email and '@collabora.com' not in email:
+            if ('@google.com' not in email and '@chromium.org' not in email
+                    and '@collabora.com' not in email):
                 ncontact, nemail = get_contact(chromeos_path, sha)
                 if ncontact:
                     contact = ncontact
@@ -240,28 +242,18 @@ def update_commits():
             if c.fetchone():
                 reason = 'stable'
 
-            c.execute(
-                'INSERT INTO commits(date, created, updated, authored, committed, contact, email, sha, usha, patchid, changeid, subject, disposition, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (
-                    date,
-                    NOW(),
-                    NOW(),
-                    authored,
-                    committed,
-                    contact,
-                    email,
-                    sha,
-                    usha,
-                    patchid,
-                    chid,
-                    subject,
-                    'drop',
-                    reason,
-                ))
+            q = """
+                INSERT INTO commits(date, created, updated, authored, committed, contact,
+                                     email, sha, usha, patchid, changeid, subject,
+                                     disposition, reason)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            c.execute(q,
+                (date, NOW(), NOW(), authored, committed, contact, email,
+                 sha, usha, patchid, chid, subject, 'drop', reason))
             filenames = subprocess.check_output(
                 ['git', '-C', chromeos_path, 'show', '--name-only', '--format=', sha],
-                encoding='utf-8',
-                errors='ignore')
+                encoding='utf-8', errors='ignore')
             for fn in filenames.splitlines():
                 if fn != '':
                     c.execute('INSERT INTO files(sha, filename) VALUES (?, ?)',
