@@ -13,7 +13,7 @@ from common import get_integrated_tag
 
 
 def mktables(c):
-    """ Create tables """
+    """Create tables"""
 
     q = """
     CREATE TABLE commits
