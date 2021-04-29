@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 
-"""
-Use information in rebase database to create rebase spreadsheet
+"""Create rebase statistics spreadsheet
 
 Required python modules:
 google-api-python-client google-auth-httplib2 google-auth-oauthlib
@@ -10,9 +9,6 @@ google-api-python-client google-auth-httplib2 google-auth-oauthlib
 The Google Sheets API needs to be enabled to run this script.
 Also, you'll need to generate access credentials and store those
 in credentials.json.
-
-Disable pyline noise
-pylint: disable=no-absolute-import
 """
 
 from __future__ import print_function
@@ -104,7 +100,7 @@ def get_consolidated_topic(c, topic_name):
 
 
 def get_consolidated_topics(c):
-    """ Return dict of consolidated topics"""
+    """Return dict of consolidated topics"""
 
     topics = {}
     other_topic_id = None
@@ -157,12 +153,12 @@ def do_topic_stats_count(topic_stats, tags, topic, committed_ts, integrated_ts):
 
     for tag in tags:
         tag_ts = tags[tag]
-        if committed_ts < tag_ts and tag_ts < integrated_ts:
+        if committed_ts < tag_ts < integrated_ts:
             topic_stats[topic][tag] += 1
 
 
 def get_topic_stats(c):
-    """ Return dict with commit statistics"""
+    """Return dict with commit statistics"""
 
     uconn = sqlite3.connect(upstreamdb)
     cu = uconn.cursor()
@@ -189,11 +185,7 @@ def get_topic_stats(c):
         # Skip entries with topic 0 immediately.
         if topic == 0:
             continue
-        if topic in topics:
-            topic_name = topics[topic]
-        else:
-            # manually generated topic, with no entry in topics list
-            topic_name = 'other'
+        topic_name = topics.get(topic, 'other')
         if disposition != 'drop':
             do_topic_stats_count(topic_stats, tags, topic_name, committed,
                                  NOW())
@@ -306,7 +298,7 @@ def add_topics_summary_row(requests, conn, nconn, rowindex, topic, name):
                         m = rp.search(m.group(2))
                         if m:
                             what = m.group(1).replace(' ', '')
-                    if what == 'CHROMIUM:' or what == 'CHROMEOS:':
+                    if what in ('CHROMIUM:', 'CHROMEOS:'):
                         chromium += 1
                     elif what == 'UPSTREAM:':
                         upstream += 1
@@ -363,7 +355,7 @@ def add_topics_summary(requests):
     c.execute('select topic, name from topics order by name')
     rowindex = 2
     for (topic, name) in c.fetchall():
-        if name != 'chromeos' and name != 'other':
+        if name not in ('chromeos', 'other'):
             added = add_topics_summary_row(requests, conn, nconn, rowindex,
                                            topic, name)
             if added:
