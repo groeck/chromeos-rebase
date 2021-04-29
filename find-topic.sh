@@ -11,7 +11,7 @@ rebasedb=$(python3 -c "from common import rebasedb; print(rebasedb)")
 
 sql="select sha,topic,subject from commits where sha is \"${sha}\""
 
-sqlite3 "${rebasedb}" "${sql}" | sed -e 's/|/	/g'
+sqlite3 "${rebasedb}" "${sql}" | sed -e 's/|/\x9/g'
 exit 0
 
 tlist=""
