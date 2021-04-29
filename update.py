@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
+
+"""Update rebase database with new information from upstream and next database"""
+
+from __future__ import print_function
 import sqlite3
 import re
 from common import rebasedb, upstreamdb, nextdb
@@ -10,10 +14,10 @@ subject = re.compile(
 
 
 def findsha(uconn, sha, patchid, desc):
+    """Try to find matching SHA in provided database.
+
+    Return updated SHA, or None if not found.
     """
-  Try to find matching SHA in provided database.
-  Return updated SHA, or None if not found.
-  """
 
     c = uconn.cursor()
 
@@ -47,12 +51,12 @@ def findsha(uconn, sha, patchid, desc):
 
 
 def update_commits():
+    """Validate 'usha' field in rebase database.
+
+    Verify if the upstream SHA actually exists by looking it up in the upstream
+    database. If it doesn't exist, and if a matching commit is not found either,
+    remove it.
     """
-  Validate 'usha' field in rebase database.
-  Verify if the upstream SHA actually exists by looking it up in the upstream
-  database. If it doesn't exist, and if a matching commit is not found either,
-  remove it.
-  """
 
     conn = sqlite3.connect(rebasedb)
     uconn = sqlite3.connect(upstreamdb)
@@ -80,4 +84,5 @@ def update_commits():
         nconn.close()
 
 
-update_commits()
+if __name__ == '__main__':
+    update_commits()
