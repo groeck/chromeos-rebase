@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
-# Use information in rebase database to create rebase spreadsheet
-# Required python modules:
-# google-api-python-client google-auth-httplib2 google-auth-oauthlib
-#
-# The Google Sheets API needs to be enabled to run this script.
-# Also, you'll need to generate access credentials and store those
-# in credentials.json.
-#
-# Disable pyline noise
-# pylint: disable=no-absolute-import
+"""Use information in rebase database to create rebase spreadsheet
+
+Required python modules:
+    google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+The Google Sheets API needs to be enabled to run this script.
+Also, you'll need to generate access credentials and store those
+in credentials.json.
+
+Disable pyline noise
+pylint: disable=no-absolute-import
+"""
 
 from __future__ import print_function
 
@@ -34,7 +36,7 @@ white = {'red': 1, 'green': 1, 'blue': 1}
 def get_other_topic_id():
     """ Calculate other_topic_id """
 
-    global other_topic_id
+    global other_topic_id # pylint: disable=global-statement
 
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
@@ -52,6 +54,8 @@ def get_other_topic_id():
 
 
 def add_topics_summary(requests):
+    """Add topics to summary sheet"""
+
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
     c2 = conn.cursor()
@@ -130,6 +134,8 @@ def add_topics_summary(requests):
 
 
 def create_summary(requests):
+    """Create summary sheet"""
+
     requests.append({
         'updateSheetProperties': {
             # 'sheetId': 0,
@@ -175,7 +181,7 @@ def add_description(requests):
                         {
                             'userEnteredValue': {
                                 'stringValue':
-                                    'branch dropped: All patches upstream, no longer applicable, moved to another topic, or no longer needed'
+                                    'branch dropped: All patches upstream, no longer applicable, moved to another topic, or no longer needed' # pylint: disable=line-too-long
                             },
                         },
                     ]
@@ -257,6 +263,8 @@ def add_description(requests):
 
 
 def addsheet(requests, index, topic, name):
+    """Add sheet with header"""
+
     print('Adding sheet id=%d index=%d title="%s"' % (topic, index, name))
 
     requests.append({
@@ -275,6 +283,8 @@ def addsheet(requests, index, topic, name):
 
 
 def add_topics_sheets(requests):
+    """Add topics sheets"""
+
     conn = sqlite3.connect(rebasedb)
     c = conn.cursor()
 
@@ -294,6 +304,8 @@ def add_topics_sheets(requests):
 
 def add_sha(requests, sheetId, sha, contact, email, subject, disposition,
             reason, dsha, origin):
+    """Add sha to topics sheet"""
+
     comment = ''
     color = white
 
@@ -394,6 +406,8 @@ def add_sha(requests, sheetId, sha, contact, email, subject, disposition,
 
 
 def add_commits(requests):
+    """Add commits to sheets"""
+
     conn = sqlite3.connect(rebasedb)
     uconn = sqlite3.connect(upstreamdb)
     c = conn.cursor()
@@ -403,7 +417,8 @@ def add_commits(requests):
     sheets = set([])
 
     c.execute(
-        'select sha, dsha, contact, email, subject, disposition, reason, topic from commits where topic > 0'
+        'select sha, dsha, contact, email, subject, disposition, reason, topic \
+            from commits where topic > 0'
     )
     for (sha, dsha, contact, email, subject, disposition, reason,
          topic) in c.fetchall():
@@ -431,6 +446,8 @@ def add_commits(requests):
 
 
 def main():
+    """Main function"""
+
     sheet = genlib.init_spreadsheet(
         rebase_filename,
         'Rebase %s -> %s' % (rebase_baseline(), rebase_target_tag()))
