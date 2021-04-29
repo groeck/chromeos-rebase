@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-"
-#
-# Use information in rebase database to create rebase spreadsheet
-# Required python modules:
-# google-api-python-client google-auth-httplib2 google-auth-oauthlib
-#
-# The Google Sheets API needs to be enabled to run this script.
-# Also, you'll need to generate access credentials and store those
-# in credentials.json.
-#
-# Disable pyline noise
-# pylint: disable=no-absolute-import
+
+"""Use information in rebase database to create rebase spreadsheet
+Required python modules:
+google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+The Google Sheets API needs to be enabled to run this script.
+Also, you'll need to generate access credentials and store those
+in credentials.json.
+
+Disable pyline noise
+pylint: disable=no-absolute-import
+"""
 
 import os
 import pickle
 
-from googleapiclient import discovery
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from googleapiclient import discovery # pylint: disable=import-error
+from google_auth_oauthlib.flow import InstalledAppFlow # pylint: disable=import-error
+from google.auth.transport.requests import Request # pylint: disable=import-error
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -25,6 +26,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 def getsheet():
     """ Get and return reference to spreadsheet """
+
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -34,7 +36,7 @@ def getsheet():
             try:  # py2 or token saved with py3
                 creds = pickle.load(token)
             except UnicodeDecodeError:  # py3, token saved with py2
-                creds = pickle.load(token, encoding='latin-1')
+                creds = pickle.load(token, encoding='latin-1') # pylint: disable=unexpected-keyword-arg
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -53,6 +55,8 @@ def getsheet():
 
 
 def init_spreadsheet(filename, title):
+    """Initialize spreadsheet"""
+
     sheet = getsheet()
     try:
         with open(filename, 'r') as f:
@@ -167,6 +171,8 @@ def delete_sheets(sheet, sheets):
 
 
 def resize_sheet(requests, sheetId, start, end):
+    """Resize a sheet in provided range"""
+
     requests.append({
         'autoResizeDimensions': {
             'dimensions': {
@@ -240,6 +246,8 @@ def move_sheet(sheet, sheetId, to):
 
 
 def sourceRange(sheetId, rows, column):
+    """Return source range"""
+
     return {
         'sourceRange': {
             'sources': [{
@@ -254,10 +262,14 @@ def sourceRange(sheetId, rows, column):
 
 
 def scope(name, sheetId, rows, column):
+    """Return single source range"""
+
     return {name: sourceRange(sheetId, rows, column)}
 
 
 def sscope(name, sheetId, rows, start, end):
+    """Return multiple source ranges"""
+
     s = [scope(name, sheetId, rows, start)]
     while start < end:
         start += 1
