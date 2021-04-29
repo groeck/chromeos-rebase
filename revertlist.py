@@ -92,7 +92,7 @@ def handle_reverts():
                     "select committed, sha from commits where subject is '%s'" %
                     fdesc)
                 for (_committed, _sha,) in c2.fetchall():
-                    if _committed <= committed and _committed >= revert_committed:
+                    if revert_committed <= _committed <= committed:
                         mark_disposition(conn, _sha, 'drop', 'fixup/reverted',
                                          revert_sha)
             else:
