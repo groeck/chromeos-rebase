@@ -34,7 +34,7 @@ white = {'red': 1, 'green': 1, 'blue': 1}
 
 
 def get_other_topic_id():
-    """ Calculate other_topic_id """
+    """Calculate other_topic_id"""
 
     global other_topic_id # pylint: disable=global-statement
 
@@ -155,7 +155,8 @@ def create_summary(requests):
 
 
 def add_description(requests):
-    """ Add describing text to 'Summary' sheet """
+    """Add describing text to 'Summary' sheet"""
+
     requests.append({
         'appendCells': {
             'sheetId': 0,
