@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 # pylint: disable=global-statement
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
 
 """Search upstream commits in rebase database amd mark accordingly"""
@@ -31,7 +31,7 @@ _alldescs = defaultdict(list)
 
 
 def NOW():
-    """"Return current time"""
+    """Return current time"""
     return int(time.time())
 
 
@@ -45,24 +45,26 @@ def get_patch(path, psha):
     if i:
         ind = patch.index(i)
         return patch[ind:]
-    return
+    return None
 
 
 def patch_ratio(usha, lsha, ref=upstream_path):
-    """ compare patches
+    """compare patches
 
-  Args:
-    usha, lsha: Two SHAs to compare
+    Args:
+        usha: First SHA to compare
+        lsha: Second SHA to compare
+        ref: optional repository path name
 
-  Returns:
-    Tuple with two different fuzzy matches
+    Returns:
+        Tuple with two different fuzzy matches
 
-  Fuzzy match is applied to first 1,000 lines in each patch
-  to avoid stalls. If one of the patches has more than 1,000
-  lines, also compare the number of lines in each patch and
-  return (0,0) if the mismatch is too significant.
+    Fuzzy match is applied to first 1,000 lines in each patch
+    to avoid stalls. If one of the patches has more than 1,000
+    lines, also compare the number of lines in each patch and
+    return (0,0) if the mismatch is too significant.
+    """
 
-  """
     lpatch = get_patch(ref, usha)
     if lpatch:
         upatch = get_patch(chromeos_path, lsha)
@@ -83,16 +85,16 @@ def patch_ratio(usha, lsha, ref=upstream_path):
 def best_match(s):
     """Find best match for subject in _alldescs.
 
-  Split provided subject into words. Search for subject in each of the
-  word lists.
+    Split provided subject into words. Search for subject in each of the
+    word lists.
 
-  Args:
-    s: The subject to match.
+    Args:
+        s: The subject to match.
 
-  Returns:
-    Best subject match as list (subject, score). If multiple subjects match
-    with the same score, return first encountered match with this score.
-  """
+    Returns:
+        Best subject match as list (subject, score). If multiple subjects match
+        with the same score, return first encountered match with this score.
+    """
 
     matches = []
     s = re.sub(r'[^a-zA-Z0-9_/\s]+', ' ', s)
@@ -108,15 +110,14 @@ def best_match(s):
 
 
 def getallsubjects(db=upstreamdb):
+    """Split subjects into a dictionary of of word-hashed lists.
+
+    By searching the resulting lists, we can speed up processing
+    significantly.
+
+    Returns:
+        _alldescs[] is populated.
     """
-  Split subjects into a dictionary of of word-hashed lists.
-
-  By searching the resulting lists, we can speed up processing
-  significantly.
-
-  Returns:
-    _alldescs[] is populated.
-  """
 
     global _alldescs # pylint: disable=global-statement
 
@@ -133,9 +134,7 @@ def getallsubjects(db=upstreamdb):
 
 
 def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
-    """
-  Update a commit entry in the database if the disposition changes
-  """
+    """Update a commit entry in the database if the disposition changes"""
 
     c.execute("select disposition from commits where sha='%s'" % sha)
     disp = c.fetchall()
@@ -160,12 +159,11 @@ def update_commit(c, sha, disposition, reason, sscore=None, pscore=None):
 
 
 def doit(db=upstreamdb, path=upstream_path, name='upstream'):
-    """
-  Do the actual work.
+    """Do the actual work.
 
-  Read all commits from database, compare against commits in provided
-  database, and mark accordingly.
-  """
+    Read all commits from database, compare against commits in provided
+    database, and mark accordingly.
+    """
 
     rp = re.compile(
         '(CHROMIUM: *|CHROMEOS: *|UPSTREAM: *|FROMGIT: *|FROMLIST: *|BACKPORT: *)+(.*)'
