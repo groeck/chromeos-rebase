@@ -10,7 +10,8 @@ from common import nextdb, createdb, rebase_target_tag
 
 
 def mktables(c):
-    # Create tables
+    """Create tables"""
+
     c.execute(
         'CREATE TABLE commits (committed timestamp, sha text, patchid text, subject text)'
     )
@@ -23,6 +24,8 @@ def mktables(c):
 
 
 def handle(c):
+    """Do the work"""
+
     next_pick = rebase_target_tag() + '..'
 
     cmd = [
@@ -56,8 +59,11 @@ def handle(c):
 
 
 def initdb_next():
-    # Always re-create the 'next' database.
-    # Its SHAs are unstable and thus can not be relied on.
+    """Unconditionally (re-)create the 'next' database.
+
+    Its SHAs are unstable and thus can not be relied on.
+    """
+
     createdb(nextdb, mktables)
     conn = sqlite3.connect(nextdb)
     c = conn.cursor()
