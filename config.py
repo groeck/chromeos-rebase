@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-"
 
+"""Configuration file"""
+
 rebase_baseline_branch = 'chromeos-5.10'
 android_baseline_branch = 'android13-5.10'
 
@@ -54,11 +56,11 @@ topiclist = \
        'Documentation/ABI/testing/sysfs-bus-iio-cros-ec'
        ]],
      ['cros_ec/wilco',
-      [ 'drivers/platform/chrome/wilco_ec', 'drivers/rtc/rtc-wilco-ec',
+      ['drivers/platform/chrome/wilco_ec', 'drivers/rtc/rtc-wilco-ec',
       'drivers/power/supply/wilco-charger',
       'include/linux/platform_data/wilco-ec.h',
       'Documentation/ABI/testing/debugfs-wilco-ec',
-      'Documentation/ABI/testing/sysfs-platform-wilco-ec' ]],
+      'Documentation/ABI/testing/sysfs-platform-wilco-ec']],
      ['cros_ec/extcon',
       ['drivers/extcon/extcon-usbc-cros_ec',
        'drivers/extcon/extcon-tcss-cros-ec.c',
@@ -108,7 +110,7 @@ topiclist = \
       ['drivers/gpu/drm/rockchip']],
      ['drm/virtio',
       ['drivers/gpu/drm/virtio', 'include/drm/virtio_drm.h',
-       'include/uapi/drm/virtgpu_drm.h', 'include/uapi/linux/virtio_gpu.h' ]],
+       'include/uapi/drm/virtgpu_drm.h', 'include/uapi/linux/virtio_gpu.h']],
      ['gpu/other',
       ['drm', 'drivers/gpu', 'include/drm', 'Documentation/devicetree/bindings/drm',
        'include/uapi/drm']],
@@ -119,14 +121,14 @@ topiclist = \
        'Documentation/devicetree/bindings/media/qcom,msm8916-venus.yaml',
        'Documentation/devicetree/bindings/media/qcom,msm8996-venus.yaml',
        'Documentation/devicetree/bindings/media/qcom,sdm845-venus-v2.yaml',
-       'Documentation/devicetree/bindings/media/qcom,venus.txt' ]],
+       'Documentation/devicetree/bindings/media/qcom,venus.txt']],
      ['media/virtio',
-      ['drivers/media/virtio' ]],
+      ['drivers/media/virtio']],
      ['media/other',
       ['drivers/media', 'drivers/staging/media',
        'include/media', 'include/uapi/linux/videodev2.h',
        'include/uapi/linux/v4l2-controls.h', 'Documentation/media',
-       'Documentation/devicetree/bindings/media' ]],
+       'Documentation/devicetree/bindings/media']],
      ['video',
       ['drivers/video']],
      ['input',
@@ -225,7 +227,7 @@ topiclist = \
      ['soundwire',
       ['drivers/soundwire', 'include/linux/soundwire']],
      ['remoteproc',
-      ['drivers/remoteproc', 'drivers/rpmsg', 'include/linux/rpmsg' ]],
+      ['drivers/remoteproc', 'drivers/rpmsg', 'include/linux/rpmsg']],
      ['mfd',
       ['drivers/mfd']],
      ['drivers/soc',
