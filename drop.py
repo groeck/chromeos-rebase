@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
+
+"""Mark patches for drop based on data in configuration file"""
+
 from __future__ import print_function
 import sqlite3
 import time
@@ -8,10 +11,13 @@ from config import subject_droplist, sha_droplist, droplist
 
 
 def NOW():
+    """Return current time"""
     return int(time.time())
 
 
 def do_drop(c, sha, reason, usha=None):
+    """Mark patch identified by sha for drop with provided reason and possibly replacement SHA"""
+
     c.execute("select disposition from commits where sha is '%s'" % sha)
     found = c.fetchone()
     if found[0] != 'drop':
@@ -27,78 +33,70 @@ def do_drop(c, sha, reason, usha=None):
                       (usha, sha))
 
 
-conn = sqlite3.connect(rebasedb)
-# conn.text_factory = str
+def handle_drops():
+    """Handle all drops"""
 
-c = conn.cursor()
-c2 = conn.cursor()
+    conn = sqlite3.connect(rebasedb)
 
-# Drop patches listed explicitly as to be dropped.
-# Only drop if the listed SHA is actually in the database.
+    c = conn.cursor()
+    c2 = conn.cursor()
 
-for sha, reason, usha in sha_droplist:
-    c.execute("select sha from commits where sha is '%s'" % sha)
-    if c.fetchone():
-        do_drop(c2, sha, reason, usha=usha)
+    # Drop patches listed explicitly as to be dropped.
+    # Only drop if the listed SHA is actually in the database.
 
-# Drop all Android patches. We'll pick them up from the most recent version.
+    for sha, reason, usha in sha_droplist:
+        c.execute("select sha from commits where sha is '%s'" % sha)
+        if c.fetchone():
+            do_drop(c2, sha, reason, usha=usha)
 
-c.execute('select sha, subject from commits')
-for (sha, desc) in c.fetchall():
-    for prefix in subject_droplist:
-        if desc.startswith(prefix):
-            do_drop(c2, sha, 'android')
+    # Drop all Android patches. We'll pick them up from the most recent version.
 
-conn.commit()
+    c.execute('select sha, subject from commits')
+    for (sha, desc) in c.fetchall():
+        for prefix in subject_droplist:
+            if desc.startswith(prefix):
+                do_drop(c2, sha, 'android')
 
-# Now drop commits touching directories/files specified in droplist.
+    conn.commit()
 
-c.execute('select sha from commits')
-for (_sha,) in c.fetchall():
-    c.execute("select filename from files where sha is '%s'" % _sha)
-    for (filename,) in c.fetchall():
-        dropped = 0
-        for (_dir, _reason) in droplist:
-            if filename.startswith(_dir):
-                do_drop(c2, _sha, _reason)
-                dropped = 1
+    # Now drop commits touching directories/files specified in droplist.
+
+    c.execute('select sha from commits')
+    for (_sha,) in c.fetchall():
+        c.execute("select filename from files where sha is '%s'" % _sha)
+        for (filename,) in c.fetchall():
+            dropped = 0
+            for (_dir, _reason) in droplist:
+                if filename.startswith(_dir):
+                    do_drop(c2, _sha, _reason)
+                    dropped = 1
+                    break
+            if dropped:
                 break
-        if dropped:
-            break
 
-conn.commit()
+    conn.commit()
 
-# Try again. This time drop duplicates.
-# TODO: Needs work. This identifies revert/reapply wrongly as duplicates.
+    # Try again. This time drop duplicates.
+    # TODO: Needs work. This identifies revert/reapply wrongly as duplicates.
 
-dsha = []
+    dsha = []
 
-c.execute('select sha,patchid,disposition from commits')
-for (
-        _sha,
-        _patchid,
-        _disposition,
-) in c.fetchall():
-    if _disposition is 'drop':
-        continue
-    if _sha in dsha:
-        continue
-    c2.execute("select sha from commits where patchid is '%s'" % _patchid)
-    for (__sha,) in c2.fetchall():
-        if __sha in dsha:
+    c.execute('select sha,patchid,disposition from commits')
+    for (_sha, _patchid, _disposition,) in c.fetchall():
+        if _disposition is 'drop':
             continue
-        if _sha != __sha:
-            do_drop(c2, __sha, 'duplicate')
-            dsha.append(__sha)
+        if _sha in dsha:
+            continue
+        c2.execute("select sha from commits where patchid is '%s'" % _patchid)
+        for (__sha,) in c2.fetchall():
+            if __sha in dsha:
+                continue
+            if _sha != __sha:
+                do_drop(c2, __sha, 'duplicate')
+                dsha.append(__sha)
 
-conn.commit()
+    conn.commit()
+    conn.close()
 
-conn.close()
-
-# c.execute('SELECT * FROM commits')
-# c.fetchone() -> read one result
-#
-# for entry in c.execute(SELECT * FROM commits ORDER BY date'):
-#     print entry
-#     print entry.sha
-#     print entry.subject
+if __name__ == '__main__':
+    handle_drops()
