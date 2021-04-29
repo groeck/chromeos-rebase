@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-"
 
 """Use information in rebase database to create rebase spreadsheet
+
 Required python modules:
 google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
@@ -17,7 +18,7 @@ import pickle
 
 from googleapiclient import discovery # pylint: disable=import-error
 from google_auth_oauthlib.flow import InstalledAppFlow # pylint: disable=import-error
-from google.auth.transport.requests import Request # pylint: disable=import-error
+from google.auth.transport.requests import Request # pylint: disable=import-error, disable=no-name-in-module
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -25,7 +26,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 
 def getsheet():
-    """ Get and return reference to spreadsheet """
+    """Get and return reference to spreadsheet"""
 
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
@@ -51,7 +52,7 @@ def getsheet():
 
     service = discovery.build('sheets', 'v4', credentials=creds)
     # service = discovery.build('sheets', 'v4', developerKey=API_KEY)
-    return service.spreadsheets()
+    return service.spreadsheets() # pylint: disable=no-member
 
 
 def init_spreadsheet(filename, title):
@@ -78,7 +79,7 @@ def init_spreadsheet(filename, title):
 
 
 def get_other_topic_id(c):
-    """ Calculate and return other_topic_id """
+    """Calculate and return other_topic_id"""
 
     other_topic_id = 0
 
@@ -93,7 +94,7 @@ def get_other_topic_id(c):
 
 
 def get_topic_name(c, topic):
-    """ Get topic name from topic id """
+    """Get topic name from topic id"""
 
     c.execute("select name from topics where topic is '%s'" % topic)
     topic = c.fetchone()
@@ -107,7 +108,7 @@ def get_topic_name(c, topic):
 
 
 def doit(sheet, requests):
-    """ Execute a request """
+    """Execute a request"""
 
     body = {'requests': requests}
 
@@ -117,7 +118,7 @@ def doit(sheet, requests):
 
 
 def hide_sheet(sheet, sheetId, hide):
-    """ Move 'Data' sheet to end of spreadsheet. """
+    """Move 'Data' sheet to end of spreadsheet."""
     request = []
 
     request.append({
@@ -134,7 +135,7 @@ def hide_sheet(sheet, sheetId, hide):
 
 
 def create_spreadsheet(sheet, title):
-    """ Create a spreadsheet and return reference to it """
+    """Create a spreadsheet and return reference to it"""
     spreadsheet = {'properties': {'title': title}}
 
     request = sheet.create(body=spreadsheet, fields='spreadsheetId')
@@ -144,7 +145,7 @@ def create_spreadsheet(sheet, title):
 
 
 def delete_sheets(sheet, sheets):
-    """ Delete all sheets except sheet 0. In sheet 0, delete all values. """
+    """Delete all sheets except sheet 0. In sheet 0, delete all values."""
     # Unhide 'Data' sheet. If it is hidden we can't remove the other sheets.
     hide_sheet(sheet, 0, False)
     request = []
@@ -189,6 +190,7 @@ def add_sheet_header(requests, sheetId, fields):
     """Add provided header line to specified sheet.
 
     Make it bold.
+
     Args:
         requests: Reference to list of requests to send to API.
         sheetId: Sheet Id
@@ -229,7 +231,8 @@ def add_sheet_header(requests, sheetId, fields):
 
 
 def move_sheet(sheet, sheetId, to):
-    """ Move 'Data' sheet to end of spreadsheet. """
+    """Move 'Data' sheet to end of spreadsheet."""
+
     request = []
 
     request.append({
