@@ -12,7 +12,7 @@ from common import rebasedb
 topics = []
 
 def get_topic(filename, n=None):
-    """"Return topic associated with filename, or 0 if not found"""
+    """Return topic associated with filename, or 0 if not found"""
 
     for (subdir, topic, name,) in topics:
         if filename and filename.startswith(subdir):
@@ -44,13 +44,12 @@ def update_sha(sha, topic, filename='', base=''):
             # Generate topic even if disposition is drop. We'll need it for statistics.
             # Do not look into stable release and android patches since those will always
             # be dropped.
-            if disposition == 'drop' and (reason == 'stable' or reason
-                                          == 'android' or reason == 'Intel'):
+            if disposition == 'drop' and reason in ('stable', 'android', 'Intel'):
                 print("Disposition for '%s' is '%s' ('%s'), skipping" %
                       (sha, disposition, reason))
                 return count
 
-            #if (disposition == 'drop' and reason != 'revisit' and reason != 'revisit/fixup'
+            # if (disposition == 'drop' and reason != 'revisit' and reason != 'revisit/fixup'
             #                       and reason != 'upstream/fixup' and reason != 'reverted'):
             #    print("Disposition for '%s' is '%s' ('%s'), skipping" % (sha,
             #          disposition, reason))
@@ -75,20 +74,20 @@ def update_sha(sha, topic, filename='', base=''):
         # print("Attached SHA '%s' to topic %d" % (sha, topic))
         # Attach all SHAs touching the same set of files to the same topic.
         c.execute("select filename from files where sha is '%s'" % (sha))
-        for (filename,) in c.fetchall():
+        for (db_filename,) in c.fetchall():
             c.execute("select sha from files where filename is '%s'" %
-                      (filename))
+                      (db_filename))
             for (fsha,) in c.fetchall():
                 # print("Expect to attach sha '%s' to topic %d, file='%s'" %
-                #       (fsha, topic, filename))
-                if fsha != sha and not filename.endswith(
-                        'Makefile') and not filename.endswith('Kconfig'):
-                    if base != '' and not filename.startswith(
-                            base) and get_topic(filename) != topic:
+                #       (fsha, topic, db_filename))
+                if fsha != sha and not db_filename.endswith(
+                        'Makefile') and not db_filename.endswith('Kconfig'):
+                    if base != '' and not db_filename.startswith(
+                            base) and get_topic(db_filename) != topic:
                         print("  Skipping '%s': base '%s' mismatch [%d-%d]" %
-                              (filename, base, topic, get_topic(filename)))
+                              (db_filename, base, topic, get_topic(db_filename)))
                         continue
-                    filelist.append([fsha, topic, filename, base])
+                    filelist.append([fsha, topic, db_filename, base])
     return count
 
 
