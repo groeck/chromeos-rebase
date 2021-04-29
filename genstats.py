@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-"
-#
-# Use information in rebase database to create rebase spreadsheet
-# Required python modules:
-# google-api-python-client google-auth-httplib2 google-auth-oauthlib
-#
-# The Google Sheets API needs to be enabled to run this script.
-# Also, you'll need to generate access credentials and store those
-# in credentials.json.
-#
-# Disable pyline noise
-# pylint: disable=no-absolute-import
+
+"""
+Use information in rebase database to create rebase spreadsheet
+
+Required python modules:
+google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+The Google Sheets API needs to be enabled to run this script.
+Also, you'll need to generate access credentials and store those
+in credentials.json.
+
+Disable pyline noise
+pylint: disable=no-absolute-import
+"""
 
 from __future__ import print_function
 
@@ -66,10 +69,12 @@ stats_colors = [
 
 
 def NOW():
+    """Return current time"""
     return int(time.time())
 
 
 def get_consolidated_topic_name(topic_name):
+    """Return consolidated topic name"""
 
     for [consolidated_name, topic_names] in topiclist_consolidated:
         for elem in topic_names:
@@ -79,6 +84,8 @@ def get_consolidated_topic_name(topic_name):
 
 
 def get_consolidated_topic(c, topic_name):
+    """Return consolidated topic"""
+
     for (_, topic_names) in topiclist_consolidated:
         for elem in topic_names:
             if topic_name == elem:
@@ -97,6 +104,8 @@ def get_consolidated_topic(c, topic_name):
 
 
 def get_consolidated_topics(c):
+    """ Return dict of consolidated topics"""
+
     topics = {}
     other_topic_id = None
 
@@ -244,6 +253,8 @@ def get_topic_stats(c):
 
 
 def add_topics_summary_row(requests, conn, nconn, rowindex, topic, name):
+    """Add topics summary row"""
+
     c = conn.cursor()
     c2 = conn.cursor()
     cn = nconn.cursor()
@@ -266,7 +277,7 @@ def add_topics_summary_row(requests, conn, nconn, rowindex, topic, name):
     chromium = 0
     backport = 0
     other = 0
-    for (t, patchid, usha, a, subject, d) in c.fetchall():
+    for (t, patchid, usha, a, subject, d) in c.fetchall(): # pylint: disable=too-many-nested-blocks
         if topic == 0:
             # We are interested if the topic name is 'other',
             # or if the topic is not in the named topic list.
@@ -336,6 +347,8 @@ def add_topics_summary_row(requests, conn, nconn, rowindex, topic, name):
 
 
 def add_topics_summary(requests):
+    """Add topics summary"""
+
     conn = sqlite3.connect(rebasedb)
     nconn = sqlite3.connect(nextdb)
     c = conn.cursor()
@@ -365,6 +378,8 @@ def add_topics_summary(requests):
 
 
 def create_summary(sheet):
+    """Create summary"""
+
     requests = []
 
     requests.append({
@@ -512,6 +527,8 @@ def create_topic_stats(sheet):
 
 
 def colored_scope(name, sheetId, rows, column):
+    """Add colored scope"""
+
     return {
         name: genlib.sourceRange(sheetId, rows, column),
         'targetAxis': 'LEFT_AXIS',
@@ -520,6 +537,8 @@ def colored_scope(name, sheetId, rows, column):
 
 
 def colored_sscope(name, sheetId, rows, start, end):
+    """Add colored sscope"""
+
     s = [colored_scope(name, sheetId, rows, start)]
     while start < end:
         start += 1
@@ -528,6 +547,8 @@ def colored_sscope(name, sheetId, rows, start, end):
 
 
 def add_backlog_chart(sheet, rows):
+    """Add backlog chart"""
+
     request = []
 
     # chart start with summary row 2. Row 1 is assumed to be 'chromeos'
@@ -583,6 +604,8 @@ def add_backlog_chart(sheet, rows):
 
 
 def add_age_chart(sheet, rows):
+    """Add age chart"""
+
     request = []
 
     request.append({
@@ -635,6 +658,8 @@ def add_age_chart(sheet, rows):
 
 
 def add_stats_chart(sheet, sheetId, rows, columns):
+    """Add statistics chart"""
+
     request = []
 
     if columns > 25:
@@ -696,6 +721,8 @@ def add_stats_chart(sheet, sheetId, rows, columns):
 
 
 def main():
+    """Main function"""
+
     sheet = genlib.init_spreadsheet(
         stats_filename,
         'Backlog Status for chromeos-%s' % rebase_baseline().strip('v'))
